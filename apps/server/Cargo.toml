@@ -10,3 +10,4 @@ tracing-subscriber.workspace = true
 clap.workspace = true
 figment.workspace = true
 serde.workspace = true
+poem.workspace = true

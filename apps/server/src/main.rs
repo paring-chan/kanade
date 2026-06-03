@@ -3,10 +3,16 @@ use figment::{
     Figment,
     providers::{Env, Format, Toml},
 };
+use poem::{Route, Server, handler, listener::TcpListener};
 use serde::Deserialize;
 
 #[macro_use]
 extern crate tracing;
+
+#[handler]
+fn index() -> &'static str {
+    "hello world!"
+}
 
 #[derive(Parser, Debug)]
 #[command(name = "kanade-server", version, about, long_about = None)]
@@ -67,4 +73,14 @@ async fn main() {
     let config: AppConfig = figment.extract().expect("Failed to extract config");
 
     debug!("config: {config:?}");
+
+    let addr = format!("{}:{}", config.server.host, config.server.port);
+    let listener = TcpListener::bind(&addr);
+    let app = Route::new().at("/", index);
+
+    Server::new(listener)
+        .name("kanade-server")
+        .run(app)
+        .await
+        .expect("Failed to start server");
 }
