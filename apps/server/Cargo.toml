@@ -7,3 +7,6 @@ edition = "2024"
 tokio.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
+clap.workspace = true
+figment.workspace = true
+serde.workspace = true
