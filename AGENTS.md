@@ -11,3 +11,6 @@
 ## Commands
 - Use `cargo test` to run tests.
 - Use `cargo run -p <package_name>` to run specific applications.
+
+## Commit Conventions
+- Use conventional commits when committing (e.g., `feat:`, `fix:`, `docs:`, `chore:`, `refactor:`, `test:`).
