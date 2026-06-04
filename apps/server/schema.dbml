@@ -1,0 +1,263 @@
+Project kanade {
+  database_type: 'PostgreSQL'
+  Note: 'Kanade CI Server Database Schema'
+}
+
+Table user {
+  id uuid pk [not null]
+  username text [not null, unique]
+  nick text
+  email text [unique]
+
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+}
+
+Table forge {
+  id uuid pk [not null]
+  name text
+
+  config jsonb [not null]
+
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+}
+
+Table user_forge {
+  id uuid pk [not null]
+  user_id uuid [not null, ref: > user.id]
+  forge_id uuid [not null, ref: > forge.id]
+
+  forge_user_id text [not null]
+  access_token text [not null]
+  refresh_token text [not null]
+  access_token_expires_at timestamptz [not null]
+
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+
+  indexes {
+    (user_id, forge_id) [unique]
+    (forge_id, forge_user_id) [unique]
+  }
+}
+
+Table team {
+  id uuid pk [not null]
+  name text
+  slug text unique [not null]
+
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+}
+
+Enum role_type {
+  viewer
+  manager
+  admin
+}
+
+Table user_team {
+  id uuid pk [not null]
+  user_id uuid [not null, ref: > user.id]
+  team_id uuid [not null, ref: > team.id]
+  role role_type [not null]
+
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+
+  indexes {
+    (user_id, team_id) [unique]
+  }
+}
+
+Table secret {
+  id uuid pk
+  key text
+  value bytea [note: 'AES-256-GCM으로 암호화']
+
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+}
+
+Enum event_type {
+  push
+  tag
+  release
+  pull_request
+  cron
+  manual
+}
+
+Table team_secret {
+  id uuid pk [not null]
+  team_id uuid [not null, ref: > team.id]
+  secret_id uuid [not null, ref: > secret.id]
+  scopes event_type[]
+
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+
+  indexes {
+    (team_id, secret_id) [unique]
+  }
+}
+
+Table repo {
+  id uuid pk [not null]
+  name text [not null]
+  slug text [not null]
+  team_id uuid [not null, ref: > team.id]
+
+  forge_id uuid [not null, ref: > forge.id]
+  forge_repo_id text [not null]
+  forge_webhook_token bytea [not null, note: 'AES-256-GCM으로 암호화']
+
+  indexes {
+    (forge_id, forge_repo_id) [unique]
+    (team_id, slug) [unique]
+  }
+}
+
+Table repo_secret {
+  id uuid pk [not null]
+  repo_id uuid [not null, ref: > repo.id]
+  secret_id uuid [not null, ref: > secret.id]
+  scopes event_type[]
+
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+
+  indexes {
+    (repo_id, secret_id) [unique]
+  }
+}
+
+Enum pipeline_status {
+  evaluating
+  queued
+  running
+  success
+  failed
+  cancelled
+}
+
+Table pipeline {
+  id uuid pk [not null, note: 'UUIDv7']
+  serial integer [not null]
+  repo_id uuid [not null, ref: > repo.id]
+  title text
+  triggered_by text [not null, note: '모든 git 유저가 계정을 가진게 아니기 때문에 디스플레이용 값을 저장함']
+  triggered_by_user uuid [null, ref: > user.id]
+
+  event_type event_type [not null]
+  event_payload jsonb [not null, default: '{}']
+
+  git_ref text
+  git_commit_id text [not null]
+
+  status pipeline_status [not null, default: 'pending']
+
+  indexes {
+    (repo_id, serial) [unique]
+  }
+}
+
+Table pipeline_job {
+  id uuid pk [not null, note: 'UUIDv7']
+  pipeline_id uuid [not null, ref: > pipeline.id]
+  depends_on uuid[] [ref: > pipeline_job.id]
+  key text [not null]
+  name text [not null]
+  image text [note: '컨테이너 이미지']
+  env jsonb [not null, default: '{}']
+  timeout int [not null, default: 60, note: '분 단위']
+  created_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    (pipeline_id, key) [unique]
+  }
+}
+
+Table pipeline_job_step {
+  id uuid pk [not null, note: 'UUIDv7']
+  job_id uuid [not null, ref: > pipeline_job.id]
+  name text [not null]
+  env jsonb [not null, default: '{}']
+  ordering int [not null]
+  command text [not null]
+  created_at timestamptz [not null, default: `now()`]
+}
+
+Enum job_status {
+  waiting
+  pending
+  running
+  success
+  failed
+  skipped
+  cancelled
+}
+
+Table pipeline_job_run {
+  id uuid pk [not null, note: 'UUIDv7']
+  job_id uuid [not null, ref: > pipeline_job.id]
+  attempt_serial int [not null]
+  env jsonb [not null, default: '{}', note: 'attempt number 등 메타데이터 주입용']
+
+  status job_status [not null, default: 'pending']
+
+  created_at timestamptz [not null, default: `now()`]
+  started_at timestamptz
+  finished_at timestamptz
+
+  agent_id uuid [ref: > agent.id]
+
+  indexes {
+    (job_id, attempt_serial) [unique]
+  }
+}
+
+Table pipeline_job_step_run {
+  run_id uuid [not null, ref: > pipeline_job_run.id]
+  step_id uuid [not null, ref: > pipeline_job_step.id]
+
+  status job_status [not null, default: 'pending']
+
+  exit_code int
+
+  created_at timestamptz [not null, default: `now()`]
+  started_at timestamptz
+  finished_at timestamptz
+
+  indexes {
+    (run_id, step_id) [unique]
+  }
+}
+
+Enum agent_status {
+  idle
+  busy
+  offline
+}
+
+Table agent {
+  id uuid pk [not null]
+  name text [not null]
+  status agent_status
+  token_sha256 bytea [not null, unique]
+
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+  last_heartbeat_at timestamptz
+}
+
+Table agent_tag {
+  id uuid pk [not null]
+  agent_id uuid [not null, ref: > agent.id]
+  tag text [not null]
+
+  indexes {
+    (agent_id, tag) [unique]
+  }
+}

@@ -1,5 +1,9 @@
-_:
-
+{ pkgs, ... }:
 {
   languages.rust.enable = true;
+
+  packages = with pkgs; [
+    openssl
+    sqlx-cli
+  ];
 }
