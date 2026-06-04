@@ -1,5 +1,6 @@
 mod config;
 
+use anyhow::Context as _;
 use clap::Parser;
 use config::AppConfig;
 use figment::{
@@ -7,6 +8,8 @@ use figment::{
     providers::{Env, Format, Toml},
 };
 use poem::{Route, Server, handler, listener::TcpListener};
+use secrecy::ExposeSecret;
+use sqlx::{Database, PgPool};
 
 #[macro_use]
 extern crate tracing;
@@ -30,7 +33,7 @@ pub struct Args {
 }
 
 #[tokio::main]
-async fn main() {
+async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt()
         .with_env_filter(
             tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into()),
@@ -43,9 +46,19 @@ async fn main() {
         .merge(Toml::file(&args.config))
         .merge(Env::prefixed("KANADE_SERVER_").split("__"));
 
-    let config: AppConfig = figment.extract().expect("Failed to extract config");
+    let config: AppConfig = figment.extract().context("Failed to extract config")?;
 
     debug!("config: {config:?}");
+
+    let db = PgPool::connect(config.db.url.expose_secret())
+        .await
+        .context("failed to connect to db")?;
+
+    let migrator = sqlx::migrate!("./migrations");
+
+    migrator.run(&db).await.context("failed to run migration")?;
+
+    info!("connected to db");
 
     let listener = TcpListener::bind(&config.server.bind);
     let app = Route::new().at("/", index);
@@ -54,5 +67,7 @@ async fn main() {
         .name("kanade-server")
         .run(app)
         .await
-        .expect("Failed to start server");
+        .context("failed to start server")?;
+
+    Ok(())
 }

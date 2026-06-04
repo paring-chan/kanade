@@ -131,7 +131,7 @@ CREATE TABLE "pipeline" (
   "event_payload" jsonb NOT NULL DEFAULT '{}',
   "git_ref" text,
   "git_commit_id" text NOT NULL,
-  "status" pipeline_status NOT NULL DEFAULT 'pending'
+  "status" pipeline_status NOT NULL DEFAULT 'queued'
 );
 
 CREATE TABLE "pipeline_job" (
