@@ -9,7 +9,7 @@ use figment::{
 };
 use poem::{Route, Server, handler, listener::TcpListener};
 use secrecy::ExposeSecret;
-use sqlx::{Database, PgPool};
+use sqlx::PgPool;
 
 #[macro_use]
 extern crate tracing;
@@ -44,7 +44,7 @@ async fn main() -> anyhow::Result<()> {
 
     let figment = Figment::new()
         .merge(Toml::file(&args.config))
-        .merge(Env::prefixed("KANADE_SERVER_").split("__"));
+        .merge(Env::prefixed("KANADE_SERVER__").split("__"));
 
     let config: AppConfig = figment.extract().context("Failed to extract config")?;
 

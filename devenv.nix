@@ -21,5 +21,5 @@
     ];
   };
 
-  env.KANADE_SERVER_DB__URL = "postgresql://kanade:hello@127.0.0.1:5439/kanade";
+  env.KANADE_SERVER__DB__URL = "postgresql://kanade:hello@127.0.0.1:5439/kanade";
 }
