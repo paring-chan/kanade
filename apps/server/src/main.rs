@@ -1,5 +1,7 @@
 mod config;
 
+use std::sync::Arc;
+
 use anyhow::Context as _;
 use clap::Parser;
 use config::AppConfig;
@@ -7,12 +9,24 @@ use figment::{
     Figment,
     providers::{Env, Format, Toml},
 };
-use poem::{Route, Server, handler, listener::TcpListener};
-use secrecy::ExposeSecret;
-use sqlx::PgPool;
+use poem::handler;
 
 #[macro_use]
 extern crate tracing;
+
+mod commands;
+mod data;
+mod util;
+
+#[derive(Parser, Debug)]
+pub enum Command {
+    Serve,
+    Migrate,
+    Forge {
+        #[command(subcommand)]
+        subcommand: crate::commands::ForgesSubcommand,
+    },
+}
 
 #[handler]
 fn index() -> &'static str {
@@ -30,6 +44,8 @@ pub struct Args {
         default_value = "kanade-server.toml"
     )]
     pub config: String,
+    #[command(subcommand)]
+    pub command: Command,
 }
 
 #[tokio::main]
@@ -46,28 +62,15 @@ async fn main() -> anyhow::Result<()> {
         .merge(Toml::file(&args.config))
         .merge(Env::prefixed("KANADE_SERVER__").split("__"));
 
-    let config: AppConfig = figment.extract().context("Failed to extract config")?;
+    let config: Arc<AppConfig> = Arc::new(figment.extract().context("Failed to extract config")?);
 
     debug!("config: {config:?}");
 
-    let db = PgPool::connect(config.db.url.expose_secret())
-        .await
-        .context("failed to connect to db")?;
-
-    let migrator = sqlx::migrate!("./migrations");
-
-    migrator.run(&db).await.context("failed to run migration")?;
-
-    info!("connected to db");
-
-    let listener = TcpListener::bind(&config.server.bind);
-    let app = Route::new().at("/", index);
-
-    Server::new(listener)
-        .name("kanade-server")
-        .run(app)
-        .await
-        .context("failed to start server")?;
+    match args.command {
+        Command::Serve => commands::serve::run(config).await?,
+        Command::Migrate => commands::migrate::run(config).await?,
+        Command::Forge { subcommand } => commands::forges::run(config, subcommand).await?,
+    };
 
     Ok(())
 }

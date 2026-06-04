@@ -14,3 +14,6 @@ poem.workspace = true
 secrecy.workspace = true
 sqlx.workspace = true
 anyhow.workspace = true
+uuid.workspace = true
+chrono.workspace = true
+serde_json.workspace = true
