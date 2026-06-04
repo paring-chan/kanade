@@ -1,30 +1,33 @@
+use secrecy::SecretString;
 use serde::Deserialize;
 
-#[derive(Debug, Deserialize, Default)]
+#[derive(Debug, Deserialize)]
 pub struct AppConfig {
     #[serde(default)]
     pub server: ServerConfig,
+    pub db: DbConfig,
+    pub encryption_key: SecretString,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct DbConfig {
+    pub url: SecretString,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct ServerConfig {
-    pub host: String,
-    pub port: u16,
+    #[serde(default = "default_bind")]
+    pub bind: String,
 }
 
 impl Default for ServerConfig {
     fn default() -> Self {
         Self {
-            host: default_host(),
-            port: default_port(),
+            bind: default_bind(),
         }
     }
 }
 
-fn default_host() -> String {
-    "0.0.0.0".to_string()
-}
-
-fn default_port() -> u16 {
-    4000
+fn default_bind() -> String {
+    "0.0.0.0:4000".to_string()
 }

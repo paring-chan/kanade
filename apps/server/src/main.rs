@@ -47,8 +47,7 @@ async fn main() {
 
     debug!("config: {config:?}");
 
-    let addr = format!("{}:{}", config.server.host, config.server.port);
-    let listener = TcpListener::bind(&addr);
+    let listener = TcpListener::bind(&config.server.bind);
     let app = Route::new().at("/", index);
 
     Server::new(listener)

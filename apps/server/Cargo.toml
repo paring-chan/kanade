@@ -11,3 +11,5 @@ clap.workspace = true
 figment.workspace = true
 serde.workspace = true
 poem.workspace = true
+secrecy.workspace = true
+sqlx.workspace = true
