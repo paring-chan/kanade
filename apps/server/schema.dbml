@@ -156,7 +156,7 @@ Table pipeline {
   git_ref text
   git_commit_id text [not null]
 
-  status pipeline_status [not null, default: 'pending']
+  status pipeline_status [not null, default: 'queued']
 
   indexes {
     (repo_id, serial) [unique]
