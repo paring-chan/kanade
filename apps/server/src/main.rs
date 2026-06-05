@@ -16,6 +16,7 @@ extern crate tracing;
 
 mod commands;
 mod data;
+mod routes;
 mod util;
 
 #[derive(Parser, Debug)]

@@ -17,3 +17,6 @@ anyhow.workspace = true
 uuid.workspace = true
 chrono.workspace = true
 serde_json.workspace = true
+hmac.workspace = true
+sha2.workspace = true
+hex.workspace = true

@@ -8,8 +8,8 @@ use uuid::Uuid;
 use crate::{
     config::AppConfig,
     data::{
+        db::ForgeRow,
         forges::{ForgeConfig, ForgejoForgeConfig},
-        rows::ForgeRow,
     },
     util::open_db,
 };
