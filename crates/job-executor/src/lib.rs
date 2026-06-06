@@ -2,14 +2,16 @@ use std::collections::HashMap;
 
 use bollard::{
     Docker,
-    plugin::{ContainerCreateBody, HostConfig},
+    container::LogOutput,
+    exec::{CreateExecOptions, StartExecOptions, StartExecResults},
+    plugin::{ContainerCreateBody, ExecInspectResponse, HostConfig},
     query_parameters::{
         CreateContainerOptions, CreateImageOptions, RemoveContainerOptions, StartContainerOptions,
     },
 };
 use chrono::Duration;
 use futures_util::StreamExt;
-use tracing::debug;
+use tracing::{debug, instrument};
 use uuid::Uuid;
 
 mod error;
@@ -75,7 +77,11 @@ impl JobExecutor {
                         map
                     }),
                     stop_timeout: Some(job.timeout.num_seconds()),
-                    cmd: Some(vec!["/bin/sh".into(), "-c".into(), "sleep infinity".into()]),
+                    cmd: Some(vec![
+                        "/bin/sh".into(),
+                        "-c".into(),
+                        "mkdir /work && tail -f /dev/null".into(),
+                    ]),
                     host_config: Some(HostConfig {
                         auto_remove: Some(true),
                         ..Default::default()
@@ -103,6 +109,7 @@ impl JobExecutor {
         Ok(JobResult {})
     }
 
+    #[instrument(skip(self, steps))]
     async fn run_steps(&self, container_name: &str, steps: Vec<JobStep>) -> Result<()> {
         self.docker
             .start_container(
@@ -114,6 +121,53 @@ impl JobExecutor {
             .await?;
 
         debug!("container started: {container_name}");
+
+        for step in steps {
+            let exec = self
+                .docker
+                .create_exec(
+                    container_name,
+                    CreateExecOptions::<String> {
+                        working_dir: Some("/work".to_string()),
+                        cmd: Some(vec!["/bin/sh".to_string(), "-c".to_string(), step.command]),
+                        attach_stderr: Some(true),
+                        attach_stdout: Some(true),
+                        ..Default::default()
+                    },
+                )
+                .await?;
+            let StartExecResults::Attached { mut output, .. } = self
+                .docker
+                .start_exec(
+                    &exec.id,
+                    Some(StartExecOptions {
+                        ..Default::default()
+                    }),
+                )
+                .await?
+            else {
+                panic!("why detached");
+            };
+
+            while let Some(output) = output.next().await.transpose()? {
+                match output {
+                    LogOutput::StdErr { message } => {
+                        debug!("[STDERR] {}", String::from_utf8_lossy(message.as_ref()))
+                    }
+                    LogOutput::StdOut { message } => {
+                        debug!("[STDOUT] {}", String::from_utf8_lossy(message.as_ref()))
+                    }
+                    LogOutput::Console { message } => {
+                        debug!("[CONSOLE] {}", String::from_utf8_lossy(message.as_ref()))
+                    }
+                    _ => {}
+                }
+            }
+
+            let ExecInspectResponse { exit_code, .. } = self.docker.inspect_exec(&exec.id).await?;
+            let exit_code = exit_code.unwrap_or_default();
+            dbg!(exit_code);
+        }
 
         Ok(())
     }
