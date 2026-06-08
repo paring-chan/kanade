@@ -152,7 +152,8 @@ async fn forgejo_webhook(req: &Request, body: Body, db: Data<&PgPool>) -> poem::
     .bind(pipeline_id)
     .bind("evaluate")
     .bind("Evaluate Pipeline")
-    .bind("oci.pari.ng/kanade/bun-evaluator")
+    .bind("oven/bun:latest")
+    // .bind("oci.pari.ng/kanade/bun-evaluator")
     .bind(5)
     .execute(&mut *tx)
     .await
