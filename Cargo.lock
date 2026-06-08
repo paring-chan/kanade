@@ -97,6 +97,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f202df86484c868dbad7eaa557ef785d5c66295e41b460ef922eca0723b842c"
 
 [[package]]
+name = "api-types"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "poem-openapi",
+ "serde",
+ "serde_json",
+ "uuid",
+]
+
+[[package]]
 name = "atoi"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2282,6 +2293,7 @@ name = "server"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "api-types",
  "chrono",
  "clap",
  "figment",
@@ -3093,6 +3105,7 @@ checksum = "d258b83ceec21034727ecee8c382cfa6c3e133699b0742c64571814fb420c9f7"
 dependencies = [
  "getrandom 0.4.2",
  "js-sys",
+ "serde_core",
  "wasm-bindgen",
 ]
 

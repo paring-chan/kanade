@@ -1,7 +1,8 @@
-use poem_openapi::{ApiResponse, Object, payload::Json};
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+use poem_openapi::{ApiResponse, Object, payload::Json};
 
-#[derive(Object)]
+#[derive(Debug, Serialize, Deserialize, Object)]
 pub struct PipelineJobStepResponse {
     /// 스텝 ID
     pub id: Uuid,
@@ -13,7 +14,7 @@ pub struct PipelineJobStepResponse {
     pub command: String,
 }
 
-#[derive(Object)]
+#[derive(Debug, Serialize, Deserialize, Object)]
 pub struct PipelineJobResponse {
     /// 작업 ID
     pub id: Uuid,
@@ -23,7 +24,7 @@ pub struct PipelineJobResponse {
     pub timeout: i32,
 }
 
-#[derive(Object)]
+#[derive(Debug, Serialize, Deserialize, Object)]
 pub struct PipelineJobStepRunResponse {
     /// 스텝 실행 ID
     pub id: Uuid,
@@ -31,7 +32,7 @@ pub struct PipelineJobStepRunResponse {
     pub step: PipelineJobStepResponse,
 }
 
-#[derive(Object)]
+#[derive(Debug, Serialize, Deserialize, Object)]
 pub struct PipelineJobRunResponse {
     /// 작업 실행 ID
     pub id: Uuid,

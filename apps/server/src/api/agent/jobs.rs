@@ -1,9 +1,7 @@
-use crate::api::{
-    ApiTags,
-    agent::types::{
-        AcquireResponse, PipelineJobResponse, PipelineJobRunResponse, PipelineJobStepResponse,
-        PipelineJobStepRunResponse,
-    },
+use crate::api::ApiTags;
+use api_types::{
+    AcquireResponse, PipelineJobResponse, PipelineJobRunResponse, PipelineJobStepResponse,
+    PipelineJobStepRunResponse,
 };
 use poem::web::Data;
 use poem_openapi::{OpenApi, payload::Json};

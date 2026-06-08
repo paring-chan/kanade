@@ -2,8 +2,7 @@ use poem_openapi::OpenApi;
 
 use crate::api::agent::jobs::AgentJobsApi;
 
-mod jobs;
-mod types;
+pub mod jobs;
 
 pub fn api() -> impl OpenApi {
     AgentJobsApi
