@@ -54,6 +54,17 @@ impl AgentJobsApi {
             return Ok(AcquireResponse::NoContent);
         };
 
+        sqlx::query(
+            r#"
+            UPDATE pipeline_job_run
+            SET status = 'running'::job_status
+            WHERE id = $1
+            "#,
+        )
+        .bind(row.run_id)
+        .execute(&mut *tx)
+        .await?;
+
         let job = PipelineJobResponse {
             id: row.job_id,
             name: row.job_name,
@@ -106,6 +117,7 @@ impl AgentJobsApi {
             steps,
         };
 
+        tx.commit().await?;
         Ok(AcquireResponse::Ok(Json(run)))
     }
 }

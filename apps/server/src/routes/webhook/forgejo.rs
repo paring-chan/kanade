@@ -204,14 +204,17 @@ async fn forgejo_webhook(req: &Request, body: Body, db: Data<&PgPool>) -> poem::
         return poem::Error::from_status(StatusCode::INTERNAL_SERVER_ERROR);
     })?;
 
+    let step_run_id = Uuid::now_v7();
+
     sqlx::query(
         r#"
             INSERT INTO pipeline_job_step_run
-                (run_id, step_id, status)
+                (id, run_id, step_id, status)
             VALUES
-                ($1, $2, $3)
+                ($1, $2, $3, $4)
         "#,
     )
+    .bind(step_run_id)
     .bind(run_id)
     .bind(step_id)
     .bind(JobStatus::Pending)
