@@ -5,6 +5,11 @@ version = 4
 [[package]]
 name = "agent"
 version = "0.1.0"
+dependencies = [
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+]
 
 [[package]]
 name = "aho-corasick"
