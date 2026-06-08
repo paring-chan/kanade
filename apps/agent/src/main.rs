@@ -1,3 +1,4 @@
+mod agent;
 mod config;
 
 use std::sync::Arc;
@@ -46,6 +47,9 @@ async fn main() -> anyhow::Result<()> {
     let config: Arc<AgentConfig> = Arc::new(figment.extract().context("Failed to extract config")?);
 
     debug!("config: {config:?}");
+
+    let agent = Arc::new(agent::KanadeAgent::new(config));
+    agent.run().await.context("Agent run failed")?;
 
     Ok(())
 }
