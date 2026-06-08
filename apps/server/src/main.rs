@@ -14,10 +14,14 @@ use poem::handler;
 #[macro_use]
 extern crate tracing;
 
+mod api;
 mod commands;
 mod data;
+mod error;
 mod routes;
 mod util;
+
+use error::*;
 
 #[derive(Parser, Debug)]
 pub enum Command {

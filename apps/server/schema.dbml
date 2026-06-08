@@ -219,6 +219,7 @@ Table pipeline_job_run {
 }
 
 Table pipeline_job_step_run {
+  id uuid pk [not null]
   run_id uuid [not null, ref: > pipeline_job_run.id]
   step_id uuid [not null, ref: > pipeline_job_step.id]
 
