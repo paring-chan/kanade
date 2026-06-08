@@ -22,6 +22,8 @@ pub struct PipelineJobResponse {
     pub name: String,
     /// 작업 타임아웃 (분 단위)
     pub timeout: i32,
+    /// 컨테이너 이미지
+    pub image: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Object)]

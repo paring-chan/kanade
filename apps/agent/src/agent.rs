@@ -1,8 +1,10 @@
 use crate::config::AgentConfig;
 use api_types::PipelineJobRunResponse;
+use chrono::Duration;
+use job_executor::{Job, JobExecutor, JobStep};
 use reqwest::Client;
 use std::sync::Arc;
-use tokio::time::{Duration, sleep};
+use tokio::time::sleep;
 
 pub struct KanadeAgent {
     config: Arc<AgentConfig>,
@@ -17,7 +19,7 @@ impl KanadeAgent {
         }
     }
 
-    pub async fn run(&self) -> anyhow::Result<()> {
+    pub async fn run(&self) {
         tracing::info!("Agent starting...");
         let uri = format!("{}/api/v1/agent/jobs/acquire", self.config.api_uri);
 
@@ -36,7 +38,28 @@ impl KanadeAgent {
                                 .await
                                 .unwrap_or_else(|_| "Could not read body".to_string());
                             match serde_json::from_str::<PipelineJobRunResponse>(&body) {
-                                Ok(job) => tracing::info!("Acquired job: {:?}", job),
+                                Ok(job) => {
+                                    tracing::info!("Acquired job: {:?}", job);
+                                    let executor = JobExecutor::new().unwrap();
+                                    let job_to_run = Job {
+                                        id: job.id,
+                                        image: job.job.image.clone(),
+                                        timeout: Duration::minutes(job.job.timeout as i64),
+                                        steps: job
+                                            .steps
+                                            .into_iter()
+                                            .map(|s| JobStep {
+                                                id: s.id,
+                                                name: s.step.name.clone(),
+                                                ordering: s.step.ordering,
+                                                command: s.step.command.clone(),
+                                            })
+                                            .collect(),
+                                    };
+                                    if let Err(e) = executor.run(job_to_run).await {
+                                        tracing::error!("Failed to run job: {:?}", e);
+                                    }
+                                }
                                 Err(e) => tracing::error!(
                                     "Failed to parse job JSON: {}. Raw body: {}",
                                     e,
@@ -58,7 +81,7 @@ impl KanadeAgent {
                 }
             }
 
-            sleep(Duration::from_secs(5)).await;
+            sleep(tokio::time::Duration::from_secs(5)).await;
         }
     }
 }

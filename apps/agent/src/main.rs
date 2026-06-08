@@ -49,7 +49,7 @@ async fn main() -> anyhow::Result<()> {
     debug!("config: {config:?}");
 
     let agent = Arc::new(agent::KanadeAgent::new(config));
-    agent.run().await.context("Agent run failed")?;
+    agent.run().await;
 
     Ok(())
 }

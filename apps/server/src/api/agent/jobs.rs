@@ -30,12 +30,13 @@ impl AgentJobsApi {
             job_id: Uuid,
             job_name: String,
             job_timeout: i32,
+            job_image: String,
         }
 
         let row = sqlx::query_as::<_, JobRow>(
             r#"
             SELECT job_run.id as run_id, job_run.attempt_serial as run_attempt_serial,
-                   job.id as job_id, job.name as job_name, job.timeout as job_timeout
+                   job.id as job_id, job.name as job_name, job.timeout as job_timeout, job.image as job_image
             FROM pipeline_job_run job_run
             LEFT JOIN pipeline_job job ON job_run.job_id = job.id
             WHERE job_run.status = 'pending'::job_status
@@ -68,6 +69,7 @@ impl AgentJobsApi {
             id: row.job_id,
             name: row.job_name,
             timeout: row.job_timeout,
+            image: row.job_image,
         };
 
         #[derive(FromRow)]

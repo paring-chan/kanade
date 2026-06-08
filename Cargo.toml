@@ -4,6 +4,7 @@ members = ["apps/agent", "apps/cli","apps/server", "crates/*"]
 
 [workspace.dependencies]
 api-types = { path = "crates/api-types" }
+job-executor = { path = "crates/job-executor" }
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 tokio = { version = "1.52.3", features = ["full"] }

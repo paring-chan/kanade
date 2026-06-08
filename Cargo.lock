@@ -10,6 +10,7 @@ dependencies = [
  "api-types",
  "clap",
  "figment",
+ "job-executor",
  "reqwest",
  "serde",
  "serde_json",
