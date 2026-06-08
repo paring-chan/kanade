@@ -7,10 +7,12 @@ name = "agent"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "api-types",
  "clap",
  "figment",
  "reqwest",
  "serde",
+ "serde_json",
  "tokio",
  "tracing",
  "tracing-subscriber",
@@ -1986,6 +1988,8 @@ dependencies = [
  "rustls",
  "rustls-pki-types",
  "rustls-platform-verifier",
+ "serde",
+ "serde_json",
  "sync_wrapper",
  "tokio",
  "tokio-rustls",

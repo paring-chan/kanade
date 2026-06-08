@@ -1,7 +1,8 @@
 use crate::config::AgentConfig;
+use api_types::PipelineJobRunResponse;
 use reqwest::Client;
 use std::sync::Arc;
-use tokio::time::{sleep, Duration};
+use tokio::time::{Duration, sleep};
 
 pub struct KanadeAgent {
     config: Arc<AgentConfig>,
@@ -24,10 +25,32 @@ impl KanadeAgent {
             match self.client.post(&uri).send().await {
                 Ok(response) => {
                     let status = response.status();
-                    tracing::info!("Job acquisition attempt: status={}", status);
-                    
-                    if status.is_success() {
-                        // Handle successful job acquisition if needed in the future
+
+                    match status {
+                        reqwest::StatusCode::NO_CONTENT => {
+                            tracing::debug!("No job acquired");
+                        }
+                        reqwest::StatusCode::OK => {
+                            let body = response
+                                .text()
+                                .await
+                                .unwrap_or_else(|_| "Could not read body".to_string());
+                            match serde_json::from_str::<PipelineJobRunResponse>(&body) {
+                                Ok(job) => tracing::info!("Acquired job: {:?}", job),
+                                Err(e) => tracing::error!(
+                                    "Failed to parse job JSON: {}. Raw body: {}",
+                                    e,
+                                    body
+                                ),
+                            }
+                        }
+                        _ => {
+                            let body = response
+                                .text()
+                                .await
+                                .unwrap_or_else(|_| "Could not read body".to_string());
+                            tracing::error!("Unexpected status {}: {}", status, body);
+                        }
                     }
                 }
                 Err(e) => {
