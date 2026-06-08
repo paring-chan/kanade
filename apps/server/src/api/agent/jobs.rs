@@ -57,7 +57,8 @@ impl AgentJobsApi {
         sqlx::query(
             r#"
             UPDATE pipeline_job_run
-            SET status = 'running'::job_status
+            SET status = 'running'::job_status,
+                started_at = NOW()
             WHERE id = $1
             "#,
         )
