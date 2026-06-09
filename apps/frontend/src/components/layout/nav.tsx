@@ -49,8 +49,8 @@ const NavAuth = () => {
         <Menu.Root>
           <Menu.Trigger
             render={
-              <Avatar.Root className="size-6 rounded-full overflow-hidden">
-                <Avatar.Image src={user.avatar_url} />
+              <Avatar.Root className="size-6 rounded-full overflow-hidden select-none">
+                <Avatar.Image src={user.avatar_url} draggable="false" />
                 <Avatar.Fallback className="flex justify-center items-center size-full bg-black/5">
                   <LucideUser className="size-4 opacity-40" />
                 </Avatar.Fallback>
