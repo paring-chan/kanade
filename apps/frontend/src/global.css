@@ -1,0 +1,13 @@
+@import 'tailwindcss';
+
+@import '@noonnu/monoplex-kr-regular';
+@import './assets/fonts/SUITE/SUITE-Variable.css';
+
+@theme {
+  --font-sans: 'SUITE Variable', system-ui, sans-serif;
+  --font-mono: 'MonoplexKR-Regular', monospace;
+}
+
+body {
+  @apply bg-pink-50;
+}
