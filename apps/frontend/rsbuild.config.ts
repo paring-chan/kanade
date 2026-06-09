@@ -23,4 +23,10 @@ export default defineConfig({
       plugins: [Icons({ compiler: 'jsx', jsx: 'react' })],
     },
   },
+  server: {
+    proxy: {
+      '/_/': 'http://localhost:4000',
+      '/api/': 'http://localhost:4000',
+    },
+  },
 });

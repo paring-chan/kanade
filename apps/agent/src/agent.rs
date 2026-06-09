@@ -40,7 +40,7 @@ impl KanadeAgent {
                                 .unwrap_or_else(|_| "Could not read body".to_string());
                             match serde_json::from_str::<JobAcquireResponse>(&body) {
                                 Ok(job) => {
-                                    tracing::info!("Acquired job: {:?}", job);
+                                    tracing::info!("Acquired job: {}", job.id);
                                     let executor = JobExecutor::new().unwrap();
                                     let reporter = HttpReporter::new(
                                         self.config.api_uri.clone(),

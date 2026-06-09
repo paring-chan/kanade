@@ -12,3 +12,4 @@ devenv.local.yaml
 target/
 
 kanade-server.toml
+kanade-agent.toml
