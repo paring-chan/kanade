@@ -19,6 +19,10 @@ export default [
             path: 'login',
             lazy: () => import('./routes/login'),
           },
+          {
+            path: 'login/success',
+            lazy: () => import('./routes/login-success'),
+          },
         ],
       },
     ],
