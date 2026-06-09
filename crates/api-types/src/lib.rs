@@ -20,6 +20,40 @@ pub enum JobFinishResponse {
 }
 
 #[derive(Debug, Serialize, Deserialize, Object)]
+pub struct StepFinishRequest {
+    pub success: bool,
+    pub exit_code: i32,
+}
+
+#[derive(ApiResponse)]
+pub enum StepFinishResponse {
+    /// 스텝 완료됨
+    #[oai(status = 200)]
+    Ok,
+    /// 스텝이 존재하지않음
+    ///
+    /// 1. 내 job의 스텝이 아님
+    /// 2. 진짜 존재하지 않음
+    /// 3. 이미 끝남
+    #[oai(status = 404)]
+    StepNotFound,
+}
+
+#[derive(ApiResponse)]
+pub enum StepStartedResponse {
+    /// 스텝 시작됨
+    #[oai(status = 200)]
+    Ok,
+    /// 스텝이 존재하지않음
+    ///
+    /// 1. 내 job의 스텝이 아님
+    /// 2. 진짜 존재하지 않음
+    /// 3. 이미 끝남
+    #[oai(status = 404)]
+    StepNotFound,
+}
+
+#[derive(Debug, Serialize, Deserialize, Object)]
 pub struct PipelineJobStepResponse {
     /// 스텝 ID
     pub id: Uuid,
