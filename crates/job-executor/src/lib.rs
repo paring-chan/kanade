@@ -123,7 +123,12 @@ impl<R: adapter::JobStatusReport> JobExecutor<R> {
     }
 
     #[instrument(skip(self, steps, reporter))]
-    async fn run_steps(&self, container_name: &str, steps: Vec<JobStep>, reporter: &R) -> Result<()> {
+    async fn run_steps(
+        &self,
+        container_name: &str,
+        steps: Vec<JobStep>,
+        reporter: &R,
+    ) -> Result<()> {
         self.docker
             .start_container(
                 container_name,
@@ -136,7 +141,10 @@ impl<R: adapter::JobStatusReport> JobExecutor<R> {
         debug!("container started: {container_name}");
 
         for step in steps {
-            reporter.step_started(step.id, &step.name).await.map_err(|e| Error::Reporter(Box::new(e)))?;
+            reporter
+                .step_started(step.id, &step.name)
+                .await
+                .map_err(|e| Error::Reporter(Box::new(e)))?;
             let exec = self
                 .docker
                 .create_exec(
@@ -166,22 +174,37 @@ impl<R: adapter::JobStatusReport> JobExecutor<R> {
             while let Some(output) = output.next().await.transpose()? {
                 match output {
                     LogOutput::StdErr { message } => {
-                        reporter.step_log(
-                            step.id,
-                            LogLine::StdErr(String::from_utf8_lossy(message.as_ref()).to_string()),
-                        ).await.map_err(|e| Error::Reporter(Box::new(e)))?;
+                        reporter
+                            .step_log(
+                                step.id,
+                                LogLine::StdErr(
+                                    String::from_utf8_lossy(message.as_ref()).to_string(),
+                                ),
+                            )
+                            .await
+                            .map_err(|e| Error::Reporter(Box::new(e)))?;
                     }
                     LogOutput::StdOut { message } => {
-                        reporter.step_log(
-                            step.id,
-                            LogLine::StdOut(String::from_utf8_lossy(message.as_ref()).to_string()),
-                        ).await.map_err(|e| Error::Reporter(Box::new(e)))?;
+                        reporter
+                            .step_log(
+                                step.id,
+                                LogLine::StdOut(
+                                    String::from_utf8_lossy(message.as_ref()).to_string(),
+                                ),
+                            )
+                            .await
+                            .map_err(|e| Error::Reporter(Box::new(e)))?;
                     }
                     LogOutput::Console { message } => {
-                        reporter.step_log(
-                            step.id,
-                            LogLine::StdOut(String::from_utf8_lossy(message.as_ref()).to_string()),
-                        ).await.map_err(|e| Error::Reporter(Box::new(e)))?;
+                        reporter
+                            .step_log(
+                                step.id,
+                                LogLine::StdOut(
+                                    String::from_utf8_lossy(message.as_ref()).to_string(),
+                                ),
+                            )
+                            .await
+                            .map_err(|e| Error::Reporter(Box::new(e)))?;
                     }
                     _ => {}
                 }
@@ -189,7 +212,10 @@ impl<R: adapter::JobStatusReport> JobExecutor<R> {
 
             let ExecInspectResponse { exit_code, .. } = self.docker.inspect_exec(&exec.id).await?;
             let exit_code = exit_code.unwrap_or_default() as i32;
-            reporter.step_finished(step.id, exit_code).await.map_err(|e| Error::Reporter(Box::new(e)))?;
+            reporter
+                .step_finished(step.id, exit_code)
+                .await
+                .map_err(|e| Error::Reporter(Box::new(e)))?;
         }
 
         Ok(())

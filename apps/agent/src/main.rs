@@ -1,5 +1,6 @@
 mod agent;
 mod config;
+mod reporter;
 
 use std::sync::Arc;
 

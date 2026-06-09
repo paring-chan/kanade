@@ -1,4 +1,5 @@
 use crate::config::AgentConfig;
+use crate::reporter::HttpReporter;
 use api_types::PipelineJobRunResponse;
 use chrono::Duration;
 use job_executor::{Job, JobExecutor, JobStep};
@@ -40,25 +41,27 @@ impl KanadeAgent {
                             match serde_json::from_str::<PipelineJobRunResponse>(&body) {
                                 Ok(job) => {
                                     tracing::info!("Acquired job: {:?}", job);
-                                    let executor = JobExecutor::new().unwrap();
-                                    let job_to_run = Job {
-                                        id: job.id,
-                                        image: job.job.image.clone(),
-                                        timeout: Duration::minutes(job.job.timeout as i64),
-                                        steps: job
-                                            .steps
-                                            .into_iter()
-                                            .map(|s| JobStep {
-                                                id: s.id,
-                                                name: s.step.name.clone(),
-                                                ordering: s.step.ordering,
-                                                command: s.step.command.clone(),
-                                            })
-                                            .collect(),
-                                    };
-                                    if let Err(e) = executor.run(job_to_run).await {
-                                        tracing::error!("Failed to run job: {:?}", e);
-                                    }
+                                     let executor = JobExecutor::new().unwrap();
+                                     let reporter = HttpReporter;
+                                     let job_to_run = Job {
+                                         id: job.id,
+                                         image: job.job.image.clone(),
+                                         timeout: Duration::minutes(job.job.timeout as i64),
+                                         steps: job
+                                             .steps
+                                             .into_iter()
+                                             .map(|s| JobStep {
+                                                 id: s.id,
+                                                 name: s.step.name.clone(),
+                                                 ordering: s.step.ordering,
+                                                 command: s.step.command.clone(),
+                                             })
+                                             .collect(),
+                                     };
+                                     if let Err(e) = executor.run(job_to_run, &reporter).await {
+                                         tracing::error!("Failed to run job: {:?}", e);
+                                     }
+
                                 }
                                 Err(e) => tracing::error!(
                                     "Failed to parse job JSON: {}. Raw body: {}",
