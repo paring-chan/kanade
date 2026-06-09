@@ -9,3 +9,4 @@ serde_json.workspace = true
 uuid.workspace = true
 poem-openapi.workspace = true
 anyhow.workspace = true
+chrono.workspace = true

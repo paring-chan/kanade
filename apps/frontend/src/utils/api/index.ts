@@ -2,4 +2,15 @@ import type { paths } from './types';
 import createClient from 'openapi-fetch';
 import ky from 'ky';
 
-export const api = createClient<paths>({ fetch: ky });
+export const api = createClient<paths>({
+  fetch: ky.extend({
+    hooks: {
+      beforeRequest: [
+        ({ request }) => {
+          const token = localStorage.getItem('kanade.apikey');
+          request.headers.set('Authorization', `Bearer ${token}`);
+        },
+      ],
+    },
+  }),
+});

@@ -4,6 +4,7 @@ use crate::api::{forge::ForgeApi, user::UserApi};
 
 mod agent;
 mod forge;
+mod security;
 mod user;
 
 #[derive(Tags)]

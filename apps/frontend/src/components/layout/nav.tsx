@@ -1,8 +1,11 @@
 import { Link } from 'react-router';
 import Music2 from '~icons/lucide/music-2';
+import LucideUser from '~icons/lucide/user';
 import ChevronRight from '~icons/lucide/chevron-right';
-import { Menu } from '@base-ui/react';
-import clsx from 'clsx';
+import { Avatar, Menu } from '@base-ui/react';
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { userQueryOptions } from '../../queries/user';
+import { menu } from '../menu';
 
 const NavMenu = () => {
   return (
@@ -12,19 +15,8 @@ const NavMenu = () => {
       </Menu.Trigger>
       <Menu.Portal>
         <Menu.Positioner collisionPadding={0}>
-          <Menu.Popup
-            className={clsx(
-              'relative origin-(--transform-origin) bg-pink-50 border-r border-b border-t border-black/10 min-w-32 text-sm',
-              'flex flex-col',
-              'transition-[scale,opacity]',
-              'data-starting-style:scale-[0.98] data-starting-style:opacity-0',
-              'data-ending-style:scale-[0.98] data-ending-style:opacity-0',
-            )}
-          >
-            <Menu.Item
-              className="px-2 py-1 hover:bg-black/5 transition-colors"
-              render={<Link to="/">프로젝트 목록</Link>}
-            />
+          <Menu.Popup className={menu.popup({ className: 'border-l-0' })}>
+            <Menu.Item className={menu.item()} render={<Link to="/">프로젝트 목록</Link>} />
             {/*<Menu.Item
               className="px-2 py-1 hover:bg-black/5 transition-colors"
               render={<Link to="/settings">설정</Link>}
@@ -51,11 +43,48 @@ const NavBreadcrumb = () => {
 };
 
 const NavAuth = () => {
+  const { data: user } = useSuspenseQuery(userQueryOptions());
+
   return (
     <div className="flex items-center px-3">
-      <Link to="/login" className="hover:underline">
-        [로그인]
-      </Link>
+      {user ? (
+        <Menu.Root>
+          <Menu.Trigger
+            render={
+              <Avatar.Root className="size-6 rounded-full overflow-hidden">
+                <Avatar.Image src={user.avatar_url} />
+                <Avatar.Fallback className="flex justify-center items-center size-full bg-black/5">
+                  <LucideUser className="size-4 opacity-40" />
+                </Avatar.Fallback>
+              </Avatar.Root>
+            }
+          />
+          <Menu.Portal>
+            <Menu.Positioner className={menu.positioner()} sideOffset={4}>
+              <Menu.Popup className={menu.popup()}>
+                <Menu.Item
+                  className={menu.item()}
+                  onClick={() => {
+                    localStorage.removeItem('kanade.apikey');
+                    location.reload();
+                  }}
+                  render={<button />}
+                >
+                  로그아웃
+                </Menu.Item>
+                {/*<Menu.Item
+                       className="px-2 py-1 hover:bg-black/5 transition-colors"
+                       render={<Link to="/settings">설정</Link>}
+                     />*/}
+              </Menu.Popup>
+            </Menu.Positioner>
+          </Menu.Portal>
+        </Menu.Root>
+      ) : (
+        <Link to="/login" className="hover:underline">
+          [로그인]
+        </Link>
+      )}
     </div>
   );
 };
