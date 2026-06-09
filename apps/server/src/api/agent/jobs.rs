@@ -1,10 +1,11 @@
 use crate::api::ApiTags;
+use crate::data::db::JobStatus;
 use api_types::{
-    AcquireResponse, PipelineJobResponse, PipelineJobRunResponse, PipelineJobStepResponse,
-    PipelineJobStepRunResponse,
+    AcquireResponse, JobFinishRequest, JobFinishResponse, PipelineJobResponse,
+    PipelineJobRunResponse, PipelineJobStepResponse, PipelineJobStepRunResponse,
 };
 use poem::web::Data;
-use poem_openapi::{OpenApi, payload::Json};
+use poem_openapi::{OpenApi, param::Path, payload::Json};
 use sqlx::{PgPool, prelude::FromRow};
 use uuid::Uuid;
 
@@ -120,5 +121,75 @@ impl AgentJobsApi {
 
         tx.commit().await?;
         Ok(AcquireResponse::Ok(Json(run)))
+    }
+
+    /// Job 완료
+    #[oai(path = "/:id/finish", method = "post")]
+    async fn finish(
+        &self,
+        db: Data<&PgPool>,
+        id: Path<Uuid>,
+        status: Json<JobFinishRequest>,
+    ) -> poem::Result<JobFinishResponse> {
+        self._finish(&db, id.0, status.0).await.map_err(Into::into)
+    }
+
+    #[instrument(skip(self, db), err(Debug))]
+    async fn _finish(
+        &self,
+        db: &PgPool,
+        run_id: Uuid,
+        request: JobFinishRequest,
+    ) -> crate::Result<JobFinishResponse> {
+        let mut tx = db.begin().await?;
+
+        let job_status = if request.success {
+            JobStatus::Success
+        } else {
+            JobStatus::Failed
+        };
+
+        let result = sqlx::query(
+            r#"
+            UPDATE pipeline_job_run
+            SET status = $1,
+                finished_at = NOW()
+            WHERE id = $2 AND status = 'running'::job_status
+            "#,
+        )
+        .bind(&job_status)
+        .bind(run_id)
+        .execute(&mut *tx)
+        .await?;
+
+        if result.rows_affected() == 0 {
+            tx.rollback().await?;
+            return Ok(JobFinishResponse::JobNotFound);
+        }
+
+        let step_status = if request.success {
+            JobStatus::Success
+        } else {
+            JobStatus::Skipped
+        };
+
+        sqlx::query(
+            r#"
+            UPDATE pipeline_job_step_run
+            SET status = CASE
+                            WHEN status = 'running'::job_status THEN 'failed'::job_status
+                            ELSE $1
+                         END,
+                finished_at = NOW()
+            WHERE run_id = $2 AND status NOT IN ('success', 'failed', 'skipped', 'cancelled')
+            "#,
+        )
+        .bind(&step_status)
+        .bind(run_id)
+        .execute(&mut *tx)
+        .await?;
+
+        tx.commit().await?;
+        Ok(JobFinishResponse::Ok)
     }
 }

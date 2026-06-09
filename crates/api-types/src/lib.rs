@@ -1,6 +1,23 @@
+use poem_openapi::{payload::Json, ApiResponse, Object};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use poem_openapi::{ApiResponse, Object, payload::Json};
+
+#[derive(Debug, Serialize, Deserialize, Object)]
+pub struct JobFinishRequest {
+    pub success: bool,
+}
+
+#[derive(ApiResponse)]
+pub enum JobFinishResponse {
+    /// 작업 완료됨
+    #[oai(status = 200)]
+    Ok,
+    /// 작업이 존재하지 않음
+    ///
+    /// 존재하지 않거나 이미 완료되었거나 agent 자신이 소유하지 않는 경우
+    #[oai(status = 404)]
+    JobNotFound,
+}
 
 #[derive(Debug, Serialize, Deserialize, Object)]
 pub struct PipelineJobStepResponse {
