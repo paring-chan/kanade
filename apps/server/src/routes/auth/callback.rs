@@ -1,7 +1,7 @@
 use std::{
     ops::Add,
     str::FromStr,
-    sync::{Arc, LazyLock, OnceLock},
+    sync::{Arc, LazyLock},
 };
 
 use chrono::{DateTime, Duration, Utc};
@@ -21,6 +21,7 @@ use uuid::Uuid;
 use crate::{
     auth::UserTokenClaims,
     config::{AppConfig, JwtSigningKey},
+    crypto::CryptoEngine,
     data::forges::ForgeConfig,
     error::AppError,
     routes::auth::jwt::LoginClaims,
@@ -46,6 +47,7 @@ pub async fn callback(
     Data(db): Data<&PgPool>,
     Data(signing_key): Data<&Arc<JwtSigningKey>>,
     Data(config): Data<&Arc<AppConfig>>,
+    Data(crypto_engine): Data<&Arc<CryptoEngine>>,
 ) -> crate::Result<Response> {
     match query {
         CallbackQuery::Successful { code, state } => {
@@ -69,7 +71,7 @@ pub async fn callback(
                 }
             };
 
-            match process_callback(code, token, db, config, &signing_key).await {
+            match process_callback(code, token, db, config, &signing_key, &crypto_engine).await {
                 Err(err) => {
                     return Ok(Redirect::see_other(format!(
                         "/login?error={}",
@@ -106,12 +108,14 @@ static HTTP: LazyLock<reqwest::Client> = LazyLock::new(|| {
         .expect("client should build")
 });
 
+#[instrument(skip(code, token, db, config, signing_key, crypto_engine), err(Debug))]
 async fn process_callback(
     code: AuthorizationCode,
     token: TokenData<LoginClaims>,
     db: &PgPool,
     config: &AppConfig,
     signing_key: &JwtSigningKey,
+    crypto_engine: &CryptoEngine,
 ) -> crate::Result<Response> {
     let forge_id =
         Uuid::from_str(&token.claims.forge_id).map_err(|e| AppError::InternalError(e.into()))?;
@@ -192,6 +196,9 @@ async fn process_callback(
         }
     };
 
+    let access_token = crypto_engine.encrypt(result.access_token.expose_secret())?;
+    let refresh_token = crypto_engine.encrypt(result.refresh_token.expose_secret())?;
+
     let mut tx = db.begin().await?;
 
     #[derive(FromRow)]
@@ -202,12 +209,12 @@ async fn process_callback(
     let existing_user = sqlx::query_as::<_, UserIdRow>(
         r#"
         SELECT u.id as user_id
-        FROM user_forge uf
-        LEFT JOIN "user" u ON u.id = uf.user_id
+        FROM "user" u
+        LEFT JOIN user_forge uf ON u.id = uf.user_id
         WHERE
             uf.forge_id = $1 AND
             uf.forge_user_id = $2
-        FOR UPDATE
+        FOR UPDATE OF u
     "#,
     )
     .bind(forge_id)
@@ -227,8 +234,8 @@ async fn process_callback(
                 WHERE forge_id = $4 AND user_id = $5
                 "#,
             )
-            .bind(result.access_token.expose_secret())
-            .bind(result.refresh_token.expose_secret())
+            .bind(&access_token)
+            .bind(&refresh_token)
             .bind(result.access_token_expires_at)
             .bind(forge_id)
             .bind(row.user_id)
@@ -256,7 +263,7 @@ async fn process_callback(
             #[derive(FromRow)]
             struct UserInsertResult {
                 id: Uuid,
-            };
+            }
 
             let user_insert_query = r#"
                 INSERT INTO "user"
@@ -313,8 +320,8 @@ async fn process_callback(
             .bind(user_id)
             .bind(forge_id)
             .bind(&result.sub)
-            .bind(result.access_token.expose_secret())
-            .bind(result.refresh_token.expose_secret())
+            .bind(&access_token)
+            .bind(&refresh_token)
             .bind(result.access_token_expires_at)
             .execute(&mut *tx).await?;
 
