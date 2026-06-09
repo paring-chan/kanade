@@ -15,6 +15,10 @@ export default [
             path: 'repo/:team/:repo/pipelines/:pipeline',
             lazy: () => import('./routes/pipeline-view'),
           },
+          {
+            path: 'login',
+            lazy: () => import('./routes/login'),
+          },
         ],
       },
     ],
