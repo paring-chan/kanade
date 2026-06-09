@@ -3,7 +3,7 @@ import { Nav } from '../components/layout/nav';
 
 export const Component = () => {
   return (
-    <div>
+    <div className="min-h-screen flex flex-col">
       <Nav />
       <Outlet />
     </div>
