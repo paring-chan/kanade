@@ -128,7 +128,7 @@ impl<R: adapter::JobStatusReport> JobExecutor<R> {
     async fn run_steps(
         &self,
         container_name: &str,
-        steps: Vec<JobStep>,
+        mut steps: Vec<JobStep>,
         reporter: &R,
     ) -> Result<i32> {
         self.docker
@@ -141,6 +141,8 @@ impl<R: adapter::JobStatusReport> JobExecutor<R> {
             .await?;
 
         debug!("container started: {container_name}");
+
+        steps.sort_by(|a, b| a.ordering.cmp(&b.ordering));
 
         for step in steps {
             reporter
