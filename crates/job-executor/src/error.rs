@@ -4,4 +4,6 @@ pub type Result<T, E = Error> = std::result::Result<T, E>;
 pub enum Error {
     #[error("docker api error: {0}")]
     Bollard(#[from] bollard::errors::Error),
+    #[error("reporter error: {0}")]
+    Reporter(#[from] Box<dyn std::error::Error + Send + Sync>),
 }

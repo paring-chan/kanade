@@ -17,6 +17,9 @@ use uuid::Uuid;
 mod error;
 pub use error::*;
 
+pub mod adapter;
+use adapter::LogLine;
+
 pub struct Job {
     pub id: Uuid,
     pub image: String,
@@ -31,16 +34,18 @@ pub struct JobStep {
     pub command: String,
 }
 
-pub struct JobExecutor {
+pub struct JobExecutor<R: adapter::JobStatusReport> {
     docker: Docker,
+    reporter: R,
 }
 
 pub struct JobResult {}
 
-impl JobExecutor {
-    pub fn new() -> crate::Result<Self> {
+impl<R: adapter::JobStatusReport> JobExecutor<R> {
+    pub fn new(reporter: R) -> crate::Result<Self> {
         Ok(Self {
             docker: Docker::connect_with_defaults()?,
+            reporter,
         })
     }
 
@@ -104,9 +109,16 @@ impl JobExecutor {
             )
             .await?;
 
-        result?;
-
-        Ok(JobResult {})
+        match result {
+            Ok(_) => {
+                let _ = self.reporter.job_finished(job.id, true).await;
+                Ok(JobResult {})
+            }
+            Err(e) => {
+                let _ = self.reporter.job_finished(job.id, false).await;
+                Err(e)
+            }
+        }
     }
 
     #[instrument(skip(self, steps))]
@@ -123,6 +135,7 @@ impl JobExecutor {
         debug!("container started: {container_name}");
 
         for step in steps {
+            self.reporter.step_started(step.id, &step.name).await.map_err(|e| Error::Reporter(Box::new(e)))?;
             let exec = self
                 .docker
                 .create_exec(
@@ -152,21 +165,30 @@ impl JobExecutor {
             while let Some(output) = output.next().await.transpose()? {
                 match output {
                     LogOutput::StdErr { message } => {
-                        debug!("[STDERR] {}", String::from_utf8_lossy(message.as_ref()))
+                        self.reporter.step_log(
+                            step.id,
+                            LogLine::StdErr(String::from_utf8_lossy(message.as_ref()).to_string()),
+                        ).await.map_err(|e| Error::Reporter(Box::new(e)))?;
                     }
                     LogOutput::StdOut { message } => {
-                        debug!("[STDOUT] {}", String::from_utf8_lossy(message.as_ref()))
+                        self.reporter.step_log(
+                            step.id,
+                            LogLine::StdOut(String::from_utf8_lossy(message.as_ref()).to_string()),
+                        ).await.map_err(|e| Error::Reporter(Box::new(e)))?;
                     }
                     LogOutput::Console { message } => {
-                        debug!("[CONSOLE] {}", String::from_utf8_lossy(message.as_ref()))
+                        self.reporter.step_log(
+                            step.id,
+                            LogLine::StdOut(String::from_utf8_lossy(message.as_ref()).to_string()),
+                        ).await.map_err(|e| Error::Reporter(Box::new(e)))?;
                     }
                     _ => {}
                 }
             }
 
             let ExecInspectResponse { exit_code, .. } = self.docker.inspect_exec(&exec.id).await?;
-            let exit_code = exit_code.unwrap_or_default();
-            dbg!(exit_code);
+            let exit_code = exit_code.unwrap_or_default() as i32;
+            self.reporter.step_finished(step.id, exit_code).await.map_err(|e| Error::Reporter(Box::new(e)))?;
         }
 
         Ok(())
