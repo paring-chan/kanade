@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::marker::PhantomData;
 
 use bollard::{
     Docker,
@@ -36,20 +37,20 @@ pub struct JobStep {
 
 pub struct JobExecutor<R: adapter::JobStatusReport> {
     docker: Docker,
-    reporter: R,
+    _marker: PhantomData<R>,
 }
 
 pub struct JobResult {}
 
 impl<R: adapter::JobStatusReport> JobExecutor<R> {
-    pub fn new(reporter: R) -> crate::Result<Self> {
+    pub fn new() -> crate::Result<Self> {
         Ok(Self {
             docker: Docker::connect_with_defaults()?,
-            reporter,
+            _marker: PhantomData,
         })
     }
 
-    pub async fn run(&self, job: Job) -> crate::Result<JobResult> {
+    pub async fn run(&self, job: Job, reporter: &R) -> crate::Result<JobResult> {
         let mut pull = self.docker.create_image(
             Some(CreateImageOptions {
                 from_image: Some(job.image.clone()),
@@ -97,7 +98,7 @@ impl<R: adapter::JobStatusReport> JobExecutor<R> {
             .await?;
         debug!("container created: {container:?}");
 
-        let result = self.run_steps(&name, job.steps).await;
+        let result = self.run_steps(&name, job.steps, reporter).await;
 
         self.docker
             .remove_container(
@@ -111,18 +112,18 @@ impl<R: adapter::JobStatusReport> JobExecutor<R> {
 
         match result {
             Ok(_) => {
-                let _ = self.reporter.job_finished(job.id, true).await;
+                let _ = reporter.job_finished(job.id, true).await;
                 Ok(JobResult {})
             }
             Err(e) => {
-                let _ = self.reporter.job_finished(job.id, false).await;
+                let _ = reporter.job_finished(job.id, false).await;
                 Err(e)
             }
         }
     }
 
-    #[instrument(skip(self, steps))]
-    async fn run_steps(&self, container_name: &str, steps: Vec<JobStep>) -> Result<()> {
+    #[instrument(skip(self, steps, reporter))]
+    async fn run_steps(&self, container_name: &str, steps: Vec<JobStep>, reporter: &R) -> Result<()> {
         self.docker
             .start_container(
                 container_name,
@@ -135,7 +136,7 @@ impl<R: adapter::JobStatusReport> JobExecutor<R> {
         debug!("container started: {container_name}");
 
         for step in steps {
-            self.reporter.step_started(step.id, &step.name).await.map_err(|e| Error::Reporter(Box::new(e)))?;
+            reporter.step_started(step.id, &step.name).await.map_err(|e| Error::Reporter(Box::new(e)))?;
             let exec = self
                 .docker
                 .create_exec(
@@ -165,19 +166,19 @@ impl<R: adapter::JobStatusReport> JobExecutor<R> {
             while let Some(output) = output.next().await.transpose()? {
                 match output {
                     LogOutput::StdErr { message } => {
-                        self.reporter.step_log(
+                        reporter.step_log(
                             step.id,
                             LogLine::StdErr(String::from_utf8_lossy(message.as_ref()).to_string()),
                         ).await.map_err(|e| Error::Reporter(Box::new(e)))?;
                     }
                     LogOutput::StdOut { message } => {
-                        self.reporter.step_log(
+                        reporter.step_log(
                             step.id,
                             LogLine::StdOut(String::from_utf8_lossy(message.as_ref()).to_string()),
                         ).await.map_err(|e| Error::Reporter(Box::new(e)))?;
                     }
                     LogOutput::Console { message } => {
-                        self.reporter.step_log(
+                        reporter.step_log(
                             step.id,
                             LogLine::StdOut(String::from_utf8_lossy(message.as_ref()).to_string()),
                         ).await.map_err(|e| Error::Reporter(Box::new(e)))?;
@@ -188,7 +189,7 @@ impl<R: adapter::JobStatusReport> JobExecutor<R> {
 
             let ExecInspectResponse { exit_code, .. } = self.docker.inspect_exec(&exec.id).await?;
             let exit_code = exit_code.unwrap_or_default() as i32;
-            self.reporter.step_finished(step.id, exit_code).await.map_err(|e| Error::Reporter(Box::new(e)))?;
+            reporter.step_finished(step.id, exit_code).await.map_err(|e| Error::Reporter(Box::new(e)))?;
         }
 
         Ok(())
