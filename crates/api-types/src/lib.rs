@@ -1,4 +1,6 @@
-use poem_openapi::{payload::Json, ApiResponse, Object};
+use std::collections::HashMap;
+
+use poem_openapi::{payload::Json, ApiResponse, Object, Union};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -78,15 +80,38 @@ pub struct PipelineJobResponse {
 }
 
 #[derive(Debug, Serialize, Deserialize, Object)]
-pub struct PipelineJobStepRunResponse {
+pub struct JobStepAcquireResponse {
     /// 스텝 실행 ID
     pub id: Uuid,
     /// 스텝 정보
     pub step: PipelineJobStepResponse,
 }
 
-#[derive(Debug, Serialize, Deserialize, Object)]
-pub struct PipelineJobRunResponse {
+/// 환경변수 정의
+#[derive(Union, Serialize, Deserialize, Debug)]
+#[serde(tag = "type", rename_all = "snake_case")]
+#[oai(discriminator_name = "type", rename_all = "snake_case")]
+pub enum EnvDefinition {
+    Static(StaticEnv),
+    Secret(SecretEnv),
+}
+
+/// 고정된 환경변수
+#[derive(Object, Serialize, Deserialize, Debug)]
+pub struct StaticEnv {
+    /// 환경변수 값
+    pub value: String,
+}
+
+/// 시크릿 환경변수
+#[derive(Object, Serialize, Deserialize, Debug)]
+pub struct SecretEnv {
+    /// 환경변수를 불러올 시크릿 키
+    pub secret_key: String,
+}
+
+#[derive(Serialize, Deserialize, Object)]
+pub struct JobAcquireResponse {
     /// 작업 실행 ID
     pub id: Uuid,
     /// 작업 재시도 시리얼
@@ -94,14 +119,18 @@ pub struct PipelineJobRunResponse {
     /// 작업 정보
     pub job: PipelineJobResponse,
     /// 스텝 목록
-    pub steps: Vec<PipelineJobStepRunResponse>,
+    pub steps: Vec<JobStepAcquireResponse>,
+    /// Job 스코프 환경변수 목록
+    pub env: HashMap<String, EnvDefinition>,
+    /// 레퍼런스된 시크릿 목록
+    pub secrets: HashMap<String, String>,
 }
 
 #[derive(ApiResponse)]
-pub enum AcquireResponse {
+pub enum JobAcquireEndpointResponse {
     /// 작업 할당됨
     #[oai(status = 200)]
-    Ok(Json<PipelineJobRunResponse>),
+    Ok(Json<JobAcquireResponse>),
 
     /// 현재 할당 가능한 작업이 없음
     #[oai(status = 204)]

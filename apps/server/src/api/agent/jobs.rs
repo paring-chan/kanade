@@ -1,8 +1,10 @@
+use std::collections::HashMap;
+
 use crate::api::ApiTags;
 use crate::data::db::JobStatus;
 use api_types::{
-    AcquireResponse, JobFinishRequest, JobFinishResponse, PipelineJobResponse,
-    PipelineJobRunResponse, PipelineJobStepResponse, PipelineJobStepRunResponse,
+    JobAcquireEndpointResponse, JobAcquireResponse, JobFinishRequest, JobFinishResponse,
+    JobStepAcquireResponse, PipelineJobResponse, PipelineJobStepResponse,
 };
 use poem::web::Data;
 use poem_openapi::{OpenApi, param::Path, payload::Json};
@@ -15,12 +17,12 @@ pub struct AgentJobsApi;
 impl AgentJobsApi {
     /// Job 획득
     #[oai(path = "/acquire", method = "post")]
-    async fn acquire(&self, db: Data<&PgPool>) -> poem::Result<AcquireResponse> {
+    async fn acquire(&self, db: Data<&PgPool>) -> poem::Result<JobAcquireEndpointResponse> {
         self._acquire(&db).await.map_err(Into::into)
     }
 
     #[instrument(skip(self, db), err(Debug))]
-    async fn _acquire(&self, db: &PgPool) -> crate::Result<AcquireResponse> {
+    async fn _acquire(&self, db: &PgPool) -> crate::Result<JobAcquireEndpointResponse> {
         let mut tx = db.begin().await?;
 
         #[derive(FromRow)]
@@ -51,7 +53,7 @@ impl AgentJobsApi {
 
         let Some(row) = row else {
             tx.rollback().await?;
-            return Ok(AcquireResponse::NoContent);
+            return Ok(JobAcquireEndpointResponse::NoContent);
         };
 
         sqlx::query(
@@ -101,7 +103,7 @@ impl AgentJobsApi {
         .fetch_all(&mut *tx)
         .await?
         .into_iter()
-        .map(|x| PipelineJobStepRunResponse {
+        .map(|x| JobStepAcquireResponse {
             id: x.run_id,
             step: PipelineJobStepResponse {
                 id: x.step_id,
@@ -112,15 +114,17 @@ impl AgentJobsApi {
         })
         .collect::<Vec<_>>();
 
-        let run = PipelineJobRunResponse {
+        let run = JobAcquireResponse {
             id: row.run_id,
             attempt_serial: row.run_attempt_serial,
             job,
             steps,
+            env: HashMap::default(),
+            secrets: HashMap::default(),
         };
 
         tx.commit().await?;
-        Ok(AcquireResponse::Ok(Json(run)))
+        Ok(JobAcquireEndpointResponse::Ok(Json(run)))
     }
 
     /// Job 완료
