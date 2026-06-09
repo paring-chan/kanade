@@ -51,18 +51,20 @@ impl<R: adapter::JobStatusReport> JobExecutor<R> {
     }
 
     pub async fn run(&self, job: Job, reporter: &R) -> crate::Result<JobResult> {
-        let mut pull = self.docker.create_image(
-            Some(CreateImageOptions {
-                from_image: Some(job.image.clone()),
-                ..Default::default()
-            }),
-            None,
-            None,
-        );
+        if let Err(_) = self.docker.inspect_image(&job.image).await {
+            let mut pull = self.docker.create_image(
+                Some(CreateImageOptions {
+                    from_image: Some(job.image.clone()),
+                    ..Default::default()
+                }),
+                None,
+                None,
+            );
 
-        while let Some(result) = pull.next().await {
-            let status = result?;
-            debug!("pull progress: {status:?}");
+            while let Some(result) = pull.next().await {
+                let status = result?;
+                debug!("pull progress: {status:?}");
+            }
         }
 
         let name = format!("kanade-job--{}", job.id);
@@ -111,8 +113,8 @@ impl<R: adapter::JobStatusReport> JobExecutor<R> {
             .await?;
 
         match result {
-            Ok(_) => {
-                let _ = reporter.job_finished(job.id, true).await;
+            Ok(status) => {
+                let _ = reporter.job_finished(job.id, status == 0).await;
                 Ok(JobResult {})
             }
             Err(e) => {
@@ -128,7 +130,7 @@ impl<R: adapter::JobStatusReport> JobExecutor<R> {
         container_name: &str,
         steps: Vec<JobStep>,
         reporter: &R,
-    ) -> Result<()> {
+    ) -> Result<i32> {
         self.docker
             .start_container(
                 container_name,
@@ -216,8 +218,12 @@ impl<R: adapter::JobStatusReport> JobExecutor<R> {
                 .step_finished(step.id, exit_code)
                 .await
                 .map_err(|e| Error::Reporter(Box::new(e)))?;
+
+            if exit_code != 0 {
+                return Ok(exit_code);
+            }
         }
 
-        Ok(())
+        Ok(0)
     }
 }

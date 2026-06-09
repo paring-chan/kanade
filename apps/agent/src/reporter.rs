@@ -1,41 +1,76 @@
+use api_types::{JobFinishRequest, StepFinishRequest};
 use job_executor::adapter::{JobStatusReport, LogLine};
-use uuid::Uuid;
+use reqwest::Client;
 use tracing::info;
-use std::error::Error;
+use uuid::Uuid;
 
 #[derive(Debug)]
 pub struct ReporterError(pub anyhow::Error);
 
+impl std::error::Error for ReporterError {}
+
 impl std::fmt::Display for ReporterError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
+        self.0.fmt(f)
     }
 }
 
-impl Error for ReporterError {}
+pub struct HttpReporter {
+    base_url: String,
+    client: Client,
+}
 
-pub struct HttpReporter;
+impl HttpReporter {
+    pub fn new(base_url: String, client: Client) -> Self {
+        Self { base_url, client }
+    }
+}
 
 impl JobStatusReport for HttpReporter {
     type Error = ReporterError;
 
     async fn step_started(&self, step_id: Uuid, step_name: &str) -> Result<(), Self::Error> {
         info!(step_id = %step_id, step_name = %step_name, "Step started");
+        let url = format!("{}/api/v1/agent/steps/{}/started", self.base_url, step_id);
+        self.client
+            .post(&url)
+            .send()
+            .await
+            .map_err(|e| ReporterError(e.into()))?;
         Ok(())
     }
 
     async fn step_finished(&self, step_id: Uuid, exit_code: i32) -> Result<(), Self::Error> {
         info!(step_id = %step_id, exit_code = %exit_code, "Step finished");
+        let url = format!("{}/api/v1/agent/steps/{}/finish", self.base_url, step_id);
+        let request = StepFinishRequest {
+            success: exit_code == 0,
+            exit_code,
+        };
+        self.client
+            .post(&url)
+            .json(&request)
+            .send()
+            .await
+            .map_err(|e| ReporterError(e.into()))?;
         Ok(())
     }
 
     async fn step_log(&self, step_id: Uuid, line: LogLine) -> Result<(), Self::Error> {
-        info!(step_id = %step_id, line = ?line, "Step log");
+        debug!(step_id = %step_id, line = ?line, "Step log");
         Ok(())
     }
 
     async fn job_finished(&self, job_id: Uuid, success: bool) -> Result<(), Self::Error> {
         info!(job_id = %job_id, success = %success, "Job finished");
+        let url = format!("{}/api/v1/agent/jobs/{}/finish", self.base_url, job_id);
+        let request = JobFinishRequest { success };
+        self.client
+            .post(&url)
+            .json(&request)
+            .send()
+            .await
+            .map_err(|e| ReporterError(e.into()))?;
         Ok(())
     }
 }

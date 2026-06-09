@@ -42,8 +42,9 @@ impl KanadeAgent {
                                 Ok(job) => {
                                     tracing::info!("Acquired job: {:?}", job);
                                      let executor = JobExecutor::new().unwrap();
-                                     let reporter = HttpReporter;
-                                     let job_to_run = Job {
+                                       let reporter = HttpReporter::new(self.config.api_uri.clone(), self.client.clone());
+                                       let job_to_run = Job {
+
                                          id: job.id,
                                          image: job.job.image.clone(),
                                          timeout: Duration::minutes(job.job.timeout as i64),
