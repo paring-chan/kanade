@@ -8,6 +8,7 @@ Table user {
   username text [not null, unique]
   nick text
   email text [unique]
+  avatar_url text
 
   created_at timestamptz [default: `now()`]
   updated_at timestamptz [default: `now()`]

@@ -17,6 +17,7 @@ extern crate tracing;
 pub use api::api;
 
 mod api;
+mod auth;
 mod commands;
 mod data;
 mod error;

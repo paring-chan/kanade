@@ -11,3 +11,7 @@ pub async fn open_db(config: &AppConfig) -> anyhow::Result<PgPool> {
 
     Ok(db)
 }
+
+pub const JWT_ISS: &str = "kanade";
+pub const AUD_LOGIN: &str = "login";
+pub const AUD_USER: &str = "user";
