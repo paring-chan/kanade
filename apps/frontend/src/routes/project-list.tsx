@@ -1,11 +1,16 @@
+import { Button } from '@base-ui/react';
 import { Link } from 'react-router';
 import GitCommitHorizontal from '~icons/lucide/git-commit-horizontal';
+import { button } from '../components/button';
 
 export const Component = () => {
   return (
     <div className="px-4">
       <div className="container mx-auto mt-12">
-        <h1 className="text-3xl">프로젝트 목록</h1>
+        <div className="flex items-center">
+          <h1 className="text-3xl grow w-0">프로젝트 목록</h1>
+          <Button className={button({ style: 'outlined' })}>생성</Button>
+        </div>
 
         <div className="mt-4 grid lg:grid-cols-2 border gap-px border-black/10 bg-black/10">
           {Array.from({ length: 30 }).map((_, i) => (

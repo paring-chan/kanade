@@ -16,11 +16,9 @@ const NavMenu = () => {
       <Menu.Portal>
         <Menu.Positioner collisionPadding={0}>
           <Menu.Popup className={menu.popup({ className: 'border-l-0' })}>
-            <Menu.Item className={menu.item()} render={<Link to="/">프로젝트 목록</Link>} />
-            {/*<Menu.Item
-              className="px-2 py-1 hover:bg-black/5 transition-colors"
-              render={<Link to="/settings">설정</Link>}
-            />*/}
+            <Menu.Item className={menu.item()} render={<Link to="/">프로젝트</Link>} />
+            <Menu.Item className={menu.item()} render={<Link to="/teams">팀</Link>} />
+            <Menu.Item className={menu.item()} render={<Link to="/agent">에이전트</Link>} />
           </Menu.Popup>
         </Menu.Positioner>
       </Menu.Portal>
