@@ -30,8 +30,8 @@ Table user_forge {
   forge_id uuid [not null, ref: > forge.id]
 
   forge_user_id text [not null]
-  access_token text [not null]
-  refresh_token text [not null]
+  access_token bytea [not null]
+  refresh_token bytea [not null]
   access_token_expires_at timestamptz [not null]
 
   created_at timestamptz [default: `now()`]
@@ -113,6 +113,7 @@ Table repo {
   forge_id uuid [not null, ref: > forge.id]
   forge_repo_id text [not null]
   forge_webhook_token bytea [not null, note: 'AES-256-GCM으로 암호화']
+  created_by uuid [not null, ref: > user.id]
 
   indexes {
     (forge_id, forge_repo_id) [unique]

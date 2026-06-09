@@ -19,6 +19,7 @@ pub use api::api;
 mod api;
 mod auth;
 mod commands;
+mod crypto;
 mod data;
 mod error;
 mod routes;
