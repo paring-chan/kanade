@@ -39,6 +39,60 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/teams": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["TeamCreateRequest"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["TeamResponse"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": unknown;
+                    };
+                };
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/forges": {
         parameters: {
             query?: never;
@@ -293,6 +347,10 @@ export interface components {
              */
             type: "static";
         } & components["schemas"]["StaticEnv"];
+        /** ErrorResponse */
+        ErrorResponse: {
+            message: string;
+        };
         /** ForgeInfoResponse */
         ForgeInfoResponse: {
             /**
@@ -396,6 +454,22 @@ export interface components {
             success: boolean;
             /** Format: int32 */
             exit_code: number;
+        };
+        /** TeamCreateRequest */
+        TeamCreateRequest: {
+            name: string;
+            slug: string;
+        };
+        /** TeamResponse */
+        TeamResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            slug: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
         };
         /** UserResponse */
         UserResponse: {

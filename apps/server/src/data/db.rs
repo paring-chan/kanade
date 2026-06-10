@@ -49,3 +49,11 @@ pub enum JobStatus {
     Skipped,
     Cancelled,
 }
+
+#[derive(Debug, Type)]
+#[sqlx(type_name = "role_type", rename_all = "snake_case")]
+pub enum RoleType {
+    Viewer,
+    Manager,
+    Admin,
+}

@@ -2,23 +2,15 @@ import { Button, Dialog, Field } from "@base-ui/react";
 import { button } from "../components/button";
 import { dialog } from "../components/dialog";
 import { type } from "arktype";
-import { formOptions, useForm } from "@tanstack/react-form";
+import { useForm } from "@tanstack/react-form";
 import { formField, input } from "../components";
+import { api } from "../utils/api";
+import { generatePath, useNavigate } from "react-router";
+import { toast } from "sonner";
 
 const createTeamSchema = type({
-  name: "string >= 2",
-  slug: "/^[a-zA-Z0-9-_]{3,}$/",
-});
-
-const createFormOpts = formOptions({
-  defaultValues: { name: "", slug: "" } as type.infer<typeof createTeamSchema>,
-  onSubmit: async ({ value }) => {
-    console.log(value);
-  },
-
-  validators: {
-    onChange: createTeamSchema,
-  },
+  name: "string >= 2 & string <= 20",
+  slug: "/^[a-zA-Z0-9-_]{3,20}$/",
 });
 
 export const Component = () => {
@@ -35,7 +27,30 @@ export const Component = () => {
 };
 
 const CreateTeamDialog = () => {
-  const form = useForm(createFormOpts);
+  const navigate = useNavigate();
+
+  const form = useForm({
+    defaultValues: { name: "", slug: "" } as type.infer<
+      typeof createTeamSchema
+    >,
+    onSubmit: async ({ value }) => {
+      try {
+        const { data } = await api.POST("/api/v1/teams", {
+          body: { name: value.name, slug: value.slug },
+        });
+
+        if (data) {
+          navigate(generatePath("/t/:slug", { slug: data!.slug }));
+        }
+      } catch (e: any) {
+        if (e.message) toast.error(e.message);
+      }
+    },
+
+    validators: {
+      onChange: createTeamSchema,
+    },
+  });
 
   return (
     <Dialog.Root>

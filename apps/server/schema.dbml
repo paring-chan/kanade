@@ -45,7 +45,7 @@ Table user_forge {
 
 Table team {
   id uuid pk [not null]
-  name text
+  name text [not null]
   slug text unique [not null]
 
   created_at timestamptz [default: `now()`]

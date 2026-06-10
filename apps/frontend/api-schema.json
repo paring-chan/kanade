@@ -15,6 +15,10 @@
       "description": "포지 API"
     },
     {
+      "name": "Team",
+      "description": "팀 API"
+    },
+    {
       "name": "User",
       "description": "유저 정보 API"
     }
@@ -33,6 +37,58 @@
               "application/json; charset=utf-8": {
                 "schema": {
                   "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/teams": {
+      "post": {
+        "tags": [
+          "Team"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json; charset=utf-8": {
+              "schema": {
+                "$ref": "#/components/schemas/TeamCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -266,6 +322,18 @@
           }
         ]
       },
+      "ErrorResponse": {
+        "type": "object",
+        "title": "ErrorResponse",
+        "required": [
+          "message"
+        ],
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        }
+      },
       "ForgeInfoResponse": {
         "type": "object",
         "title": "ForgeInfoResponse",
@@ -480,6 +548,53 @@
           "exit_code": {
             "type": "integer",
             "format": "int32"
+          }
+        }
+      },
+      "TeamCreateRequest": {
+        "type": "object",
+        "title": "TeamCreateRequest",
+        "required": [
+          "name",
+          "slug"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          }
+        }
+      },
+      "TeamResponse": {
+        "type": "object",
+        "title": "TeamResponse",
+        "required": [
+          "id",
+          "name",
+          "slug",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },

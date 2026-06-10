@@ -1,10 +1,11 @@
 use poem_openapi::{OpenApi, Tags};
 
-use crate::api::{forge::ForgeApi, user::UserApi};
+use crate::api::{forge::ForgeApi, team::TeamApi, user::UserApi};
 
 mod agent;
 mod forge;
 mod security;
+mod team;
 mod user;
 
 #[derive(Tags)]
@@ -15,8 +16,10 @@ enum ApiTags {
     User,
     /// 포지 API
     Forge,
+    /// 팀 API
+    Team,
 }
 
 pub fn api() -> impl OpenApi {
-    (UserApi, ForgeApi, agent::api())
+    (UserApi, TeamApi, ForgeApi, agent::api())
 }

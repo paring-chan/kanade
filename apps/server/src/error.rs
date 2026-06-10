@@ -13,6 +13,8 @@ pub enum AppError {
     Jwt(#[from] jsonwebtoken::errors::Error),
     #[error("internal error: {0}")]
     InternalError(#[from] anyhow::Error),
+    #[error("serde json error: {0}")]
+    Json(#[from] serde_json::Error),
     #[error("invalid token response")]
     InvalidTokenResponse,
 }
@@ -28,6 +30,7 @@ impl ResponseError for AppError {
             AppError::InternalError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             AppError::Jwt(_) => StatusCode::INTERNAL_SERVER_ERROR,
             AppError::InvalidTokenResponse => StatusCode::INTERNAL_SERVER_ERROR,
+            AppError::Json(_) => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
 }

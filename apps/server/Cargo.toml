@@ -30,3 +30,4 @@ oauth2-reqwest.workspace = true
 reqwest.workspace = true
 nanoid.workspace = true
 aes-gcm.workspace = true
+garde.workspace = true
