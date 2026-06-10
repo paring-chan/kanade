@@ -1,0 +1,178 @@
+use std::sync::Arc;
+
+use chrono::{DateTime, Utc};
+use oauth2::{RefreshToken, TokenResponse};
+use secrecy::{ExposeSecret, SecretString};
+use sqlx::{PgPool, prelude::FromRow, types::Json};
+use uuid::Uuid;
+
+use crate::{
+    config::AppConfig,
+    crypto::CryptoEngine,
+    data::forges::{ForgeConfig, ForgejoForgeConfig},
+    error::AppError,
+    forges::forgejo::ForgejoApi,
+};
+
+pub mod forgejo;
+
+pub struct UpstreamRepositoryInfo {
+    pub id: String,
+    pub name: String,
+}
+
+pub struct AllForges {
+    db: PgPool,
+    crypto: Arc<CryptoEngine>,
+
+    pub forgejo: ForgejoApi,
+}
+
+pub enum ForgeAuthInfo {
+    Forgejo {
+        config: ForgejoForgeConfig,
+        uid: String,
+        access_token: SecretString,
+    },
+}
+
+impl AllForges {
+    pub fn new(
+        config: Arc<AppConfig>,
+        crypto: Arc<CryptoEngine>,
+        db: PgPool,
+    ) -> crate::Result<Self> {
+        Ok(Self {
+            db,
+            crypto,
+            forgejo: ForgejoApi::new(config)?,
+        })
+    }
+
+    pub async fn get_forge_auth(
+        &self,
+        user_id: Uuid,
+        forge_id: Uuid,
+    ) -> crate::Result<Option<ForgeAuthInfo>> {
+        let mut tx = self.db.begin().await?;
+
+        #[derive(FromRow)]
+        struct UserForgeRow {
+            id: Uuid,
+            access_token: Vec<u8>,
+            refresh_token: Vec<u8>,
+            access_token_expires_at: DateTime<Utc>,
+            forge_user_id: String,
+
+            forge_config: Json<ForgeConfig>,
+        }
+
+        let uf = match sqlx::query_as::<_, UserForgeRow>(
+            r#"
+            SELECT uf.id, uf.access_token, uf.refresh_token, uf.access_token_expires_at, uf.forge_user_id, f.config as forge_config
+            FROM user_forge uf
+            LEFT JOIN forge f ON f.id = uf.forge_id
+            WHERE
+                user_id = $1 AND
+                forge_id = $2
+            FOR UPDATE OF uf
+            "#,
+        )
+        .bind(user_id)
+        .bind(forge_id)
+        .fetch_optional(&mut *tx)
+        .await?
+        {
+            Some(forge) => forge,
+            None => return Ok(None),
+        };
+
+        let is_expired = Utc::now() > uf.access_token_expires_at;
+        let at = self.crypto.decrypt(&uf.access_token)?;
+
+        if is_expired {
+            return match uf.forge_config.0 {
+                ForgeConfig::Forgejo(forgejo) => Ok(Some(ForgeAuthInfo::Forgejo {
+                    config: forgejo,
+                    uid: uf.forge_user_id,
+                    access_token: at,
+                })),
+            };
+        }
+
+        let refresh_token = self.crypto.decrypt(&uf.refresh_token)?;
+
+        let at = {
+            let tokens = match &uf.forge_config.0 {
+                ForgeConfig::Forgejo(forgejo) => {
+                    self.forgejo
+                        .refresh_token(
+                            forgejo,
+                            RefreshToken::new(refresh_token.expose_secret().to_string()),
+                        )
+                        .await?
+                }
+            };
+
+            let at = SecretString::from(tokens.access_token().clone().into_secret());
+            let rt = tokens
+                .refresh_token()
+                .ok_or(AppError::InvalidTokenResponse)?;
+            let exp = Utc::now() + tokens.expires_in().ok_or(AppError::InvalidTokenResponse)?;
+
+            sqlx::query(
+                r#"
+                UPDATE user_forge
+                SET
+                    access_token = $1,
+                    refresh_token = $2,
+                    access_token_expires_at = $3
+                WHERE
+                    id = $4
+                "#,
+            )
+            .bind(self.crypto.encrypt(at.expose_secret())?)
+            .bind(self.crypto.encrypt(rt.secret().as_str())?)
+            .bind(exp)
+            .bind(uf.id)
+            .execute(&mut *tx)
+            .await?;
+
+            at
+        };
+
+        tx.commit().await?;
+
+        match uf.forge_config.0 {
+            ForgeConfig::Forgejo(forgejo) => Ok(Some(ForgeAuthInfo::Forgejo {
+                config: forgejo,
+                access_token: at,
+                uid: uf.forge_user_id,
+            })),
+        }
+    }
+
+    pub async fn search_repositories(
+        &self,
+        user_id: Uuid,
+        forge_id: Uuid,
+        search: &str,
+    ) -> crate::Result<Vec<UpstreamRepositoryInfo>> {
+        let auth = self
+            .get_forge_auth(user_id, forge_id)
+            .await?
+            .ok_or(AppError::ForgeNotLinked)?;
+
+        match auth {
+            ForgeAuthInfo::Forgejo {
+                config,
+                uid,
+                access_token,
+            } => {
+                self.forgejo
+                    .search_repositories(&config, &uid, &access_token, search)
+                    .await
+            }
+        }
+    }
+}

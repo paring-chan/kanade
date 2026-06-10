@@ -13,6 +13,8 @@ import { teamListQueryOptions } from "../../queries/team";
 import { type } from "arktype";
 import { formField, input } from "../form";
 import { userForgesQueryOptions } from "../../queries/user";
+import { useState } from "react";
+import { api } from "../../utils/api";
 
 const createProjectSchema = type({
   name: "string > 0",
@@ -70,8 +72,8 @@ export const CreateProjectDialog = ({
               프로젝트 생성
             </Dialog.Title>
             <Dialog.Description className={dialog.description()}>
-              선택한 포지의 저장소에 대해 CI를 활성화합니다. 저장소 소유자
-              권한이 있는 경우에만 목록에 표시됩니다.
+              선택한 포지의 저장소에 대해 CI를 활성화합니다. 저장소 관리 권한이
+              있는 경우에만 목록에 표시됩니다.
             </Dialog.Description>
           </div>
 
@@ -387,13 +389,47 @@ const ForgeSelector = ({
 
 const RepositorySelector = ({
   forgeId,
+  value,
+  onChange,
 }: {
   value: string;
   onChange: (value: string) => void;
   forgeId: string;
 }) => {
+  const [searchText, setSearchText] = useState("");
+  const { data, isPending } = useQuery({
+    queryKey: ["forges", forgeId, "repo-search", searchText] as const,
+    enabled: !!forgeId,
+    queryFn: ({ queryKey: [, forge, , search] }) =>
+      api
+        .POST("/api/v1/forges/{forge_id}/search", {
+          params: {
+            path: { forge_id: forge },
+          },
+          body: {
+            query: search,
+          },
+        })
+        .then((x) => x.data!),
+  });
+
+  const items = data ?? [];
+
+  const current = items.find((x) => x.id === value) ?? null;
+
+  type Item = (typeof items)[number];
+
   return (
-    <Combobox.Root disabled={!forgeId}>
+    <Combobox.Root
+      disabled={!forgeId}
+      inputValue={searchText}
+      onInputValueChange={setSearchText}
+      filter={null}
+      items={items}
+      value={current}
+      onValueChange={(v) => onChange(v?.id || "")}
+      itemToStringLabel={(x: Item) => x.name}
+    >
       <Combobox.InputGroup className={combobox.inputGroup()}>
         <Combobox.Input
           placeholder="저장소 선택"
@@ -413,6 +449,22 @@ const RepositorySelector = ({
             <Combobox.Empty>
               <div className={combobox.empty()}>결과가 없습니다</div>
             </Combobox.Empty>
+            <Combobox.List>
+              {(item: Item) => (
+                <Combobox.Item
+                  key={item.id}
+                  value={item}
+                  className={combobox.item()}
+                >
+                  <Combobox.ItemIndicator className={combobox.itemIndicator()}>
+                    <LucideCheck className="size-4" />
+                  </Combobox.ItemIndicator>
+                  <div className={combobox.itemContent()}>
+                    <div>{item.name}</div>
+                  </div>
+                </Combobox.Item>
+              )}
+            </Combobox.List>
           </Combobox.Popup>
         </Combobox.Positioner>
       </Combobox.Portal>

@@ -17,6 +17,14 @@ pub enum AppError {
     Json(#[from] serde_json::Error),
     #[error("invalid token response")]
     InvalidTokenResponse,
+    #[error("user is not linked to the forge")]
+    ForgeNotLinked,
+}
+
+impl From<reqwest::Error> for AppError {
+    fn from(value: reqwest::Error) -> Self {
+        Self::InternalError(value.into())
+    }
 }
 
 pub type Result<T, E = AppError> = std::result::Result<T, E>;
@@ -31,6 +39,7 @@ impl ResponseError for AppError {
             AppError::Jwt(_) => StatusCode::INTERNAL_SERVER_ERROR,
             AppError::InvalidTokenResponse => StatusCode::INTERNAL_SERVER_ERROR,
             AppError::Json(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            AppError::ForgeNotLinked => StatusCode::UNAUTHORIZED,
         }
     }
 }

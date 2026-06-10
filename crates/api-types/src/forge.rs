@@ -14,3 +14,14 @@ pub struct ForgeInfoResponse {
     pub id: Uuid,
     pub name: String,
 }
+
+#[derive(Debug, Object)]
+pub struct ForgeRepoSearchRequest {
+    pub query: String,
+}
+
+#[derive(Debug, Object)]
+pub struct ForgeRepoResponse {
+    pub id: String,
+    pub name: String,
+}

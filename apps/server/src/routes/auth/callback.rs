@@ -25,7 +25,7 @@ use crate::{
     data::forges::ForgeConfig,
     error::AppError,
     routes::auth::jwt::LoginClaims,
-    util::{AUD_LOGIN, AUD_USER, JWT_ISS},
+    util::{AUD_LOGIN, AUD_USER, HTTP, JWT_ISS, OAUTH2_REQWEST},
 };
 
 #[derive(Deserialize, Debug)]
@@ -92,21 +92,6 @@ pub async fn callback(
         .into_response()),
     }
 }
-
-static OAUTH2_REQWEST: LazyLock<ReqwestClient> = LazyLock::new(|| {
-    reqwest::ClientBuilder::new()
-        .redirect(reqwest::redirect::Policy::none())
-        .build()
-        .expect("client should build")
-        .into()
-});
-
-static HTTP: LazyLock<reqwest::Client> = LazyLock::new(|| {
-    reqwest::ClientBuilder::new()
-        .redirect(reqwest::redirect::Policy::none())
-        .build()
-        .expect("client should build")
-});
 
 #[instrument(skip(code, token, db, config, signing_key, crypto_engine), err(Debug))]
 async fn process_callback(

@@ -266,6 +266,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/forges/{forge_id}/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 포지에서 저장소 검색하기 */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    forge_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["ForgeRepoSearchRequest"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["ForgeRepoResponse"][];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/agent/jobs/acquire": {
         parameters: {
             query?: never;
@@ -496,6 +537,15 @@ export interface components {
              */
             id: string;
             name: string;
+        };
+        /** ForgeRepoResponse */
+        ForgeRepoResponse: {
+            id: string;
+            name: string;
+        };
+        /** ForgeRepoSearchRequest */
+        ForgeRepoSearchRequest: {
+            query: string;
         };
         /** JobAcquireResponse */
         JobAcquireResponse: {

@@ -8,6 +8,7 @@ use secrecy::ExposeSecret;
 use crate::{
     config::{AppConfig, JwtSigningKey},
     crypto::CryptoEngine,
+    forges::AllForges,
     routes::routes,
     util::open_db,
 };
@@ -17,15 +18,19 @@ pub async fn run(config: Arc<AppConfig>) -> anyhow::Result<()> {
     info!("connected to db");
 
     let listener = TcpListener::bind(&config.server.bind);
+
+    let crypto = Arc::new(CryptoEngine::new(
+        Vec::<u8>::from_hex(config.encryption_key.expose_secret())?.into(),
+    )?);
+
     let app = routes()
-        .data(db)
+        .data(db.clone())
         .data(Arc::new(JwtSigningKey::new(
             config.jwt_secret.expose_secret().as_bytes(),
         )))
         .data(config.clone())
-        .data(Arc::new(CryptoEngine::new(
-            Vec::<u8>::from_hex(config.encryption_key.expose_secret())?.into(),
-        )?));
+        .data(crypto.clone())
+        .data(Arc::new(AllForges::new(config.clone(), crypto, db)?));
 
     Server::new(listener)
         .name("kanade-server")

@@ -3,7 +3,7 @@ use aes_gcm::{
     aead::{Aead, Nonce},
 };
 use hmac::{KeyInit, digest::common::Generate};
-use secrecy::{ExposeSecret, SecretSlice};
+use secrecy::{ExposeSecret, SecretSlice, SecretString};
 
 use crate::error::AppError;
 
@@ -35,7 +35,7 @@ impl CryptoEngine {
     }
 
     #[instrument(skip(self, packed), err(Debug))]
-    pub fn decrypt(&self, packed: &[u8]) -> crate::Result<String> {
+    pub fn decrypt(&self, packed: &[u8]) -> crate::Result<SecretString> {
         if packed.len() < 12 {
             return Err(AppError::InternalError(anyhow::anyhow!(
                 "too short iphertext payload"
@@ -54,6 +54,6 @@ impl CryptoEngine {
         let plaintext =
             String::from_utf8(decrypted_bytes).map_err(|e| AppError::InternalError(e.into()))?;
 
-        Ok(plaintext)
+        Ok(plaintext.into())
     }
 }

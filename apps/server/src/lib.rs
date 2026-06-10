@@ -22,6 +22,7 @@ mod commands;
 mod crypto;
 mod data;
 mod error;
+mod forges;
 mod routes;
 mod util;
 

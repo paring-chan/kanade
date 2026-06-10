@@ -256,6 +256,57 @@
         }
       }
     },
+    "/api/v1/forges/{forge_id}/search": {
+      "post": {
+        "tags": [
+          "Forge"
+        ],
+        "summary": "포지에서 저장소 검색하기",
+        "parameters": [
+          {
+            "name": "forge_id",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "required": true,
+            "deprecated": false,
+            "explode": true
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json; charset=utf-8": {
+              "schema": {
+                "$ref": "#/components/schemas/ForgeRepoSearchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ForgeRepoResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
     "/api/v1/agent/jobs/acquire": {
       "post": {
         "tags": [
@@ -480,6 +531,34 @@
             "description": "포지 ID"
           },
           "name": {
+            "type": "string"
+          }
+        }
+      },
+      "ForgeRepoResponse": {
+        "type": "object",
+        "title": "ForgeRepoResponse",
+        "required": [
+          "id",
+          "name"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "ForgeRepoSearchRequest": {
+        "type": "object",
+        "title": "ForgeRepoSearchRequest",
+        "required": [
+          "query"
+        ],
+        "properties": {
+          "query": {
             "type": "string"
           }
         }
