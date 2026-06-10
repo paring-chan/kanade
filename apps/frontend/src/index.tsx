@@ -1,12 +1,15 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import { createBrowserRouter, RouterProvider } from 'react-router';
-import routes from './router';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import './global.css';
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { createBrowserRouter, RouterProvider } from "react-router";
+import routes from "./router";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtoolsPanel } from "@tanstack/react-query-devtools";
+import { TanStackDevtools } from "@tanstack/react-devtools";
+import { formDevtoolsPlugin } from "@tanstack/react-form-devtools";
 
-const rootEl = document.getElementById('root');
+import "./global.css";
+
+const rootEl = document.getElementById("root");
 if (rootEl) {
   const router = createBrowserRouter(routes);
 
@@ -24,7 +27,15 @@ if (rootEl) {
   root.render(
     <React.StrictMode>
       <QueryClientProvider client={queryClient}>
-        <ReactQueryDevtools />
+        <TanStackDevtools
+          plugins={[
+            formDevtoolsPlugin(),
+            {
+              name: "Tanstack Query",
+              render: <ReactQueryDevtoolsPanel />,
+            },
+          ]}
+        />
         <RouterProvider router={router} />
       </QueryClientProvider>
     </React.StrictMode>,

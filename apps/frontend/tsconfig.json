@@ -16,6 +16,8 @@
     "allowImportingTsExtensions": true,
 
     "noUncheckedIndexedAccess": true,
+    "strictNullChecks": true,
+    "strict": true,
 
     /* type checking */
     "noUnusedLocals": true,

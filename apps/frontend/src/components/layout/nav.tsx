@@ -1,11 +1,11 @@
-import { Link } from 'react-router';
-import Music2 from '~icons/lucide/music-2';
-import LucideUser from '~icons/lucide/user';
-import ChevronRight from '~icons/lucide/chevron-right';
-import { Avatar, Menu } from '@base-ui/react';
-import { useSuspenseQuery } from '@tanstack/react-query';
-import { userQueryOptions } from '../../queries/user';
-import { menu } from '../menu';
+import { Link } from "react-router";
+import Music2 from "~icons/lucide/music-2";
+import LucideUser from "~icons/lucide/user";
+import ChevronRight from "~icons/lucide/chevron-right";
+import { Avatar, Menu } from "@base-ui/react";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { userQueryOptions } from "../../queries/user";
+import { menu } from "../menu";
 
 const NavMenu = () => {
   return (
@@ -15,10 +15,19 @@ const NavMenu = () => {
       </Menu.Trigger>
       <Menu.Portal>
         <Menu.Positioner collisionPadding={0}>
-          <Menu.Popup className={menu.popup({ className: 'border-l-0' })}>
-            <Menu.Item className={menu.item()} render={<Link to="/">프로젝트</Link>} />
-            <Menu.Item className={menu.item()} render={<Link to="/teams">팀</Link>} />
-            <Menu.Item className={menu.item()} render={<Link to="/agent">에이전트</Link>} />
+          <Menu.Popup className={menu.popup({ className: "border-l-0" })}>
+            <Menu.Item
+              className={menu.item()}
+              render={<Link to="/">프로젝트</Link>}
+            />
+            <Menu.Item
+              className={menu.item()}
+              render={<Link to="/teams">팀</Link>}
+            />
+            <Menu.Item
+              className={menu.item()}
+              render={<Link to="/agents">에이전트</Link>}
+            />
           </Menu.Popup>
         </Menu.Positioner>
       </Menu.Portal>
@@ -49,7 +58,10 @@ const NavAuth = () => {
         <Menu.Root>
           <Menu.Trigger
             render={
-              <Avatar.Root className="size-6 rounded-full overflow-hidden select-none">
+              <Avatar.Root
+                render={<button />}
+                className="size-6 rounded-full overflow-hidden select-none"
+              >
                 <Avatar.Image src={user.avatar_url} draggable="false" />
                 <Avatar.Fallback className="flex justify-center items-center size-full bg-black/5">
                   <LucideUser className="size-4 opacity-40" />
@@ -63,7 +75,7 @@ const NavAuth = () => {
                 <Menu.Item
                   className={menu.item()}
                   onClick={() => {
-                    localStorage.removeItem('kanade.apikey');
+                    localStorage.removeItem("kanade.apikey");
                     location.reload();
                   }}
                   render={<button />}
