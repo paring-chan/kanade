@@ -32,3 +32,11 @@ pub struct TeamResponse {
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
+
+#[derive(Debug, ApiResponse)]
+pub enum TeamFindOneResponse {
+    #[oai(status = 200)]
+    Ok(Json<TeamResponse>),
+    #[oai(status = 404)]
+    NotFound,
+}

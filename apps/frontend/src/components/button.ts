@@ -8,4 +8,7 @@ export const button = tv({
       outlined: "border border-black/40 hover:bg-black/10 active:bg-black/15",
     },
   },
+  defaultVariants: {
+    style: "normal",
+  },
 });

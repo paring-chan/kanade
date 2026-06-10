@@ -1,8 +1,10 @@
-use api_types::{ErrorResponse, TeamCreateEndpointResponse, TeamCreateRequest, TeamResponse};
+use api_types::{
+    ErrorResponse, TeamCreateEndpointResponse, TeamCreateRequest, TeamFindOneResponse, TeamResponse,
+};
 use chrono::{DateTime, Utc};
 use garde::Validate;
 use poem::web::Data;
-use poem_openapi::{OpenApi, payload::Json};
+use poem_openapi::{OpenApi, param::Path, payload::Json};
 use sqlx::{PgPool, prelude::FromRow};
 use uuid::Uuid;
 
@@ -60,6 +62,112 @@ impl TeamApi {
                 })
                 .collect(),
         ))
+    }
+
+    #[oai(path = "/by-slug/:team_slug", method = "get")]
+    async fn get_team_by_slug(
+        &self,
+        ApiKeyAuth(user_id): ApiKeyAuth,
+        Path(team_slug): Path<String>,
+        db: Data<&PgPool>,
+    ) -> poem::Result<TeamFindOneResponse> {
+        self._get_team_by_slug(user_id, team_slug, &db)
+            .await
+            .map_err(Into::into)
+    }
+
+    async fn _get_team_by_slug(
+        &self,
+        user_id: Uuid,
+        team_slug: String,
+        db: &PgPool,
+    ) -> crate::Result<TeamFindOneResponse> {
+        #[derive(FromRow)]
+        struct TeamRow {
+            id: Uuid,
+            name: String,
+            slug: String,
+
+            created_at: DateTime<Utc>,
+            updated_at: DateTime<Utc>,
+        }
+
+        let team = sqlx::query_as::<_, TeamRow>(
+            r#"
+            SELECT t.* FROM user_team ut
+            LEFT JOIN team t ON t.id = ut.team_id
+            WHERE ut.user_id  = $1 AND t.slug = $2
+            ORDER BY ut.updated_at
+            "#,
+        )
+        .bind(user_id)
+        .bind(team_slug)
+        .fetch_optional(db)
+        .await?;
+
+        match team {
+            Some(x) => Ok(TeamFindOneResponse::Ok(Json(TeamResponse {
+                id: x.id,
+                name: x.name,
+                slug: x.slug,
+                created_at: x.created_at,
+                updated_at: x.updated_at,
+            }))),
+            None => Ok(TeamFindOneResponse::NotFound),
+        }
+    }
+
+    #[oai(path = "/:team_id", method = "get")]
+    async fn get_team_by_id(
+        &self,
+        ApiKeyAuth(user_id): ApiKeyAuth,
+        Path(team_id): Path<Uuid>,
+        db: Data<&PgPool>,
+    ) -> poem::Result<TeamFindOneResponse> {
+        self._get_team_by_id(user_id, team_id, &db)
+            .await
+            .map_err(Into::into)
+    }
+
+    async fn _get_team_by_id(
+        &self,
+        user_id: Uuid,
+        team_id: Uuid,
+        db: &PgPool,
+    ) -> crate::Result<TeamFindOneResponse> {
+        #[derive(FromRow)]
+        struct TeamRow {
+            id: Uuid,
+            name: String,
+            slug: String,
+
+            created_at: DateTime<Utc>,
+            updated_at: DateTime<Utc>,
+        }
+
+        let team = sqlx::query_as::<_, TeamRow>(
+            r#"
+            SELECT t.* FROM user_team ut
+            LEFT JOIN team t ON t.id = ut.team_id
+            WHERE ut.user_id  = $1 AND t.id = $2
+            ORDER BY ut.updated_at
+            "#,
+        )
+        .bind(user_id)
+        .bind(team_id)
+        .fetch_optional(db)
+        .await?;
+
+        match team {
+            Some(x) => Ok(TeamFindOneResponse::Ok(Json(TeamResponse {
+                id: x.id,
+                name: x.name,
+                slug: x.slug,
+                created_at: x.created_at,
+                updated_at: x.updated_at,
+            }))),
+            None => Ok(TeamFindOneResponse::NotFound),
+        }
     }
 
     #[oai(path = "/", method = "post")]

@@ -1,7 +1,7 @@
 use crate::api::security::ApiKeyAuth;
 
 use super::ApiTags;
-use api_types::{UserEndpointResponse, UserResponse};
+use api_types::{ForgeInfoResponse, UserEndpointResponse, UserForgeResponse, UserResponse};
 use chrono::{DateTime, Utc};
 use poem::web::Data;
 use poem_openapi::{OpenApi, payload::Json};
@@ -49,5 +49,69 @@ impl UserApi {
             created_at: user.created_at,
             updated_at: user.updated_at,
         })))
+    }
+
+    /// 나에게 연결된 포지 불러오기
+    #[oai(path = "/me/forges", method = "get")]
+    async fn get_my_forges(
+        &self,
+        ApiKeyAuth(user_id): ApiKeyAuth,
+        Data(db): Data<&PgPool>,
+    ) -> poem::Result<Json<Vec<UserForgeResponse>>> {
+        self._get_my_forges(user_id, db).await.map_err(Into::into)
+    }
+
+    #[instrument(skip(self, db), err(Debug))]
+    async fn _get_my_forges(
+        &self,
+        user_id: Uuid,
+        db: &PgPool,
+    ) -> crate::Result<Json<Vec<UserForgeResponse>>> {
+        #[derive(FromRow)]
+        struct ResultRow {
+            uf_id: Uuid,
+            uf_forge_user_id: String,
+            uf_created_at: DateTime<Utc>,
+            uf_updated_at: DateTime<Utc>,
+
+            f_id: Uuid,
+            f_name: String,
+        }
+
+        let rows = sqlx::query_as::<_, ResultRow>(
+            r#"
+            SELECT
+                uf.id as uf_id,
+                uf.forge_user_id as uf_forge_user_id,
+                uf.created_at as uf_created_at,
+                uf.updated_at as uf_updated_at,
+
+                f.id as f_id,
+                f.name as f_name
+            FROM user_forge uf
+            LEFT JOIN forge f ON f.id = uf.forge_id
+            WHERE uf.user_id = $1
+            ORDER BY uf.created_at
+            "#,
+        )
+        .bind(user_id)
+        .fetch_all(db)
+        .await?;
+
+        Ok(Json(
+            rows.into_iter()
+                .map(|x| UserForgeResponse {
+                    id: x.uf_id,
+                    forge_user_id: x.uf_forge_user_id,
+                    created_at: x.uf_created_at,
+                    updated_at: x.uf_updated_at,
+
+                    forge: ForgeInfoResponse {
+                        id: x.f_id,
+                        name: x.f_name,
+                    },
+                })
+                .collect(),
+        ))
     }
 }

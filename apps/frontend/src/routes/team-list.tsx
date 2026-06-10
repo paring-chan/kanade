@@ -12,8 +12,8 @@ import { teamListQueryOptions } from "../queries/team";
 import type { components } from "../utils/api/types";
 
 const createTeamSchema = type({
-  name: "string >= 2 & string <= 20",
-  slug: "/^[a-zA-Z0-9-_]{3,20}$/",
+  name: "string > 0 & string <= 20",
+  slug: "/^[a-zA-Z0-9-_]{1,20}$/",
 });
 
 export const Component = () => {
@@ -131,13 +131,13 @@ const CreateTeamDialog = () => {
                   />
                   <div className={formField.helperArea()}>
                     <Field.Description className={formField.description()}>
-                      최소 2글자
+                      최대 20자
                     </Field.Description>
                     <Field.Error
                       className={formField.error()}
                       match={!field.state.meta.isValid}
                     >
-                      {field.state.meta.errors.join(",")}{" "}
+                      {field.state.meta.errors.join(",")}
                     </Field.Error>
                   </div>
                 </Field.Root>
@@ -165,7 +165,7 @@ const CreateTeamDialog = () => {
                   />
                   <div className={formField.helperArea()}>
                     <Field.Description className={formField.description()}>
-                      최소 2글자
+                      최대 20자, 알파벳, 숫자, -, _만 사용 가능
                     </Field.Description>
                     <Field.Error
                       className={formField.error()}

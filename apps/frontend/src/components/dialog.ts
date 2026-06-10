@@ -18,7 +18,7 @@ export const dialog = tv({
     ],
     titleArea: "flex flex-col gap-2",
     title: "text-xl font-medium",
-    description: "text-base",
+    description: "text-base text-black/60",
     actionsArea: "flex gap-2 justify-end",
     content: "flex flex-col gap-4",
   },

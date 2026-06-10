@@ -49,6 +49,34 @@
         ]
       }
     },
+    "/api/v1/users/me/forges": {
+      "get": {
+        "tags": [
+          "User"
+        ],
+        "summary": "나에게 연결된 포지 불러오기",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserForgeResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
     "/api/v1/teams": {
       "get": {
         "tags": [
@@ -117,6 +145,85 @@
                 }
               }
             }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/teams/by-slug/{team_slug}": {
+      "get": {
+        "tags": [
+          "Team"
+        ],
+        "parameters": [
+          {
+            "name": "team_slug",
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "required": true,
+            "deprecated": false,
+            "explode": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/teams/{team_id}": {
+      "get": {
+        "tags": [
+          "Team"
+        ],
+        "parameters": [
+          {
+            "name": "team_id",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "required": true,
+            "deprecated": false,
+            "explode": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": ""
           }
         },
         "security": [
@@ -623,14 +730,45 @@
           }
         }
       },
+      "UserForgeResponse": {
+        "type": "object",
+        "title": "UserForgeResponse",
+        "required": [
+          "id",
+          "forge",
+          "forgeUserId",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "forge": {
+            "$ref": "#/components/schemas/ForgeInfoResponse"
+          },
+          "forgeUserId": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "UserResponse": {
         "type": "object",
         "title": "UserResponse",
         "required": [
           "id",
           "username",
-          "created_at",
-          "updated_at"
+          "createdAt",
+          "updatedAt"
         ],
         "properties": {
           "id": {
@@ -646,14 +784,14 @@
           "email": {
             "type": "string"
           },
-          "avatar_url": {
+          "avatarUrl": {
             "type": "string"
           },
-          "created_at": {
+          "createdAt": {
             "type": "string",
             "format": "date-time"
           },
-          "updated_at": {
+          "updatedAt": {
             "type": "string",
             "format": "date-time"
           }
