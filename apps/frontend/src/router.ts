@@ -28,6 +28,10 @@ export default [
             path: "teams",
             lazy: () => import("./routes/team-list"),
           },
+          {
+            path: "t/:team",
+            lazy: () => import("./routes/team-info"),
+          },
         ],
       },
     ],
