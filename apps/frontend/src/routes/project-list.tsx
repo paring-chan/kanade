@@ -1,7 +1,7 @@
-import { Button } from '@base-ui/react';
-import { Link } from 'react-router';
-import GitCommitHorizontal from '~icons/lucide/git-commit-horizontal';
-import { button } from '../components/button';
+import { Button } from "@base-ui/react";
+import { Link } from "react-router";
+import GitCommitHorizontal from "~icons/lucide/git-commit-horizontal";
+import { button } from "../components/button";
 
 export const Component = () => {
   return (
@@ -9,12 +9,15 @@ export const Component = () => {
       <div className="container mx-auto mt-12">
         <div className="flex items-center">
           <h1 className="text-3xl grow w-0">프로젝트 목록</h1>
-          <Button className={button({ style: 'outlined' })}>생성</Button>
+          <Button className={button({ style: "outlined" })}>생성</Button>
         </div>
 
-        <div className="mt-4 grid lg:grid-cols-2 border gap-px border-black/10 bg-black/10">
+        <div className="mt-4 grid lg:grid-cols-2">
           {Array.from({ length: 30 }).map((_, i) => (
-            <div key={i} className="p-4 flex items-center gap-4 bg-pink-50">
+            <div
+              key={i}
+              className="p-4 flex items-center gap-4 bg-pink-50 border border-black/10 -ml-px -mt-px"
+            >
               <div className="max-w-64 grow min-w-0">
                 <div className="text-lg leading-3.5 flex whitespace-nowrap truncate pb-1">
                   <Link className="hover:underline" to="/teams/mizuki">

@@ -7,7 +7,7 @@ import { formField, input } from "../components";
 import { api } from "../utils/api";
 import { generatePath, Link, useNavigate } from "react-router";
 import { toast } from "sonner";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { teamListQueryOptions } from "../queries/team";
 import type { components } from "../utils/api/types";
 
@@ -35,7 +35,7 @@ const TeamList = () => {
   const { data } = useSuspenseQuery(teamListQueryOptions());
 
   return (
-    <div className="mt-8 bg-black/10 border border-black/10 grid md:grid-cols-2 lg:grid-cols-3 gap-px">
+    <div className="mt-8 grid md:grid-cols-2 lg:grid-cols-3">
       {data.map((x) => (
         <TeamItem team={x} key={x.id} />
       ))}
@@ -51,7 +51,7 @@ const TeamItem = ({
   return (
     <Link
       to={generatePath("/t/:slug", { slug: team.slug })}
-      className="bg-pink-50 hover:bg-pink-100 transition-colors px-5 py-4 flex items-center gap-4"
+      className="bg-pink-50 hover:bg-pink-100 transition-colors px-5 py-4 flex items-center gap-4 border border-black/10 -ml-px -mt-px"
     >
       <h3 className="text-lg">{team.name}</h3>
       <div className="text-sm text-black/60">{team.slug}</div>
@@ -61,6 +61,7 @@ const TeamItem = ({
 
 const CreateTeamDialog = () => {
   const navigate = useNavigate();
+  const qc = useQueryClient();
 
   const form = useForm({
     defaultValues: { name: "", slug: "" } as type.infer<
@@ -73,6 +74,7 @@ const CreateTeamDialog = () => {
         });
 
         if (data) {
+          qc.invalidateQueries(teamListQueryOptions());
           navigate(generatePath("/t/:slug", { slug: data!.slug }));
         }
       } catch (e: any) {
