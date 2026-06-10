@@ -46,7 +46,25 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["TeamResponse"][];
+                    };
+                };
+            };
+        };
         put?: never;
         post: {
             parameters: {

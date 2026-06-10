@@ -50,6 +50,31 @@
       }
     },
     "/api/v1/teams": {
+      "get": {
+        "tags": [
+          "Team"
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TeamResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
       "post": {
         "tags": [
           "Team"

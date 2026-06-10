@@ -1,11 +1,11 @@
-import { useLoaderData } from 'react-router';
-import { api } from '../utils/api';
+import { useLoaderData } from "react-router";
+import { api } from "../utils/api";
 
 export const loader = async () => {
-  const { data } = await api.GET('/api/v1/forges');
+  const { data } = await api.GET("/api/v1/forges");
 
   return {
-    forges: data,
+    forges: data!,
   };
 };
 
@@ -22,7 +22,7 @@ export const Component = () => {
             <a
               key={x.id}
               className="border border-black/10 hover:border-black transition-colors px-4 py-2 text-center rounded-lg"
-              href={'/_/auth/login/' + x.id}
+              href={"/_/auth/login/" + x.id}
             >
               {x.name}
             </a>

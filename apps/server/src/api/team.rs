@@ -1,4 +1,4 @@
-use api_types::{ErrorResponse, TeamCreateEndpointResponse, TeamCreateRequest};
+use api_types::{ErrorResponse, TeamCreateEndpointResponse, TeamCreateRequest, TeamResponse};
 use chrono::{DateTime, Utc};
 use garde::Validate;
 use poem::web::Data;
@@ -12,6 +12,56 @@ pub struct TeamApi;
 
 #[OpenApi(prefix_path = "/teams", tag = "super::ApiTags::Team")]
 impl TeamApi {
+    #[oai(path = "/", method = "get")]
+    async fn list_teams(
+        &self,
+        ApiKeyAuth(user_id): ApiKeyAuth,
+        db: Data<&PgPool>,
+    ) -> poem::Result<Json<Vec<TeamResponse>>> {
+        self._list_teams(user_id, &db).await.map_err(Into::into)
+    }
+
+    async fn _list_teams(
+        &self,
+        user_id: Uuid,
+        db: &PgPool,
+    ) -> crate::Result<Json<Vec<TeamResponse>>> {
+        #[derive(FromRow)]
+        struct TeamRow {
+            id: Uuid,
+            name: String,
+            slug: String,
+
+            created_at: DateTime<Utc>,
+            updated_at: DateTime<Utc>,
+        }
+
+        let teams = sqlx::query_as::<_, TeamRow>(
+            r#"
+            SELECT t.* FROM user_team ut
+            LEFT JOIN team t ON t.id = ut.team_id
+            WHERE ut.user_id  = $1
+            ORDER BY ut.updated_at
+            "#,
+        )
+        .bind(user_id)
+        .fetch_all(db)
+        .await?;
+
+        Ok(Json(
+            teams
+                .into_iter()
+                .map(|x| TeamResponse {
+                    id: x.id,
+                    name: x.name,
+                    slug: x.slug,
+                    created_at: x.created_at,
+                    updated_at: x.updated_at,
+                })
+                .collect(),
+        ))
+    }
+
     #[oai(path = "/", method = "post")]
     async fn create_team(
         &self,

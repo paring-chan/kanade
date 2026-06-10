@@ -5,8 +5,11 @@ import { type } from "arktype";
 import { useForm } from "@tanstack/react-form";
 import { formField, input } from "../components";
 import { api } from "../utils/api";
-import { generatePath, useNavigate } from "react-router";
+import { generatePath, Link, useNavigate } from "react-router";
 import { toast } from "sonner";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { teamListQueryOptions } from "../queries/team";
+import type { components } from "../utils/api/types";
 
 const createTeamSchema = type({
   name: "string >= 2 & string <= 20",
@@ -21,8 +24,38 @@ export const Component = () => {
           <h1 className="text-3xl grow w-0">팀 목록</h1>
           <CreateTeamDialog />
         </div>
+
+        <TeamList />
       </div>
     </div>
+  );
+};
+
+const TeamList = () => {
+  const { data } = useSuspenseQuery(teamListQueryOptions());
+
+  return (
+    <div className="mt-8 bg-black/10 border border-black/10 grid md:grid-cols-2 lg:grid-cols-3 gap-px">
+      {data.map((x) => (
+        <TeamItem team={x} key={x.id} />
+      ))}
+    </div>
+  );
+};
+
+const TeamItem = ({
+  team,
+}: {
+  team: components["schemas"]["TeamResponse"];
+}) => {
+  return (
+    <Link
+      to={generatePath("/t/:slug", { slug: team.slug })}
+      className="bg-pink-50 hover:bg-pink-100 transition-colors px-5 py-4 flex items-center gap-4"
+    >
+      <h3 className="text-lg">{team.name}</h3>
+      <div className="text-sm text-black/60">{team.slug}</div>
+    </Link>
   );
 };
 
