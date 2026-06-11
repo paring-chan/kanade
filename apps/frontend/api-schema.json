@@ -15,6 +15,10 @@
       "description": "포지 API"
     },
     {
+      "name": "Repo",
+      "description": "저장소 API"
+    },
+    {
       "name": "Team",
       "description": "팀 API"
     },
@@ -295,6 +299,58 @@
                   "items": {
                     "$ref": "#/components/schemas/ForgeRepoResponse"
                   }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/repos": {
+      "post": {
+        "tags": [
+          "Repo"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json; charset=utf-8": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectCreateResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -714,6 +770,57 @@
           "command": {
             "type": "string",
             "description": "실행 명령어"
+          }
+        }
+      },
+      "ProjectCreateRequest": {
+        "type": "object",
+        "title": "ProjectCreateRequest",
+        "required": [
+          "teamId",
+          "name",
+          "slug",
+          "forgeRepoId",
+          "forgeId"
+        ],
+        "properties": {
+          "teamId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "forgeRepoId": {
+            "type": "string"
+          },
+          "forgeId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "ProjectCreateResponse": {
+        "type": "object",
+        "title": "ProjectCreateResponse",
+        "required": [
+          "id",
+          "repoSlug",
+          "teamSlug"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "repoSlug": {
+            "type": "string"
+          },
+          "teamSlug": {
+            "type": "string"
           }
         }
       },

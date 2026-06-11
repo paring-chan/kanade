@@ -3133,6 +3133,7 @@ dependencies = [
  "oauth2-reqwest",
  "poem",
  "poem-openapi",
+ "rand 0.10.1",
  "reqwest 0.13.4",
  "secrecy",
  "serde",

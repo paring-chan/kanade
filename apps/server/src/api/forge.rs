@@ -68,7 +68,7 @@ impl ForgeApi {
                 .into_iter()
                 .map(|x| ForgeRepoResponse {
                     id: x.id,
-                    name: x.name,
+                    name: x.full_name,
                 })
                 .collect(),
         ))

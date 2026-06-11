@@ -15,6 +15,8 @@ import { formField, input } from "../form";
 import { userForgesQueryOptions } from "../../queries/user";
 import { useState } from "react";
 import { api } from "../../utils/api";
+import { toast } from "sonner";
+import { generatePath, useNavigate } from "react-router";
 
 const createProjectSchema = type({
   name: "string > 0",
@@ -29,6 +31,8 @@ export const CreateProjectDialog = ({
 }: {
   defaultTeamId?: string;
 }) => {
+  const navigate = useNavigate();
+
   const form = useForm({
     defaultValues: {
       teamId: defaultTeamId,
@@ -39,6 +43,30 @@ export const CreateProjectDialog = ({
     } as type.infer<typeof createProjectSchema>,
     validators: {
       onChange: createProjectSchema,
+    },
+    onSubmit: async ({ value }) => {
+      try {
+        const res = await api
+          .POST("/api/v1/repos", {
+            body: {
+              name: value.name,
+              forgeId: value.forgeId,
+              forgeRepoId: value.forgeRepoId,
+              slug: value.slug,
+              teamId: value.teamId,
+            },
+          })
+          .then((x) => x.data!);
+
+        navigate(
+          generatePath("/r/:team/:repo", {
+            team: res.teamSlug,
+            repo: res.repoSlug,
+          }),
+        );
+      } catch (e: any) {
+        toast.error(`${e.message}`);
+      }
     },
   });
 

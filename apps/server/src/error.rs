@@ -11,7 +11,7 @@ pub enum AppError {
     UrlParse(#[from] oauth2::url::ParseError),
     #[error("jwt error")]
     Jwt(#[from] jsonwebtoken::errors::Error),
-    #[error("internal error: {0}")]
+    #[error("internal error")]
     InternalError(#[from] anyhow::Error),
     #[error("serde json error: {0}")]
     Json(#[from] serde_json::Error),
@@ -19,6 +19,8 @@ pub enum AppError {
     InvalidTokenResponse,
     #[error("user is not linked to the forge")]
     ForgeNotLinked,
+    #[error("upstream repo not found")]
+    UpstreamRepoNotFound,
 }
 
 impl From<reqwest::Error> for AppError {
@@ -40,6 +42,7 @@ impl ResponseError for AppError {
             AppError::InvalidTokenResponse => StatusCode::INTERNAL_SERVER_ERROR,
             AppError::Json(_) => StatusCode::INTERNAL_SERVER_ERROR,
             AppError::ForgeNotLinked => StatusCode::UNAUTHORIZED,
+            AppError::UpstreamRepoNotFound => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
 }

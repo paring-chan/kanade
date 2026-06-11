@@ -16,9 +16,10 @@ use crate::{
 
 pub mod forgejo;
 
+#[derive(Debug)]
 pub struct UpstreamRepositoryInfo {
     pub id: String,
-    pub name: String,
+    pub full_name: String,
 }
 
 pub struct AllForges {
@@ -90,7 +91,7 @@ impl AllForges {
         let is_expired = Utc::now() > uf.access_token_expires_at;
         let at = self.crypto.decrypt(&uf.access_token)?;
 
-        if is_expired {
+        if !is_expired {
             return match uf.forge_config.0 {
                 ForgeConfig::Forgejo(forgejo) => Ok(Some(ForgeAuthInfo::Forgejo {
                     config: forgejo,
@@ -149,6 +150,40 @@ impl AllForges {
                 access_token: at,
                 uid: uf.forge_user_id,
             })),
+        }
+    }
+
+    pub async fn get_repo(
+        &self,
+        auth: &ForgeAuthInfo,
+        repo_id: &str,
+    ) -> crate::Result<Option<UpstreamRepositoryInfo>> {
+        match auth {
+            ForgeAuthInfo::Forgejo {
+                config,
+                access_token,
+                ..
+            } => self.forgejo.get_repo(&config, &access_token, repo_id).await,
+        }
+    }
+
+    pub async fn setup_webhook(
+        &self,
+        auth: &ForgeAuthInfo,
+        repo: &UpstreamRepositoryInfo,
+        secret: &str,
+        repo_id: Uuid,
+    ) -> crate::Result<()> {
+        match auth {
+            ForgeAuthInfo::Forgejo {
+                config,
+                access_token,
+                ..
+            } => {
+                self.forgejo
+                    .setup_webhook(&config, &access_token, repo, secret, repo_id)
+                    .await
+            }
         }
     }
 

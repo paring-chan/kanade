@@ -1,9 +1,11 @@
 use std::sync::Arc;
 
 use oauth2::{RefreshToken, TokenResponse};
-use reqwest::header::AUTHORIZATION;
+use reqwest::{StatusCode, header::AUTHORIZATION};
 use secrecy::{ExposeSecret, SecretString};
 use serde::Deserialize;
+use serde_json::json;
+use uuid::Uuid;
 
 use crate::{
     config::AppConfig,
@@ -70,9 +72,88 @@ impl ForgejoApi {
             .filter(|x| x.permissions.admin)
             .map(|x| UpstreamRepositoryInfo {
                 id: x.id.to_string(),
-                name: x.full_name,
+                full_name: x.full_name,
             })
             .collect())
+    }
+
+    #[instrument(skip(self, config, access_token, secret), err(Debug))]
+    pub async fn setup_webhook(
+        &self,
+        config: &ForgejoForgeConfig,
+        access_token: &SecretString,
+        repo: &UpstreamRepositoryInfo,
+        secret: &str,
+        repo_id: Uuid,
+    ) -> crate::Result<()> {
+        let res = HTTP.post(format!(
+                "{}/api/v1/repos/{}/hooks",
+                &config.url,
+                &repo.full_name,
+            ))
+            .header(
+                AUTHORIZATION,
+                format!("token {}", access_token.expose_secret()),
+            )
+            .json(&json!({
+                "active": true,
+                "config": {
+                    "url": format!("{}/_/webhook/forgejo?repo={}", &self.config.server.public_url, urlencoding::encode(&repo_id.to_string())),
+                    "content_type": "json",
+                    "secret": secret,
+                },
+                "events": [ "push", "create", "pull_request", "issues", "release" ],
+                "type": "forgejo"
+            }))
+            .send()
+            .await?;
+
+        let status = res.status();
+
+        let text = res.text().await?;
+        debug!(status = ?status, "response: {text}");
+
+        if status != StatusCode::CREATED {
+            return Err(AppError::InternalError(anyhow::anyhow!(
+                "create webhook request failed with status {status}"
+            )));
+        }
+
+        Ok(())
+    }
+
+    pub async fn get_repo(
+        &self,
+        config: &ForgejoForgeConfig,
+        access_token: &SecretString,
+        repo_id: &str,
+    ) -> crate::Result<Option<super::UpstreamRepositoryInfo>> {
+        let res = match HTTP
+            .get(format!(
+                "{}/api/v1/repositories/{}",
+                &config.url,
+                urlencoding::encode(repo_id),
+            ))
+            .header(
+                AUTHORIZATION,
+                format!("token {}", access_token.expose_secret()),
+            )
+            .send()
+            .await?
+            .error_for_status()
+        {
+            Err(e) if e.status() == Some(StatusCode::NOT_FOUND) => {
+                return Ok(None);
+            }
+            res => res,
+        }?
+        .json::<Repository>()
+        .await?;
+
+        Ok(Some(UpstreamRepositoryInfo {
+            id: res.id.to_string(),
+            full_name: res.full_name,
+        }))
     }
 
     pub async fn refresh_token(

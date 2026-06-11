@@ -307,6 +307,60 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/repos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["ProjectCreateRequest"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["ProjectCreateResponse"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": unknown;
+                    };
+                };
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/agent/jobs/acquire": {
         parameters: {
             query?: never;
@@ -619,6 +673,23 @@ export interface components {
             ordering: number;
             /** @description 실행 명령어 */
             command: string;
+        };
+        /** ProjectCreateRequest */
+        ProjectCreateRequest: {
+            /** Format: uuid */
+            teamId: string;
+            name: string;
+            slug: string;
+            forgeRepoId: string;
+            /** Format: uuid */
+            forgeId: string;
+        };
+        /** ProjectCreateResponse */
+        ProjectCreateResponse: {
+            /** Format: uuid */
+            id: string;
+            repoSlug: string;
+            teamSlug: string;
         };
         /**
          * SecretEnv
