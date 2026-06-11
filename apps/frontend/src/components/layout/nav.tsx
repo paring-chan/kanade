@@ -62,7 +62,7 @@ const NavAuth = () => {
                 render={<button />}
                 className="size-6 rounded-full overflow-hidden select-none"
               >
-                <Avatar.Image src={user.avatar_url} draggable="false" />
+                <Avatar.Image src={user.avatarUrl} draggable="false" />
                 <Avatar.Fallback className="flex justify-center items-center size-full bg-black/5">
                   <LucideUser className="size-4 opacity-40" />
                 </Avatar.Fallback>

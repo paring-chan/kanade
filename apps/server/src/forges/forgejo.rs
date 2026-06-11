@@ -27,6 +27,12 @@ struct RepoSearchResults {
 struct Repository {
     id: i64,
     full_name: String,
+    permissions: RepoPermissions,
+}
+
+#[derive(Debug, Deserialize)]
+struct RepoPermissions {
+    admin: bool,
 }
 
 impl ForgejoApi {
@@ -61,6 +67,7 @@ impl ForgejoApi {
         Ok(res
             .data
             .into_iter()
+            .filter(|x| x.permissions.admin)
             .map(|x| UpstreamRepositoryInfo {
                 id: x.id.to_string(),
                 name: x.full_name,
