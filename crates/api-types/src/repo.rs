@@ -40,6 +40,14 @@ pub struct RepoCreateResponse {
     pub team_slug: String,
 }
 
+#[derive(Debug, ApiResponse)]
+pub enum GetRepoResponse {
+    #[oai(status = 200)]
+    Ok(Json<RepoResponse>),
+    #[oai(status = 404)]
+    NotFound(Json<ErrorResponse>),
+}
+
 #[derive(Debug, Object)]
 pub struct RepoResponse {
     pub id: Uuid,

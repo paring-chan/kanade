@@ -1,10 +1,14 @@
 use std::sync::Arc;
 
-use api_types::{ErrorResponse, RepoCreateEndpointResponse, RepoCreateRequest, RepoCreateResponse};
+use api_types::{
+    ErrorResponse, GetRepoResponse, RepoCreateEndpointResponse, RepoCreateRequest,
+    RepoCreateResponse, RepoResponse, TeamResponse,
+};
+use chrono::{DateTime, Utc};
 use garde::Validate;
 use jsonwebtoken::signature::rand_core::{OsRng, RngCore};
 use poem::web::Data;
-use poem_openapi::{OpenApi, payload::Json};
+use poem_openapi::{NewType, Object, OpenApi, param::Path, payload::Json};
 use sqlx::{PgPool, prelude::FromRow};
 use uuid::Uuid;
 
@@ -133,5 +137,91 @@ impl RepoApi {
             repo_slug: res.repo_slug,
             team_slug: res.team_slug,
         })))
+    }
+
+    #[oai(path = "/:team/:repo", method = "get")]
+    async fn get_by_slug(
+        &self,
+        Data(db): Data<&PgPool>,
+        Path(team): Path<String>,
+        Path(repo): Path<String>,
+        ApiKeyAuth(user_id): ApiKeyAuth,
+    ) -> poem::Result<GetRepoResponse> {
+        self._get_by_slug(db, user_id, &team, &repo)
+            .await
+            .map_err(Into::into)
+    }
+
+    async fn _get_by_slug(
+        &self,
+        db: &PgPool,
+        user_id: Uuid,
+        team: &str,
+        repo: &str,
+    ) -> crate::Result<GetRepoResponse> {
+        #[derive(FromRow)]
+        struct RepoRow {
+            r_id: Uuid,
+            r_name: String,
+            r_slug: String,
+            r_created_at: DateTime<Utc>,
+            r_updated_at: DateTime<Utc>,
+
+            t_id: Uuid,
+            t_name: String,
+            t_slug: String,
+
+            t_created_at: DateTime<Utc>,
+            t_updated_at: DateTime<Utc>,
+        }
+
+        let result = sqlx::query_as::<_, RepoRow>(
+            r#"
+            SELECT
+                r.id as r_id,
+                r.name as r_name,
+                r.slug as r_slug,
+                r.created_at as r_created_at,
+                r.updated_at as r_updated_at,
+
+                t.id as t_id,
+                t.name as t_name,
+                t.slug as t_slug,
+                t.created_at as t_created_at,
+                t.updated_at as t_updated_at
+            FROM repo r
+            INNER JOIN team t ON t.id = r.team_id
+            INNER JOIN user_team ut ON ut.team_id = t.id
+            WHERE
+                ut.user_id = $1 AND
+                t.slug = $2 AND
+                r.slug = $3
+            "#,
+        )
+        .bind(user_id)
+        .bind(team)
+        .bind(repo)
+        .fetch_optional(db)
+        .await?;
+
+        match result {
+            Some(row) => Ok(GetRepoResponse::Ok(Json(RepoResponse {
+                id: row.r_id,
+                name: row.r_name,
+                slug: row.r_slug,
+                created_at: row.r_created_at,
+                updated_at: row.r_updated_at,
+                team: TeamResponse {
+                    id: row.t_id,
+                    name: row.t_name,
+                    slug: row.t_slug,
+                    created_at: row.t_created_at,
+                    updated_at: row.t_updated_at,
+                },
+            }))),
+            None => Ok(GetRepoResponse::NotFound(Json(ErrorResponse {
+                message: "repo not found".to_string(),
+            }))),
+        }
     }
 }
