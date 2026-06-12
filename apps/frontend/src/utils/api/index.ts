@@ -30,6 +30,11 @@ export const api = createClient<paths>({
       ],
       afterResponse: [
         async ({ response, request, options }) => {
+          if (response.status === 401 && !request.url.endsWith("/users/me")) {
+            window.location.href = "/login";
+            return;
+          }
+
           if (!response.ok) {
             const data = await response
               .clone()

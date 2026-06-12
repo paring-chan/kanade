@@ -146,7 +146,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/teams/by-slug/{team_slug}": {
+    "/api/v1/teams/{team_slug}": {
         parameters: {
             query?: never;
             header?: never;
@@ -159,48 +159,6 @@ export interface paths {
                 header?: never;
                 path: {
                     team_slug: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json; charset=utf-8": components["schemas"]["TeamResponse"];
-                    };
-                };
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/teams/{team_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    team_id: string;
                 };
                 cookie?: never;
             };

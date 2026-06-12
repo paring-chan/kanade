@@ -158,7 +158,7 @@
         ]
       }
     },
-    "/api/v1/teams/by-slug/{team_slug}": {
+    "/api/v1/teams/{team_slug}": {
       "get": {
         "tags": [
           "Team"
@@ -168,46 +168,6 @@
             "name": "team_slug",
             "schema": {
               "type": "string"
-            },
-            "in": "path",
-            "required": true,
-            "deprecated": false,
-            "explode": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json; charset=utf-8": {
-                "schema": {
-                  "$ref": "#/components/schemas/TeamResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "ApiKeyAuth": []
-          }
-        ]
-      }
-    },
-    "/api/v1/teams/{team_id}": {
-      "get": {
-        "tags": [
-          "Team"
-        ],
-        "parameters": [
-          {
-            "name": "team_id",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
             },
             "in": "path",
             "required": true,

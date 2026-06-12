@@ -1,12 +1,13 @@
+use chrono::{DateTime, Utc};
 use garde::Validate;
 use poem_openapi::{payload::Json, ApiResponse, Object};
 use uuid::Uuid;
 
-use crate::ErrorResponse;
+use crate::{ErrorResponse, TeamResponse};
 
 #[derive(Debug, Object, Validate)]
 #[oai(rename_all = "camelCase")]
-pub struct ProjectCreateRequest {
+pub struct RepoCreateRequest {
     #[garde(skip)]
     pub team_id: Uuid,
 
@@ -22,9 +23,9 @@ pub struct ProjectCreateRequest {
 }
 
 #[derive(Debug, ApiResponse)]
-pub enum ProjectCreateEndpointResponse {
+pub enum RepoCreateEndpointResponse {
     #[oai(status = 200)]
-    Ok(Json<ProjectCreateResponse>),
+    Ok(Json<RepoCreateResponse>),
     #[oai(status = 400)]
     ValidationFailed(Json<serde_json::Value>),
     #[oai(status = 401)]
@@ -33,8 +34,20 @@ pub enum ProjectCreateEndpointResponse {
 
 #[derive(Debug, Object)]
 #[oai(rename_all = "camelCase")]
-pub struct ProjectCreateResponse {
+pub struct RepoCreateResponse {
     pub id: Uuid,
     pub repo_slug: String,
     pub team_slug: String,
+}
+
+#[derive(Debug, Object)]
+pub struct RepoResponse {
+    pub id: Uuid,
+    pub name: String,
+    pub slug: String,
+
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+
+    pub team: TeamResponse,
 }

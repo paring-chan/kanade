@@ -8,6 +8,11 @@ export default [
         lazy: () => import("./layouts/normal"),
         children: [
           {
+            path: "login",
+            lazy: () => import("./routes/login"),
+          },
+
+          {
             index: true,
             lazy: () => import("./routes/project-list"),
           },
@@ -15,10 +20,7 @@ export default [
             path: "repo/:team/:repo/pipelines/:pipeline",
             lazy: () => import("./routes/pipeline-view"),
           },
-          {
-            path: "login",
-            lazy: () => import("./routes/login"),
-          },
+
           {
             path: "login/success",
             lazy: () => import("./routes/login-success"),

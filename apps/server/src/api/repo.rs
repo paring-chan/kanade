@@ -1,8 +1,6 @@
 use std::sync::Arc;
 
-use api_types::{
-    ErrorResponse, ProjectCreateEndpointResponse, ProjectCreateRequest, ProjectCreateResponse,
-};
+use api_types::{ErrorResponse, RepoCreateEndpointResponse, RepoCreateRequest, RepoCreateResponse};
 use garde::Validate;
 use jsonwebtoken::signature::rand_core::{OsRng, RngCore};
 use poem::web::Data;
@@ -21,10 +19,10 @@ impl RepoApi {
         &self,
         Data(db): Data<&PgPool>,
         ApiKeyAuth(user_id): ApiKeyAuth,
-        Json(payload): Json<ProjectCreateRequest>,
+        Json(payload): Json<RepoCreateRequest>,
         Data(forges): Data<&Arc<AllForges>>,
         Data(crypto): Data<&Arc<CryptoEngine>>,
-    ) -> poem::Result<ProjectCreateEndpointResponse> {
+    ) -> poem::Result<RepoCreateEndpointResponse> {
         self._create(db, user_id, payload, forges, crypto)
             .await
             .map_err(Into::into)
@@ -34,14 +32,14 @@ impl RepoApi {
         &self,
         db: &PgPool,
         user_id: Uuid,
-        payload: ProjectCreateRequest,
+        payload: RepoCreateRequest,
         forges: &AllForges,
         crypto: &Arc<CryptoEngine>,
-    ) -> crate::Result<ProjectCreateEndpointResponse> {
+    ) -> crate::Result<RepoCreateEndpointResponse> {
         match payload.validate() {
             Ok(_) => {}
             Err(report) => {
-                return Ok(ProjectCreateEndpointResponse::ValidationFailed(Json(
+                return Ok(RepoCreateEndpointResponse::ValidationFailed(Json(
                     serde_json::to_value(report)?,
                 )));
             }
@@ -72,18 +70,14 @@ impl RepoApi {
         .await?;
 
         if exists.0 {
-            return Ok(ProjectCreateEndpointResponse::Conflict(Json(
-                ErrorResponse {
-                    message: "해당 팀 내에 이미 동일한 슬러그를 가진 프로젝트가 존재합니다.".into(),
-                },
-            )));
+            return Ok(RepoCreateEndpointResponse::Conflict(Json(ErrorResponse {
+                message: "해당 팀 내에 이미 동일한 슬러그를 가진 프로젝트가 존재합니다.".into(),
+            })));
         }
         if exists.1 {
-            return Ok(ProjectCreateEndpointResponse::Conflict(Json(
-                ErrorResponse {
-                    message: "이 저장소는 이미 다른 프로젝트에 연동되어 있습니다.".into(),
-                },
-            )));
+            return Ok(RepoCreateEndpointResponse::Conflict(Json(ErrorResponse {
+                message: "이 저장소는 이미 다른 프로젝트에 연동되어 있습니다.".into(),
+            })));
         }
 
         let repo_id = Uuid::new_v4();
@@ -134,12 +128,10 @@ impl RepoApi {
 
         tx.commit().await?;
 
-        Ok(ProjectCreateEndpointResponse::Ok(Json(
-            ProjectCreateResponse {
-                id: res.id,
-                repo_slug: res.repo_slug,
-                team_slug: res.team_slug,
-            },
-        )))
+        Ok(RepoCreateEndpointResponse::Ok(Json(RepoCreateResponse {
+            id: res.id,
+            repo_slug: res.repo_slug,
+            team_slug: res.team_slug,
+        })))
     }
 }
