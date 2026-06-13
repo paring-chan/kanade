@@ -57,8 +57,8 @@ export const Component = () => {
         </div>
 
         <div className="mt-4 grid lg:grid-cols-2">
-          {repos.map((repo, i) => (
-            <ProjectItem repo={repo} key={i} />
+          {repos.map((repo) => (
+            <ProjectItem repo={repo} key={repo.id} />
           ))}
         </div>
       </div>
