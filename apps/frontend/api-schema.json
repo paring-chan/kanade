@@ -1,976 +1,1247 @@
 {
-	"openapi": "3.0.0",
-	"info": {
-		"title": "Kanade API",
-		"version": "1.0"
-	},
-	"servers": [],
-	"tags": [
-		{
-			"name": "Agent",
-			"description": "Agent 전용 API"
-		},
-		{
-			"name": "Forge",
-			"description": "포지 API"
-		},
-		{
-			"name": "Repo",
-			"description": "저장소 API"
-		},
-		{
-			"name": "Team",
-			"description": "팀 API"
-		},
-		{
-			"name": "User",
-			"description": "유저 정보 API"
-		}
-	],
-	"paths": {
-		"/api/v1/users/me": {
-			"get": {
-				"tags": ["User"],
-				"summary": "내 정보 불러오기",
-				"responses": {
-					"200": {
-						"description": "",
-						"content": {
-							"application/json; charset=utf-8": {
-								"schema": {
-									"$ref": "#/components/schemas/UserResponse"
-								}
-							}
-						}
-					}
-				},
-				"security": [
-					{
-						"ApiKeyAuth": []
-					}
-				]
-			}
-		},
-		"/api/v1/users/me/forges": {
-			"get": {
-				"tags": ["User"],
-				"summary": "나에게 연결된 포지 불러오기",
-				"responses": {
-					"200": {
-						"description": "",
-						"content": {
-							"application/json; charset=utf-8": {
-								"schema": {
-									"type": "array",
-									"items": {
-										"$ref": "#/components/schemas/UserForgeResponse"
-									}
-								}
-							}
-						}
-					}
-				},
-				"security": [
-					{
-						"ApiKeyAuth": []
-					}
-				]
-			}
-		},
-		"/api/v1/teams": {
-			"get": {
-				"tags": ["Team"],
-				"responses": {
-					"200": {
-						"description": "",
-						"content": {
-							"application/json; charset=utf-8": {
-								"schema": {
-									"type": "array",
-									"items": {
-										"$ref": "#/components/schemas/TeamResponse"
-									}
-								}
-							}
-						}
-					}
-				},
-				"security": [
-					{
-						"ApiKeyAuth": []
-					}
-				]
-			},
-			"post": {
-				"tags": ["Team"],
-				"requestBody": {
-					"content": {
-						"application/json; charset=utf-8": {
-							"schema": {
-								"$ref": "#/components/schemas/TeamCreateRequest"
-							}
-						}
-					},
-					"required": true
-				},
-				"responses": {
-					"200": {
-						"description": "",
-						"content": {
-							"application/json; charset=utf-8": {
-								"schema": {
-									"$ref": "#/components/schemas/TeamResponse"
-								}
-							}
-						}
-					},
-					"400": {
-						"description": "",
-						"content": {
-							"application/json; charset=utf-8": {
-								"schema": {}
-							}
-						}
-					},
-					"401": {
-						"description": "",
-						"content": {
-							"application/json; charset=utf-8": {
-								"schema": {
-									"$ref": "#/components/schemas/ErrorResponse"
-								}
-							}
-						}
-					}
-				},
-				"security": [
-					{
-						"ApiKeyAuth": []
-					}
-				]
-			}
-		},
-		"/api/v1/teams/{team_slug}": {
-			"get": {
-				"tags": ["Team"],
-				"parameters": [
-					{
-						"name": "team_slug",
-						"schema": {
-							"type": "string"
-						},
-						"in": "path",
-						"required": true,
-						"deprecated": false,
-						"explode": true
-					}
-				],
-				"responses": {
-					"200": {
-						"description": "",
-						"content": {
-							"application/json; charset=utf-8": {
-								"schema": {
-									"$ref": "#/components/schemas/TeamResponse"
-								}
-							}
-						}
-					},
-					"404": {
-						"description": ""
-					}
-				},
-				"security": [
-					{
-						"ApiKeyAuth": []
-					}
-				]
-			}
-		},
-		"/api/v1/teams/{team_slug}/repos": {
-			"get": {
-				"tags": ["Team"],
-				"parameters": [
-					{
-						"name": "team_slug",
-						"schema": {
-							"type": "string"
-						},
-						"in": "path",
-						"required": true,
-						"deprecated": false,
-						"explode": true
-					}
-				],
-				"responses": {
-					"200": {
-						"description": "",
-						"content": {
-							"application/json; charset=utf-8": {
-								"schema": {
-									"type": "array",
-									"items": {
-										"$ref": "#/components/schemas/RepoResponse"
-									}
-								}
-							}
-						}
-					}
-				},
-				"security": [
-					{
-						"ApiKeyAuth": []
-					}
-				]
-			}
-		},
-		"/api/v1/forges": {
-			"get": {
-				"tags": ["Forge"],
-				"summary": "포지 목록",
-				"responses": {
-					"200": {
-						"description": "정상 응답",
-						"content": {
-							"application/json; charset=utf-8": {
-								"schema": {
-									"type": "array",
-									"items": {
-										"$ref": "#/components/schemas/ForgeInfoResponse"
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		},
-		"/api/v1/forges/{forge_id}/search": {
-			"post": {
-				"tags": ["Forge"],
-				"summary": "포지에서 저장소 검색하기",
-				"parameters": [
-					{
-						"name": "forge_id",
-						"schema": {
-							"type": "string",
-							"format": "uuid"
-						},
-						"in": "path",
-						"required": true,
-						"deprecated": false,
-						"explode": true
-					}
-				],
-				"requestBody": {
-					"content": {
-						"application/json; charset=utf-8": {
-							"schema": {
-								"$ref": "#/components/schemas/ForgeRepoSearchRequest"
-							}
-						}
-					},
-					"required": true
-				},
-				"responses": {
-					"200": {
-						"description": "",
-						"content": {
-							"application/json; charset=utf-8": {
-								"schema": {
-									"type": "array",
-									"items": {
-										"$ref": "#/components/schemas/ForgeRepoResponse"
-									}
-								}
-							}
-						}
-					}
-				},
-				"security": [
-					{
-						"ApiKeyAuth": []
-					}
-				]
-			}
-		},
-		"/api/v1/repos": {
-			"post": {
-				"tags": ["Repo"],
-				"requestBody": {
-					"content": {
-						"application/json; charset=utf-8": {
-							"schema": {
-								"$ref": "#/components/schemas/RepoCreateRequest"
-							}
-						}
-					},
-					"required": true
-				},
-				"responses": {
-					"200": {
-						"description": "",
-						"content": {
-							"application/json; charset=utf-8": {
-								"schema": {
-									"$ref": "#/components/schemas/RepoCreateResponse"
-								}
-							}
-						}
-					},
-					"400": {
-						"description": "",
-						"content": {
-							"application/json; charset=utf-8": {
-								"schema": {}
-							}
-						}
-					},
-					"401": {
-						"description": "",
-						"content": {
-							"application/json; charset=utf-8": {
-								"schema": {
-									"$ref": "#/components/schemas/ErrorResponse"
-								}
-							}
-						}
-					}
-				},
-				"security": [
-					{
-						"ApiKeyAuth": []
-					}
-				]
-			}
-		},
-		"/api/v1/repos/{team}/{repo}": {
-			"get": {
-				"tags": ["Repo"],
-				"parameters": [
-					{
-						"name": "team",
-						"schema": {
-							"type": "string"
-						},
-						"in": "path",
-						"required": true,
-						"deprecated": false,
-						"explode": true
-					},
-					{
-						"name": "repo",
-						"schema": {
-							"type": "string"
-						},
-						"in": "path",
-						"required": true,
-						"deprecated": false,
-						"explode": true
-					}
-				],
-				"responses": {
-					"200": {
-						"description": "",
-						"content": {
-							"application/json; charset=utf-8": {
-								"schema": {
-									"$ref": "#/components/schemas/RepoResponse"
-								}
-							}
-						}
-					},
-					"404": {
-						"description": "",
-						"content": {
-							"application/json; charset=utf-8": {
-								"schema": {
-									"$ref": "#/components/schemas/ErrorResponse"
-								}
-							}
-						}
-					}
-				},
-				"security": [
-					{
-						"ApiKeyAuth": []
-					}
-				]
-			}
-		},
-		"/api/v1/agent/jobs/acquire": {
-			"post": {
-				"tags": ["Agent"],
-				"summary": "Job 획득",
-				"responses": {
-					"200": {
-						"description": "작업 할당됨",
-						"content": {
-							"application/json; charset=utf-8": {
-								"schema": {
-									"$ref": "#/components/schemas/JobAcquireResponse"
-								}
-							}
-						}
-					},
-					"204": {
-						"description": "현재 할당 가능한 작업이 없음"
-					}
-				}
-			}
-		},
-		"/api/v1/agent/jobs/{id}/finish": {
-			"post": {
-				"tags": ["Agent"],
-				"summary": "Job 완료",
-				"parameters": [
-					{
-						"name": "id",
-						"schema": {
-							"type": "string",
-							"format": "uuid"
-						},
-						"in": "path",
-						"required": true,
-						"deprecated": false,
-						"explode": true
-					}
-				],
-				"requestBody": {
-					"content": {
-						"application/json; charset=utf-8": {
-							"schema": {
-								"$ref": "#/components/schemas/JobFinishRequest"
-							}
-						}
-					},
-					"required": true
-				},
-				"responses": {
-					"200": {
-						"description": "작업 완료됨"
-					},
-					"404": {
-						"description": "작업이 존재하지 않음\n\n존재하지 않거나 이미 완료되었거나 agent 자신이 소유하지 않는 경우"
-					}
-				}
-			}
-		},
-		"/api/v1/agent/steps/{id}/started": {
-			"post": {
-				"tags": ["Agent"],
-				"summary": "Job Step 시작 알림",
-				"parameters": [
-					{
-						"name": "id",
-						"schema": {
-							"type": "string",
-							"format": "uuid"
-						},
-						"in": "path",
-						"required": true,
-						"deprecated": false,
-						"explode": true
-					}
-				],
-				"responses": {
-					"200": {
-						"description": "스텝 시작됨"
-					},
-					"404": {
-						"description": "스텝이 존재하지않음\n\n1. 내 job의 스텝이 아님\n2. 진짜 존재하지 않음\n3. 이미 끝남"
-					}
-				}
-			}
-		},
-		"/api/v1/agent/steps/{id}/finish": {
-			"post": {
-				"tags": ["Agent"],
-				"summary": "Job Step 완료 알림",
-				"parameters": [
-					{
-						"name": "id",
-						"schema": {
-							"type": "string",
-							"format": "uuid"
-						},
-						"in": "path",
-						"required": true,
-						"deprecated": false,
-						"explode": true
-					}
-				],
-				"requestBody": {
-					"content": {
-						"application/json; charset=utf-8": {
-							"schema": {
-								"$ref": "#/components/schemas/StepFinishRequest"
-							}
-						}
-					},
-					"required": true
-				},
-				"responses": {
-					"200": {
-						"description": "스텝 완료됨"
-					},
-					"404": {
-						"description": "스텝이 존재하지않음\n\n1. 내 job의 스텝이 아님\n2. 진짜 존재하지 않음\n3. 이미 끝남"
-					}
-				}
-			}
-		}
-	},
-	"components": {
-		"schemas": {
-			"EnvDefinition": {
-				"type": "object",
-				"description": "환경변수 정의",
-				"anyOf": [
-					{
-						"$ref": "#/components/schemas/EnvDefinition_StaticEnv"
-					},
-					{
-						"$ref": "#/components/schemas/EnvDefinition_SecretEnv"
-					}
-				],
-				"discriminator": {
-					"propertyName": "type",
-					"mapping": {
-						"static": "#/components/schemas/EnvDefinition_StaticEnv",
-						"secret": "#/components/schemas/EnvDefinition_SecretEnv"
-					}
-				}
-			},
-			"EnvDefinition_SecretEnv": {
-				"description": "환경변수 정의",
-				"allOf": [
-					{
-						"type": "object",
-						"required": ["type"],
-						"properties": {
-							"type": {
-								"type": "string",
-								"enum": ["secret"],
-								"example": "secret"
-							}
-						}
-					},
-					{
-						"$ref": "#/components/schemas/SecretEnv"
-					}
-				]
-			},
-			"EnvDefinition_StaticEnv": {
-				"description": "환경변수 정의",
-				"allOf": [
-					{
-						"type": "object",
-						"required": ["type"],
-						"properties": {
-							"type": {
-								"type": "string",
-								"enum": ["static"],
-								"example": "static"
-							}
-						}
-					},
-					{
-						"$ref": "#/components/schemas/StaticEnv"
-					}
-				]
-			},
-			"ErrorResponse": {
-				"type": "object",
-				"title": "ErrorResponse",
-				"required": ["message"],
-				"properties": {
-					"message": {
-						"type": "string"
-					}
-				}
-			},
-			"ForgeInfoResponse": {
-				"type": "object",
-				"title": "ForgeInfoResponse",
-				"required": ["id", "name"],
-				"properties": {
-					"id": {
-						"type": "string",
-						"format": "uuid",
-						"description": "포지 ID"
-					},
-					"name": {
-						"type": "string"
-					}
-				}
-			},
-			"ForgeRepoResponse": {
-				"type": "object",
-				"title": "ForgeRepoResponse",
-				"required": ["id", "name"],
-				"properties": {
-					"id": {
-						"type": "string"
-					},
-					"name": {
-						"type": "string"
-					}
-				}
-			},
-			"ForgeRepoSearchRequest": {
-				"type": "object",
-				"title": "ForgeRepoSearchRequest",
-				"required": ["query"],
-				"properties": {
-					"query": {
-						"type": "string"
-					}
-				}
-			},
-			"JobAcquireResponse": {
-				"type": "object",
-				"title": "JobAcquireResponse",
-				"required": ["id", "attempt_serial", "job", "steps", "env", "secrets"],
-				"properties": {
-					"id": {
-						"type": "string",
-						"format": "uuid",
-						"description": "작업 실행 ID"
-					},
-					"attempt_serial": {
-						"type": "integer",
-						"format": "int32",
-						"description": "작업 재시도 시리얼"
-					},
-					"job": {
-						"description": "작업 정보",
-						"allOf": [
-							{
-								"$ref": "#/components/schemas/PipelineJobResponse"
-							},
-							{
-								"description": "작업 정보"
-							}
-						]
-					},
-					"steps": {
-						"type": "array",
-						"description": "스텝 목록",
-						"items": {
-							"$ref": "#/components/schemas/JobStepAcquireResponse"
-						}
-					},
-					"env": {
-						"type": "object",
-						"description": "Job 스코프 환경변수 목록",
-						"additionalProperties": {
-							"$ref": "#/components/schemas/EnvDefinition"
-						}
-					},
-					"secrets": {
-						"type": "object",
-						"description": "레퍼런스된 시크릿 목록",
-						"additionalProperties": {
-							"type": "string"
-						}
-					}
-				}
-			},
-			"JobFinishRequest": {
-				"type": "object",
-				"title": "JobFinishRequest",
-				"required": ["success"],
-				"properties": {
-					"success": {
-						"type": "boolean"
-					}
-				}
-			},
-			"JobStepAcquireResponse": {
-				"type": "object",
-				"title": "JobStepAcquireResponse",
-				"required": ["id", "step"],
-				"properties": {
-					"id": {
-						"type": "string",
-						"format": "uuid",
-						"description": "스텝 실행 ID"
-					},
-					"step": {
-						"description": "스텝 정보",
-						"allOf": [
-							{
-								"$ref": "#/components/schemas/PipelineJobStepResponse"
-							},
-							{
-								"description": "스텝 정보"
-							}
-						]
-					}
-				}
-			},
-			"PipelineJobResponse": {
-				"type": "object",
-				"title": "PipelineJobResponse",
-				"required": ["id", "name", "timeout", "image"],
-				"properties": {
-					"id": {
-						"type": "string",
-						"format": "uuid",
-						"description": "작업 ID"
-					},
-					"name": {
-						"type": "string",
-						"description": "작업 이름"
-					},
-					"timeout": {
-						"type": "integer",
-						"format": "int32",
-						"description": "작업 타임아웃 (분 단위)"
-					},
-					"image": {
-						"type": "string",
-						"description": "컨테이너 이미지"
-					}
-				}
-			},
-			"PipelineJobStepResponse": {
-				"type": "object",
-				"title": "PipelineJobStepResponse",
-				"required": ["id", "name", "ordering", "command"],
-				"properties": {
-					"id": {
-						"type": "string",
-						"format": "uuid",
-						"description": "스텝 ID"
-					},
-					"name": {
-						"type": "string",
-						"description": "스텝 이름"
-					},
-					"ordering": {
-						"type": "integer",
-						"format": "int32",
-						"description": "스텝 순서(정렬용)"
-					},
-					"command": {
-						"type": "string",
-						"description": "실행 명령어"
-					}
-				}
-			},
-			"RepoCreateRequest": {
-				"type": "object",
-				"title": "RepoCreateRequest",
-				"required": ["teamId", "name", "slug", "forgeRepoId", "forgeId"],
-				"properties": {
-					"teamId": {
-						"type": "string",
-						"format": "uuid"
-					},
-					"name": {
-						"type": "string"
-					},
-					"slug": {
-						"type": "string"
-					},
-					"forgeRepoId": {
-						"type": "string"
-					},
-					"forgeId": {
-						"type": "string",
-						"format": "uuid"
-					}
-				}
-			},
-			"RepoCreateResponse": {
-				"type": "object",
-				"title": "RepoCreateResponse",
-				"required": ["id", "repoSlug", "teamSlug"],
-				"properties": {
-					"id": {
-						"type": "string",
-						"format": "uuid"
-					},
-					"repoSlug": {
-						"type": "string"
-					},
-					"teamSlug": {
-						"type": "string"
-					}
-				}
-			},
-			"RepoResponse": {
-				"type": "object",
-				"title": "RepoResponse",
-				"required": ["id", "name", "slug", "upstream_url", "created_at", "updated_at", "team"],
-				"properties": {
-					"id": {
-						"type": "string",
-						"format": "uuid"
-					},
-					"name": {
-						"type": "string"
-					},
-					"slug": {
-						"type": "string"
-					},
-					"upstream_url": {
-						"type": "string"
-					},
-					"created_at": {
-						"type": "string",
-						"format": "date-time"
-					},
-					"updated_at": {
-						"type": "string",
-						"format": "date-time"
-					},
-					"team": {
-						"$ref": "#/components/schemas/TeamResponse"
-					}
-				}
-			},
-			"SecretEnv": {
-				"type": "object",
-				"title": "SecretEnv",
-				"description": "시크릿 환경변수",
-				"required": ["secret_key"],
-				"properties": {
-					"secret_key": {
-						"type": "string",
-						"description": "환경변수를 불러올 시크릿 키"
-					}
-				}
-			},
-			"StaticEnv": {
-				"type": "object",
-				"title": "StaticEnv",
-				"description": "고정된 환경변수",
-				"required": ["value"],
-				"properties": {
-					"value": {
-						"type": "string",
-						"description": "환경변수 값"
-					}
-				}
-			},
-			"StepFinishRequest": {
-				"type": "object",
-				"title": "StepFinishRequest",
-				"required": ["success", "exit_code"],
-				"properties": {
-					"success": {
-						"type": "boolean"
-					},
-					"exit_code": {
-						"type": "integer",
-						"format": "int32"
-					}
-				}
-			},
-			"TeamCreateRequest": {
-				"type": "object",
-				"title": "TeamCreateRequest",
-				"required": ["name", "slug"],
-				"properties": {
-					"name": {
-						"type": "string"
-					},
-					"slug": {
-						"type": "string"
-					}
-				}
-			},
-			"TeamResponse": {
-				"type": "object",
-				"title": "TeamResponse",
-				"required": ["id", "name", "slug", "created_at", "updated_at"],
-				"properties": {
-					"id": {
-						"type": "string",
-						"format": "uuid"
-					},
-					"name": {
-						"type": "string"
-					},
-					"slug": {
-						"type": "string"
-					},
-					"created_at": {
-						"type": "string",
-						"format": "date-time"
-					},
-					"updated_at": {
-						"type": "string",
-						"format": "date-time"
-					}
-				}
-			},
-			"UserForgeResponse": {
-				"type": "object",
-				"title": "UserForgeResponse",
-				"required": ["id", "forge", "forgeUserId", "createdAt", "updatedAt"],
-				"properties": {
-					"id": {
-						"type": "string",
-						"format": "uuid"
-					},
-					"forge": {
-						"$ref": "#/components/schemas/ForgeInfoResponse"
-					},
-					"forgeUserId": {
-						"type": "string"
-					},
-					"createdAt": {
-						"type": "string",
-						"format": "date-time"
-					},
-					"updatedAt": {
-						"type": "string",
-						"format": "date-time"
-					}
-				}
-			},
-			"UserResponse": {
-				"type": "object",
-				"title": "UserResponse",
-				"required": ["id", "username", "createdAt", "updatedAt"],
-				"properties": {
-					"id": {
-						"type": "string",
-						"format": "uuid"
-					},
-					"username": {
-						"type": "string"
-					},
-					"nick": {
-						"type": "string"
-					},
-					"email": {
-						"type": "string"
-					},
-					"avatarUrl": {
-						"type": "string"
-					},
-					"createdAt": {
-						"type": "string",
-						"format": "date-time"
-					},
-					"updatedAt": {
-						"type": "string",
-						"format": "date-time"
-					}
-				}
-			}
-		},
-		"securitySchemes": {
-			"ApiKeyAuth": {
-				"type": "apiKey",
-				"name": "Authorization",
-				"in": "header"
-			}
-		}
-	}
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Kanade API",
+    "version": "1.0"
+  },
+  "servers": [],
+  "tags": [
+    {
+      "name": "Agent",
+      "description": "Agent 전용 API"
+    },
+    {
+      "name": "Forge",
+      "description": "포지 API"
+    },
+    {
+      "name": "Repo",
+      "description": "저장소 API"
+    },
+    {
+      "name": "Team",
+      "description": "팀 API"
+    },
+    {
+      "name": "User",
+      "description": "유저 정보 API"
+    }
+  ],
+  "paths": {
+    "/api/v1/users/me": {
+      "get": {
+        "tags": [
+          "User"
+        ],
+        "summary": "내 정보 불러오기",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/me/forges": {
+      "get": {
+        "tags": [
+          "User"
+        ],
+        "summary": "나에게 연결된 포지 불러오기",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserForgeResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/teams": {
+      "get": {
+        "tags": [
+          "Team"
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TeamResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Team"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json; charset=utf-8": {
+              "schema": {
+                "$ref": "#/components/schemas/TeamCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/teams/{team_slug}": {
+      "get": {
+        "tags": [
+          "Team"
+        ],
+        "parameters": [
+          {
+            "name": "team_slug",
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "required": true,
+            "deprecated": false,
+            "explode": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/teams/{team_slug}/repos": {
+      "get": {
+        "tags": [
+          "Team"
+        ],
+        "parameters": [
+          {
+            "name": "team_slug",
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "required": true,
+            "deprecated": false,
+            "explode": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RepoResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/forges": {
+      "get": {
+        "tags": [
+          "Forge"
+        ],
+        "summary": "포지 목록",
+        "responses": {
+          "200": {
+            "description": "정상 응답",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ForgeInfoResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/forges/{forge_id}/search": {
+      "post": {
+        "tags": [
+          "Forge"
+        ],
+        "summary": "포지에서 저장소 검색하기",
+        "parameters": [
+          {
+            "name": "forge_id",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "required": true,
+            "deprecated": false,
+            "explode": true
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json; charset=utf-8": {
+              "schema": {
+                "$ref": "#/components/schemas/ForgeRepoSearchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ForgeRepoResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/repos": {
+      "post": {
+        "tags": [
+          "Repo"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json; charset=utf-8": {
+              "schema": {
+                "$ref": "#/components/schemas/RepoCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/RepoCreateResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/repos/{team}/{repo}": {
+      "get": {
+        "tags": [
+          "Repo"
+        ],
+        "parameters": [
+          {
+            "name": "team",
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "required": true,
+            "deprecated": false,
+            "explode": true
+          },
+          {
+            "name": "repo",
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "required": true,
+            "deprecated": false,
+            "explode": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/RepoResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/repos/{team}/{repo}/pipelines": {
+      "get": {
+        "tags": [
+          "Repo"
+        ],
+        "parameters": [
+          {
+            "name": "team",
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "required": true,
+            "deprecated": false,
+            "explode": true
+          },
+          {
+            "name": "repo",
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "required": true,
+            "deprecated": false,
+            "explode": true
+          },
+          {
+            "name": "cursor",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "query",
+            "required": false,
+            "deprecated": false,
+            "explode": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/PipelineListResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/agent/jobs/acquire": {
+      "post": {
+        "tags": [
+          "Agent"
+        ],
+        "summary": "Job 획득",
+        "responses": {
+          "200": {
+            "description": "작업 할당됨",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobAcquireResponse"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "현재 할당 가능한 작업이 없음"
+          }
+        }
+      }
+    },
+    "/api/v1/agent/jobs/{id}/finish": {
+      "post": {
+        "tags": [
+          "Agent"
+        ],
+        "summary": "Job 완료",
+        "parameters": [
+          {
+            "name": "id",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "required": true,
+            "deprecated": false,
+            "explode": true
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json; charset=utf-8": {
+              "schema": {
+                "$ref": "#/components/schemas/JobFinishRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "작업 완료됨"
+          },
+          "404": {
+            "description": "작업이 존재하지 않음\n\n존재하지 않거나 이미 완료되었거나 agent 자신이 소유하지 않는 경우"
+          }
+        }
+      }
+    },
+    "/api/v1/agent/steps/{id}/started": {
+      "post": {
+        "tags": [
+          "Agent"
+        ],
+        "summary": "Job Step 시작 알림",
+        "parameters": [
+          {
+            "name": "id",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "required": true,
+            "deprecated": false,
+            "explode": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "스텝 시작됨"
+          },
+          "404": {
+            "description": "스텝이 존재하지않음\n\n1. 내 job의 스텝이 아님\n2. 진짜 존재하지 않음\n3. 이미 끝남"
+          }
+        }
+      }
+    },
+    "/api/v1/agent/steps/{id}/finish": {
+      "post": {
+        "tags": [
+          "Agent"
+        ],
+        "summary": "Job Step 완료 알림",
+        "parameters": [
+          {
+            "name": "id",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "required": true,
+            "deprecated": false,
+            "explode": true
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json; charset=utf-8": {
+              "schema": {
+                "$ref": "#/components/schemas/StepFinishRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "스텝 완료됨"
+          },
+          "404": {
+            "description": "스텝이 존재하지않음\n\n1. 내 job의 스텝이 아님\n2. 진짜 존재하지 않음\n3. 이미 끝남"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "EnvDefinition": {
+        "type": "object",
+        "description": "환경변수 정의",
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/EnvDefinition_StaticEnv"
+          },
+          {
+            "$ref": "#/components/schemas/EnvDefinition_SecretEnv"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "static": "#/components/schemas/EnvDefinition_StaticEnv",
+            "secret": "#/components/schemas/EnvDefinition_SecretEnv"
+          }
+        }
+      },
+      "EnvDefinition_SecretEnv": {
+        "description": "환경변수 정의",
+        "allOf": [
+          {
+            "type": "object",
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "secret"
+                ],
+                "example": "secret"
+              }
+            }
+          },
+          {
+            "$ref": "#/components/schemas/SecretEnv"
+          }
+        ]
+      },
+      "EnvDefinition_StaticEnv": {
+        "description": "환경변수 정의",
+        "allOf": [
+          {
+            "type": "object",
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "static"
+                ],
+                "example": "static"
+              }
+            }
+          },
+          {
+            "$ref": "#/components/schemas/StaticEnv"
+          }
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "title": "ErrorResponse",
+        "required": [
+          "message"
+        ],
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "EventTypeResponse": {
+        "type": "string",
+        "enum": [
+          "Push",
+          "Tag",
+          "Release",
+          "PullRequest",
+          "Cron",
+          "Manual"
+        ]
+      },
+      "ForgeInfoResponse": {
+        "type": "object",
+        "title": "ForgeInfoResponse",
+        "required": [
+          "id",
+          "name"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "포지 ID"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "ForgeRepoResponse": {
+        "type": "object",
+        "title": "ForgeRepoResponse",
+        "required": [
+          "id",
+          "name"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "ForgeRepoSearchRequest": {
+        "type": "object",
+        "title": "ForgeRepoSearchRequest",
+        "required": [
+          "query"
+        ],
+        "properties": {
+          "query": {
+            "type": "string"
+          }
+        }
+      },
+      "JobAcquireResponse": {
+        "type": "object",
+        "title": "JobAcquireResponse",
+        "required": [
+          "id",
+          "attempt_serial",
+          "job",
+          "steps",
+          "env",
+          "secrets"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "작업 실행 ID"
+          },
+          "attempt_serial": {
+            "type": "integer",
+            "format": "int32",
+            "description": "작업 재시도 시리얼"
+          },
+          "job": {
+            "description": "작업 정보",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PipelineJobResponse"
+              },
+              {
+                "description": "작업 정보"
+              }
+            ]
+          },
+          "steps": {
+            "type": "array",
+            "description": "스텝 목록",
+            "items": {
+              "$ref": "#/components/schemas/JobStepAcquireResponse"
+            }
+          },
+          "env": {
+            "type": "object",
+            "description": "Job 스코프 환경변수 목록",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/EnvDefinition"
+            }
+          },
+          "secrets": {
+            "type": "object",
+            "description": "레퍼런스된 시크릿 목록",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "JobFinishRequest": {
+        "type": "object",
+        "title": "JobFinishRequest",
+        "required": [
+          "success"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
+      "JobStepAcquireResponse": {
+        "type": "object",
+        "title": "JobStepAcquireResponse",
+        "required": [
+          "id",
+          "step"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "스텝 실행 ID"
+          },
+          "step": {
+            "description": "스텝 정보",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PipelineJobStepResponse"
+              },
+              {
+                "description": "스텝 정보"
+              }
+            ]
+          }
+        }
+      },
+      "PipelineJobResponse": {
+        "type": "object",
+        "title": "PipelineJobResponse",
+        "required": [
+          "id",
+          "name",
+          "timeout",
+          "image"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "작업 ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "작업 이름"
+          },
+          "timeout": {
+            "type": "integer",
+            "format": "int32",
+            "description": "작업 타임아웃 (분 단위)"
+          },
+          "image": {
+            "type": "string",
+            "description": "컨테이너 이미지"
+          }
+        }
+      },
+      "PipelineJobStepResponse": {
+        "type": "object",
+        "title": "PipelineJobStepResponse",
+        "required": [
+          "id",
+          "name",
+          "ordering",
+          "command"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "스텝 ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "스텝 이름"
+          },
+          "ordering": {
+            "type": "integer",
+            "format": "int32",
+            "description": "스텝 순서(정렬용)"
+          },
+          "command": {
+            "type": "string",
+            "description": "실행 명령어"
+          }
+        }
+      },
+      "PipelineListResponse": {
+        "type": "object",
+        "title": "PipelineListResponse",
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PipelineResponse"
+            }
+          },
+          "next_cursor": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "PipelineResponse": {
+        "type": "object",
+        "title": "PipelineResponse",
+        "required": [
+          "id",
+          "serial",
+          "repoId",
+          "triggeredBy",
+          "eventType",
+          "eventPayload",
+          "gitCommitId",
+          "status",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "serial": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "repoId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "triggeredBy": {
+            "type": "string"
+          },
+          "triggeredByUser": {
+            "$ref": "#/components/schemas/UserResponse"
+          },
+          "eventType": {
+            "$ref": "#/components/schemas/EventTypeResponse"
+          },
+          "eventPayload": {},
+          "gitRef": {
+            "type": "string"
+          },
+          "gitCommitId": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PipelineStatusResponse"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PipelineStatusResponse": {
+        "type": "string",
+        "enum": [
+          "Evaluating",
+          "Queued",
+          "Running",
+          "Success",
+          "Failed",
+          "Cancelled"
+        ]
+      },
+      "RepoCreateRequest": {
+        "type": "object",
+        "title": "RepoCreateRequest",
+        "required": [
+          "teamId",
+          "name",
+          "slug",
+          "forgeRepoId",
+          "forgeId"
+        ],
+        "properties": {
+          "teamId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "forgeRepoId": {
+            "type": "string"
+          },
+          "forgeId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "RepoCreateResponse": {
+        "type": "object",
+        "title": "RepoCreateResponse",
+        "required": [
+          "id",
+          "repoSlug",
+          "teamSlug"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "repoSlug": {
+            "type": "string"
+          },
+          "teamSlug": {
+            "type": "string"
+          }
+        }
+      },
+      "RepoResponse": {
+        "type": "object",
+        "title": "RepoResponse",
+        "required": [
+          "id",
+          "name",
+          "slug",
+          "upstream_url",
+          "created_at",
+          "updated_at",
+          "team"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "upstream_url": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "team": {
+            "$ref": "#/components/schemas/TeamResponse"
+          }
+        }
+      },
+      "SecretEnv": {
+        "type": "object",
+        "title": "SecretEnv",
+        "description": "시크릿 환경변수",
+        "required": [
+          "secret_key"
+        ],
+        "properties": {
+          "secret_key": {
+            "type": "string",
+            "description": "환경변수를 불러올 시크릿 키"
+          }
+        }
+      },
+      "StaticEnv": {
+        "type": "object",
+        "title": "StaticEnv",
+        "description": "고정된 환경변수",
+        "required": [
+          "value"
+        ],
+        "properties": {
+          "value": {
+            "type": "string",
+            "description": "환경변수 값"
+          }
+        }
+      },
+      "StepFinishRequest": {
+        "type": "object",
+        "title": "StepFinishRequest",
+        "required": [
+          "success",
+          "exit_code"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "exit_code": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "TeamCreateRequest": {
+        "type": "object",
+        "title": "TeamCreateRequest",
+        "required": [
+          "name",
+          "slug"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          }
+        }
+      },
+      "TeamResponse": {
+        "type": "object",
+        "title": "TeamResponse",
+        "required": [
+          "id",
+          "name",
+          "slug",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "UserForgeResponse": {
+        "type": "object",
+        "title": "UserForgeResponse",
+        "required": [
+          "id",
+          "forge",
+          "forgeUserId",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "forge": {
+            "$ref": "#/components/schemas/ForgeInfoResponse"
+          },
+          "forgeUserId": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "UserResponse": {
+        "type": "object",
+        "title": "UserResponse",
+        "required": [
+          "id",
+          "username",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "username": {
+            "type": "string"
+          },
+          "nick": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "avatarUrl": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "name": "Authorization",
+        "in": "header"
+      }
+    }
+  }
 }

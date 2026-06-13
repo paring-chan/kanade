@@ -15,6 +15,9 @@ pub use team::*;
 mod repo;
 pub use repo::*;
 
+mod pipeline;
+pub use pipeline::*;
+
 #[derive(Debug, Object)]
 pub struct ErrorResponse {
     pub message: String,

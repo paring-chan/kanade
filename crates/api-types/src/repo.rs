@@ -1,9 +1,10 @@
 use chrono::{DateTime, Utc};
 use garde::Validate;
 use poem_openapi::{payload::Json, ApiResponse, Object};
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::{ErrorResponse, TeamResponse};
+use crate::{ErrorResponse, PipelineResponse, TeamResponse};
 
 #[derive(Debug, Object, Validate)]
 #[oai(rename_all = "camelCase")]
@@ -59,4 +60,10 @@ pub struct RepoResponse {
     pub updated_at: DateTime<Utc>,
 
     pub team: TeamResponse,
+}
+
+#[derive(Debug, Object)]
+pub struct PipelineListResponse {
+    pub items: Vec<PipelineResponse>,
+    pub next_cursor: Option<Uuid>,
 }

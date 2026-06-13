@@ -10,7 +10,7 @@ pub enum UserEndpointResponse {
     Ok(Json<UserResponse>),
 }
 
-#[derive(Object)]
+#[derive(Debug, Object)]
 #[oai(rename_all = "camelCase")]
 pub struct UserResponse {
     pub id: Uuid,

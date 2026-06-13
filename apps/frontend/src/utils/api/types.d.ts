@@ -4,813 +4,883 @@
  */
 
 export interface paths {
-	'/api/v1/users/me': {
-		parameters: {
-			query?: never;
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		/** 내 정보 불러오기 */
-		get: {
-			parameters: {
-				query?: never;
-				header?: never;
-				path?: never;
-				cookie?: never;
-			};
-			requestBody?: never;
-			responses: {
-				200: {
-					headers: {
-						[name: string]: unknown;
-					};
-					content: {
-						'application/json; charset=utf-8': components['schemas']['UserResponse'];
-					};
-				};
-			};
-		};
-		put?: never;
-		post?: never;
-		delete?: never;
-		options?: never;
-		head?: never;
-		patch?: never;
-		trace?: never;
-	};
-	'/api/v1/users/me/forges': {
-		parameters: {
-			query?: never;
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		/** 나에게 연결된 포지 불러오기 */
-		get: {
-			parameters: {
-				query?: never;
-				header?: never;
-				path?: never;
-				cookie?: never;
-			};
-			requestBody?: never;
-			responses: {
-				200: {
-					headers: {
-						[name: string]: unknown;
-					};
-					content: {
-						'application/json; charset=utf-8': components['schemas']['UserForgeResponse'][];
-					};
-				};
-			};
-		};
-		put?: never;
-		post?: never;
-		delete?: never;
-		options?: never;
-		head?: never;
-		patch?: never;
-		trace?: never;
-	};
-	'/api/v1/teams': {
-		parameters: {
-			query?: never;
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		get: {
-			parameters: {
-				query?: never;
-				header?: never;
-				path?: never;
-				cookie?: never;
-			};
-			requestBody?: never;
-			responses: {
-				200: {
-					headers: {
-						[name: string]: unknown;
-					};
-					content: {
-						'application/json; charset=utf-8': components['schemas']['TeamResponse'][];
-					};
-				};
-			};
-		};
-		put?: never;
-		post: {
-			parameters: {
-				query?: never;
-				header?: never;
-				path?: never;
-				cookie?: never;
-			};
-			requestBody: {
-				content: {
-					'application/json; charset=utf-8': components['schemas']['TeamCreateRequest'];
-				};
-			};
-			responses: {
-				200: {
-					headers: {
-						[name: string]: unknown;
-					};
-					content: {
-						'application/json; charset=utf-8': components['schemas']['TeamResponse'];
-					};
-				};
-				400: {
-					headers: {
-						[name: string]: unknown;
-					};
-					content: {
-						'application/json; charset=utf-8': unknown;
-					};
-				};
-				401: {
-					headers: {
-						[name: string]: unknown;
-					};
-					content: {
-						'application/json; charset=utf-8': components['schemas']['ErrorResponse'];
-					};
-				};
-			};
-		};
-		delete?: never;
-		options?: never;
-		head?: never;
-		patch?: never;
-		trace?: never;
-	};
-	'/api/v1/teams/{team_slug}': {
-		parameters: {
-			query?: never;
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		get: {
-			parameters: {
-				query?: never;
-				header?: never;
-				path: {
-					team_slug: string;
-				};
-				cookie?: never;
-			};
-			requestBody?: never;
-			responses: {
-				200: {
-					headers: {
-						[name: string]: unknown;
-					};
-					content: {
-						'application/json; charset=utf-8': components['schemas']['TeamResponse'];
-					};
-				};
-				404: {
-					headers: {
-						[name: string]: unknown;
-					};
-					content?: never;
-				};
-			};
-		};
-		put?: never;
-		post?: never;
-		delete?: never;
-		options?: never;
-		head?: never;
-		patch?: never;
-		trace?: never;
-	};
-	'/api/v1/teams/{team_slug}/repos': {
-		parameters: {
-			query?: never;
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		get: {
-			parameters: {
-				query?: never;
-				header?: never;
-				path: {
-					team_slug: string;
-				};
-				cookie?: never;
-			};
-			requestBody?: never;
-			responses: {
-				200: {
-					headers: {
-						[name: string]: unknown;
-					};
-					content: {
-						'application/json; charset=utf-8': components['schemas']['RepoResponse'][];
-					};
-				};
-			};
-		};
-		put?: never;
-		post?: never;
-		delete?: never;
-		options?: never;
-		head?: never;
-		patch?: never;
-		trace?: never;
-	};
-	'/api/v1/forges': {
-		parameters: {
-			query?: never;
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		/** 포지 목록 */
-		get: {
-			parameters: {
-				query?: never;
-				header?: never;
-				path?: never;
-				cookie?: never;
-			};
-			requestBody?: never;
-			responses: {
-				/** @description 정상 응답 */
-				200: {
-					headers: {
-						[name: string]: unknown;
-					};
-					content: {
-						'application/json; charset=utf-8': components['schemas']['ForgeInfoResponse'][];
-					};
-				};
-			};
-		};
-		put?: never;
-		post?: never;
-		delete?: never;
-		options?: never;
-		head?: never;
-		patch?: never;
-		trace?: never;
-	};
-	'/api/v1/forges/{forge_id}/search': {
-		parameters: {
-			query?: never;
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		get?: never;
-		put?: never;
-		/** 포지에서 저장소 검색하기 */
-		post: {
-			parameters: {
-				query?: never;
-				header?: never;
-				path: {
-					forge_id: string;
-				};
-				cookie?: never;
-			};
-			requestBody: {
-				content: {
-					'application/json; charset=utf-8': components['schemas']['ForgeRepoSearchRequest'];
-				};
-			};
-			responses: {
-				200: {
-					headers: {
-						[name: string]: unknown;
-					};
-					content: {
-						'application/json; charset=utf-8': components['schemas']['ForgeRepoResponse'][];
-					};
-				};
-			};
-		};
-		delete?: never;
-		options?: never;
-		head?: never;
-		patch?: never;
-		trace?: never;
-	};
-	'/api/v1/repos': {
-		parameters: {
-			query?: never;
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		get?: never;
-		put?: never;
-		post: {
-			parameters: {
-				query?: never;
-				header?: never;
-				path?: never;
-				cookie?: never;
-			};
-			requestBody: {
-				content: {
-					'application/json; charset=utf-8': components['schemas']['RepoCreateRequest'];
-				};
-			};
-			responses: {
-				200: {
-					headers: {
-						[name: string]: unknown;
-					};
-					content: {
-						'application/json; charset=utf-8': components['schemas']['RepoCreateResponse'];
-					};
-				};
-				400: {
-					headers: {
-						[name: string]: unknown;
-					};
-					content: {
-						'application/json; charset=utf-8': unknown;
-					};
-				};
-				401: {
-					headers: {
-						[name: string]: unknown;
-					};
-					content: {
-						'application/json; charset=utf-8': components['schemas']['ErrorResponse'];
-					};
-				};
-			};
-		};
-		delete?: never;
-		options?: never;
-		head?: never;
-		patch?: never;
-		trace?: never;
-	};
-	'/api/v1/repos/{team}/{repo}': {
-		parameters: {
-			query?: never;
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		get: {
-			parameters: {
-				query?: never;
-				header?: never;
-				path: {
-					team: string;
-					repo: string;
-				};
-				cookie?: never;
-			};
-			requestBody?: never;
-			responses: {
-				200: {
-					headers: {
-						[name: string]: unknown;
-					};
-					content: {
-						'application/json; charset=utf-8': components['schemas']['RepoResponse'];
-					};
-				};
-				404: {
-					headers: {
-						[name: string]: unknown;
-					};
-					content: {
-						'application/json; charset=utf-8': components['schemas']['ErrorResponse'];
-					};
-				};
-			};
-		};
-		put?: never;
-		post?: never;
-		delete?: never;
-		options?: never;
-		head?: never;
-		patch?: never;
-		trace?: never;
-	};
-	'/api/v1/agent/jobs/acquire': {
-		parameters: {
-			query?: never;
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		get?: never;
-		put?: never;
-		/** Job 획득 */
-		post: {
-			parameters: {
-				query?: never;
-				header?: never;
-				path?: never;
-				cookie?: never;
-			};
-			requestBody?: never;
-			responses: {
-				/** @description 작업 할당됨 */
-				200: {
-					headers: {
-						[name: string]: unknown;
-					};
-					content: {
-						'application/json; charset=utf-8': components['schemas']['JobAcquireResponse'];
-					};
-				};
-				/** @description 현재 할당 가능한 작업이 없음 */
-				204: {
-					headers: {
-						[name: string]: unknown;
-					};
-					content?: never;
-				};
-			};
-		};
-		delete?: never;
-		options?: never;
-		head?: never;
-		patch?: never;
-		trace?: never;
-	};
-	'/api/v1/agent/jobs/{id}/finish': {
-		parameters: {
-			query?: never;
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		get?: never;
-		put?: never;
-		/** Job 완료 */
-		post: {
-			parameters: {
-				query?: never;
-				header?: never;
-				path: {
-					id: string;
-				};
-				cookie?: never;
-			};
-			requestBody: {
-				content: {
-					'application/json; charset=utf-8': components['schemas']['JobFinishRequest'];
-				};
-			};
-			responses: {
-				/** @description 작업 완료됨 */
-				200: {
-					headers: {
-						[name: string]: unknown;
-					};
-					content?: never;
-				};
-				/**
-				 * @description 작업이 존재하지 않음
-				 *
-				 *     존재하지 않거나 이미 완료되었거나 agent 자신이 소유하지 않는 경우
-				 */
-				404: {
-					headers: {
-						[name: string]: unknown;
-					};
-					content?: never;
-				};
-			};
-		};
-		delete?: never;
-		options?: never;
-		head?: never;
-		patch?: never;
-		trace?: never;
-	};
-	'/api/v1/agent/steps/{id}/started': {
-		parameters: {
-			query?: never;
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		get?: never;
-		put?: never;
-		/** Job Step 시작 알림 */
-		post: {
-			parameters: {
-				query?: never;
-				header?: never;
-				path: {
-					id: string;
-				};
-				cookie?: never;
-			};
-			requestBody?: never;
-			responses: {
-				/** @description 스텝 시작됨 */
-				200: {
-					headers: {
-						[name: string]: unknown;
-					};
-					content?: never;
-				};
-				/**
-				 * @description 스텝이 존재하지않음
-				 *
-				 *     1. 내 job의 스텝이 아님
-				 *     2. 진짜 존재하지 않음
-				 *     3. 이미 끝남
-				 */
-				404: {
-					headers: {
-						[name: string]: unknown;
-					};
-					content?: never;
-				};
-			};
-		};
-		delete?: never;
-		options?: never;
-		head?: never;
-		patch?: never;
-		trace?: never;
-	};
-	'/api/v1/agent/steps/{id}/finish': {
-		parameters: {
-			query?: never;
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		get?: never;
-		put?: never;
-		/** Job Step 완료 알림 */
-		post: {
-			parameters: {
-				query?: never;
-				header?: never;
-				path: {
-					id: string;
-				};
-				cookie?: never;
-			};
-			requestBody: {
-				content: {
-					'application/json; charset=utf-8': components['schemas']['StepFinishRequest'];
-				};
-			};
-			responses: {
-				/** @description 스텝 완료됨 */
-				200: {
-					headers: {
-						[name: string]: unknown;
-					};
-					content?: never;
-				};
-				/**
-				 * @description 스텝이 존재하지않음
-				 *
-				 *     1. 내 job의 스텝이 아님
-				 *     2. 진짜 존재하지 않음
-				 *     3. 이미 끝남
-				 */
-				404: {
-					headers: {
-						[name: string]: unknown;
-					};
-					content?: never;
-				};
-			};
-		};
-		delete?: never;
-		options?: never;
-		head?: never;
-		patch?: never;
-		trace?: never;
-	};
+    "/api/v1/users/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 내 정보 불러오기 */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["UserResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/me/forges": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 나에게 연결된 포지 불러오기 */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["UserForgeResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/teams": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["TeamResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["TeamCreateRequest"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["TeamResponse"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": unknown;
+                    };
+                };
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/teams/{team_slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    team_slug: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["TeamResponse"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/teams/{team_slug}/repos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    team_slug: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["RepoResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/forges": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 포지 목록 */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description 정상 응답 */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["ForgeInfoResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/forges/{forge_id}/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 포지에서 저장소 검색하기 */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    forge_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["ForgeRepoSearchRequest"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["ForgeRepoResponse"][];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/repos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["RepoCreateRequest"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["RepoCreateResponse"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": unknown;
+                    };
+                };
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/repos/{team}/{repo}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    team: string;
+                    repo: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["RepoResponse"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/repos/{team}/{repo}/pipelines": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    cursor?: string;
+                };
+                header?: never;
+                path: {
+                    team: string;
+                    repo: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["PipelineListResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent/jobs/acquire": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Job 획득 */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description 작업 할당됨 */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["JobAcquireResponse"];
+                    };
+                };
+                /** @description 현재 할당 가능한 작업이 없음 */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent/jobs/{id}/finish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Job 완료 */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["JobFinishRequest"];
+                };
+            };
+            responses: {
+                /** @description 작업 완료됨 */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /**
+                 * @description 작업이 존재하지 않음
+                 *
+                 *     존재하지 않거나 이미 완료되었거나 agent 자신이 소유하지 않는 경우
+                 */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent/steps/{id}/started": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Job Step 시작 알림 */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description 스텝 시작됨 */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /**
+                 * @description 스텝이 존재하지않음
+                 *
+                 *     1. 내 job의 스텝이 아님
+                 *     2. 진짜 존재하지 않음
+                 *     3. 이미 끝남
+                 */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent/steps/{id}/finish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Job Step 완료 알림 */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["StepFinishRequest"];
+                };
+            };
+            responses: {
+                /** @description 스텝 완료됨 */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /**
+                 * @description 스텝이 존재하지않음
+                 *
+                 *     1. 내 job의 스텝이 아님
+                 *     2. 진짜 존재하지 않음
+                 *     3. 이미 끝남
+                 */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
-	schemas: {
-		/** @description 환경변수 정의 */
-		EnvDefinition: components['schemas']['EnvDefinition_StaticEnv'] | components['schemas']['EnvDefinition_SecretEnv'];
-		/** @description 환경변수 정의 */
-		EnvDefinition_SecretEnv: {
-			/**
-			 * @example secret
-			 * @enum {string}
-			 */
-			type: 'secret';
-		} & components['schemas']['SecretEnv'];
-		/** @description 환경변수 정의 */
-		EnvDefinition_StaticEnv: {
-			/**
-			 * @example static
-			 * @enum {string}
-			 */
-			type: 'static';
-		} & components['schemas']['StaticEnv'];
-		/** ErrorResponse */
-		ErrorResponse: {
-			message: string;
-		};
-		/** ForgeInfoResponse */
-		ForgeInfoResponse: {
-			/**
-			 * Format: uuid
-			 * @description 포지 ID
-			 */
-			id: string;
-			name: string;
-		};
-		/** ForgeRepoResponse */
-		ForgeRepoResponse: {
-			id: string;
-			name: string;
-		};
-		/** ForgeRepoSearchRequest */
-		ForgeRepoSearchRequest: {
-			query: string;
-		};
-		/** JobAcquireResponse */
-		JobAcquireResponse: {
-			/**
-			 * Format: uuid
-			 * @description 작업 실행 ID
-			 */
-			id: string;
-			/**
-			 * Format: int32
-			 * @description 작업 재시도 시리얼
-			 */
-			attempt_serial: number;
-			/** @description 작업 정보 */
-			job: components['schemas']['PipelineJobResponse'] & unknown;
-			/** @description 스텝 목록 */
-			steps: components['schemas']['JobStepAcquireResponse'][];
-			/** @description Job 스코프 환경변수 목록 */
-			env: {
-				[key: string]: components['schemas']['EnvDefinition'];
-			};
-			/** @description 레퍼런스된 시크릿 목록 */
-			secrets: {
-				[key: string]: string;
-			};
-		};
-		/** JobFinishRequest */
-		JobFinishRequest: {
-			success: boolean;
-		};
-		/** JobStepAcquireResponse */
-		JobStepAcquireResponse: {
-			/**
-			 * Format: uuid
-			 * @description 스텝 실행 ID
-			 */
-			id: string;
-			/** @description 스텝 정보 */
-			step: components['schemas']['PipelineJobStepResponse'] & unknown;
-		};
-		/** PipelineJobResponse */
-		PipelineJobResponse: {
-			/**
-			 * Format: uuid
-			 * @description 작업 ID
-			 */
-			id: string;
-			/** @description 작업 이름 */
-			name: string;
-			/**
-			 * Format: int32
-			 * @description 작업 타임아웃 (분 단위)
-			 */
-			timeout: number;
-			/** @description 컨테이너 이미지 */
-			image: string;
-		};
-		/** PipelineJobStepResponse */
-		PipelineJobStepResponse: {
-			/**
-			 * Format: uuid
-			 * @description 스텝 ID
-			 */
-			id: string;
-			/** @description 스텝 이름 */
-			name: string;
-			/**
-			 * Format: int32
-			 * @description 스텝 순서(정렬용)
-			 */
-			ordering: number;
-			/** @description 실행 명령어 */
-			command: string;
-		};
-		/** RepoCreateRequest */
-		RepoCreateRequest: {
-			/** Format: uuid */
-			teamId: string;
-			name: string;
-			slug: string;
-			forgeRepoId: string;
-			/** Format: uuid */
-			forgeId: string;
-		};
-		/** RepoCreateResponse */
-		RepoCreateResponse: {
-			/** Format: uuid */
-			id: string;
-			repoSlug: string;
-			teamSlug: string;
-		};
-		/** RepoResponse */
-		RepoResponse: {
-			/** Format: uuid */
-			id: string;
-			name: string;
-			slug: string;
-			upstream_url: string;
-			/** Format: date-time */
-			created_at: string;
-			/** Format: date-time */
-			updated_at: string;
-			team: components['schemas']['TeamResponse'];
-		};
-		/**
-		 * SecretEnv
-		 * @description 시크릿 환경변수
-		 */
-		SecretEnv: {
-			/** @description 환경변수를 불러올 시크릿 키 */
-			secret_key: string;
-		};
-		/**
-		 * StaticEnv
-		 * @description 고정된 환경변수
-		 */
-		StaticEnv: {
-			/** @description 환경변수 값 */
-			value: string;
-		};
-		/** StepFinishRequest */
-		StepFinishRequest: {
-			success: boolean;
-			/** Format: int32 */
-			exit_code: number;
-		};
-		/** TeamCreateRequest */
-		TeamCreateRequest: {
-			name: string;
-			slug: string;
-		};
-		/** TeamResponse */
-		TeamResponse: {
-			/** Format: uuid */
-			id: string;
-			name: string;
-			slug: string;
-			/** Format: date-time */
-			created_at: string;
-			/** Format: date-time */
-			updated_at: string;
-		};
-		/** UserForgeResponse */
-		UserForgeResponse: {
-			/** Format: uuid */
-			id: string;
-			forge: components['schemas']['ForgeInfoResponse'];
-			forgeUserId: string;
-			/** Format: date-time */
-			createdAt: string;
-			/** Format: date-time */
-			updatedAt: string;
-		};
-		/** UserResponse */
-		UserResponse: {
-			/** Format: uuid */
-			id: string;
-			username: string;
-			nick?: string;
-			email?: string;
-			avatarUrl?: string;
-			/** Format: date-time */
-			createdAt: string;
-			/** Format: date-time */
-			updatedAt: string;
-		};
-	};
-	responses: never;
-	parameters: never;
-	requestBodies: never;
-	headers: never;
-	pathItems: never;
+    schemas: {
+        /** @description 환경변수 정의 */
+        EnvDefinition: components["schemas"]["EnvDefinition_StaticEnv"] | components["schemas"]["EnvDefinition_SecretEnv"];
+        /** @description 환경변수 정의 */
+        EnvDefinition_SecretEnv: {
+            /**
+             * @example secret
+             * @enum {string}
+             */
+            type: "secret";
+        } & components["schemas"]["SecretEnv"];
+        /** @description 환경변수 정의 */
+        EnvDefinition_StaticEnv: {
+            /**
+             * @example static
+             * @enum {string}
+             */
+            type: "static";
+        } & components["schemas"]["StaticEnv"];
+        /** ErrorResponse */
+        ErrorResponse: {
+            message: string;
+        };
+        /** @enum {string} */
+        EventTypeResponse: "Push" | "Tag" | "Release" | "PullRequest" | "Cron" | "Manual";
+        /** ForgeInfoResponse */
+        ForgeInfoResponse: {
+            /**
+             * Format: uuid
+             * @description 포지 ID
+             */
+            id: string;
+            name: string;
+        };
+        /** ForgeRepoResponse */
+        ForgeRepoResponse: {
+            id: string;
+            name: string;
+        };
+        /** ForgeRepoSearchRequest */
+        ForgeRepoSearchRequest: {
+            query: string;
+        };
+        /** JobAcquireResponse */
+        JobAcquireResponse: {
+            /**
+             * Format: uuid
+             * @description 작업 실행 ID
+             */
+            id: string;
+            /**
+             * Format: int32
+             * @description 작업 재시도 시리얼
+             */
+            attempt_serial: number;
+            /** @description 작업 정보 */
+            job: components["schemas"]["PipelineJobResponse"] & unknown;
+            /** @description 스텝 목록 */
+            steps: components["schemas"]["JobStepAcquireResponse"][];
+            /** @description Job 스코프 환경변수 목록 */
+            env: {
+                [key: string]: components["schemas"]["EnvDefinition"];
+            };
+            /** @description 레퍼런스된 시크릿 목록 */
+            secrets: {
+                [key: string]: string;
+            };
+        };
+        /** JobFinishRequest */
+        JobFinishRequest: {
+            success: boolean;
+        };
+        /** JobStepAcquireResponse */
+        JobStepAcquireResponse: {
+            /**
+             * Format: uuid
+             * @description 스텝 실행 ID
+             */
+            id: string;
+            /** @description 스텝 정보 */
+            step: components["schemas"]["PipelineJobStepResponse"] & unknown;
+        };
+        /** PipelineJobResponse */
+        PipelineJobResponse: {
+            /**
+             * Format: uuid
+             * @description 작업 ID
+             */
+            id: string;
+            /** @description 작업 이름 */
+            name: string;
+            /**
+             * Format: int32
+             * @description 작업 타임아웃 (분 단위)
+             */
+            timeout: number;
+            /** @description 컨테이너 이미지 */
+            image: string;
+        };
+        /** PipelineJobStepResponse */
+        PipelineJobStepResponse: {
+            /**
+             * Format: uuid
+             * @description 스텝 ID
+             */
+            id: string;
+            /** @description 스텝 이름 */
+            name: string;
+            /**
+             * Format: int32
+             * @description 스텝 순서(정렬용)
+             */
+            ordering: number;
+            /** @description 실행 명령어 */
+            command: string;
+        };
+        /** PipelineListResponse */
+        PipelineListResponse: {
+            items: components["schemas"]["PipelineResponse"][];
+            /** Format: uuid */
+            next_cursor?: string;
+        };
+        /** PipelineResponse */
+        PipelineResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: int32 */
+            serial: number;
+            /** Format: uuid */
+            repoId: string;
+            title?: string;
+            triggeredBy: string;
+            triggeredByUser?: components["schemas"]["UserResponse"];
+            eventType: components["schemas"]["EventTypeResponse"];
+            eventPayload: unknown;
+            gitRef?: string;
+            gitCommitId: string;
+            status: components["schemas"]["PipelineStatusResponse"];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        /** @enum {string} */
+        PipelineStatusResponse: "Evaluating" | "Queued" | "Running" | "Success" | "Failed" | "Cancelled";
+        /** RepoCreateRequest */
+        RepoCreateRequest: {
+            /** Format: uuid */
+            teamId: string;
+            name: string;
+            slug: string;
+            forgeRepoId: string;
+            /** Format: uuid */
+            forgeId: string;
+        };
+        /** RepoCreateResponse */
+        RepoCreateResponse: {
+            /** Format: uuid */
+            id: string;
+            repoSlug: string;
+            teamSlug: string;
+        };
+        /** RepoResponse */
+        RepoResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            slug: string;
+            upstream_url: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            team: components["schemas"]["TeamResponse"];
+        };
+        /**
+         * SecretEnv
+         * @description 시크릿 환경변수
+         */
+        SecretEnv: {
+            /** @description 환경변수를 불러올 시크릿 키 */
+            secret_key: string;
+        };
+        /**
+         * StaticEnv
+         * @description 고정된 환경변수
+         */
+        StaticEnv: {
+            /** @description 환경변수 값 */
+            value: string;
+        };
+        /** StepFinishRequest */
+        StepFinishRequest: {
+            success: boolean;
+            /** Format: int32 */
+            exit_code: number;
+        };
+        /** TeamCreateRequest */
+        TeamCreateRequest: {
+            name: string;
+            slug: string;
+        };
+        /** TeamResponse */
+        TeamResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            slug: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        /** UserForgeResponse */
+        UserForgeResponse: {
+            /** Format: uuid */
+            id: string;
+            forge: components["schemas"]["ForgeInfoResponse"];
+            forgeUserId: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        /** UserResponse */
+        UserResponse: {
+            /** Format: uuid */
+            id: string;
+            username: string;
+            nick?: string;
+            email?: string;
+            avatarUrl?: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+    };
+    responses: never;
+    parameters: never;
+    requestBodies: never;
+    headers: never;
+    pathItems: never;
 }
 export type $defs = Record<string, never>;
 export type operations = Record<string, never>;

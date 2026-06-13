@@ -1,20 +1,31 @@
 use std::sync::Arc;
 
 use api_types::{
-    ErrorResponse, GetRepoResponse, RepoCreateEndpointResponse, RepoCreateRequest,
-    RepoCreateResponse, RepoResponse, TeamResponse,
+    ErrorResponse, GetRepoResponse, PipelineListResponse, PipelineResponse,
+    RepoCreateEndpointResponse, RepoCreateRequest, RepoCreateResponse, RepoResponse, TeamResponse,
+    UserResponse,
 };
 use chrono::{DateTime, Utc};
 use garde::Validate;
 use jsonwebtoken::signature::rand_core::{OsRng, RngCore};
 use poem::web::Data;
-use poem_openapi::{OpenApi, param::Path, payload::Json};
+use poem_openapi::{
+    OpenApi,
+    param::{Path, Query},
+    payload::Json,
+};
 use rand::rand_core::UnwrapErr;
 use sqlx::{PgPool, prelude::FromRow};
 use ssh_key::PrivateKey;
 use uuid::Uuid;
 
-use crate::{api::security::ApiKeyAuth, crypto::CryptoEngine, error::AppError, forges::AllForges};
+use crate::{
+    api::security::ApiKeyAuth,
+    crypto::CryptoEngine,
+    data::db::{EventType, PipelineStatus},
+    error::AppError,
+    forges::AllForges,
+};
 
 pub struct RepoApi;
 
@@ -246,5 +257,138 @@ impl RepoApi {
                 message: "repo not found".to_string(),
             }))),
         }
+    }
+
+    #[oai(path = "/:team/:repo/pipelines", method = "get")]
+    async fn list_pipelines(
+        &self,
+        Data(db): Data<&PgPool>,
+        Path(team): Path<String>,
+        Path(repo): Path<String>,
+        ApiKeyAuth(user_id): ApiKeyAuth,
+        Query(cursor): Query<Option<Uuid>>,
+    ) -> poem::Result<Json<PipelineListResponse>> {
+        self._list_pipelines(db, user_id, &team, &repo, cursor)
+            .await
+            .map(Json)
+            .map_err(Into::into)
+    }
+
+    #[instrument(skip(self, db), err(Debug))]
+    async fn _list_pipelines(
+        &self,
+        db: &PgPool,
+        user_id: Uuid,
+        team: &str,
+        repo: &str,
+        cursor: Option<Uuid>,
+    ) -> crate::Result<PipelineListResponse> {
+        #[derive(FromRow)]
+        struct PipelineQueryRow {
+            p_id: Uuid,
+            p_serial: i32,
+            p_repo_id: Uuid,
+            p_title: Option<String>,
+            p_triggered_by: String,
+            p_event_type: EventType,
+            p_event_payload: sqlx::types::Json<serde_json::Value>,
+            p_git_ref: Option<String>,
+            p_git_commit_id: String,
+            p_status: PipelineStatus,
+            p_created_at: DateTime<Utc>,
+            p_updated_at: DateTime<Utc>,
+
+            tu_id: Option<Uuid>,
+            tu_username: Option<String>,
+            tu_nick: Option<String>,
+            tu_email: Option<String>,
+            tu_avatar_url: Option<String>,
+            tu_created_at: Option<DateTime<Utc>>,
+            tu_updated_at: Option<DateTime<Utc>>,
+        }
+
+        let result = sqlx::query_as::<_, PipelineQueryRow>(
+            r#"
+            SELECT
+                p.id as p_id,
+                p.serial as p_serial,
+                p.repo_id p_repo_id,
+                p.title p_title,
+                p.triggered_by p_triggered_by,
+                p.event_type as p_event_type,
+                p.event_payload as p_event_payload,
+                p.git_ref as p_git_ref,
+                p.git_commit_id as p_git_commit_id,
+                p.status as p_status,
+                p.created_at as p_created_at,
+                p.updated_at as p_updated_at,
+
+                tu.id as tu_id,
+                tu.username as tu_username,
+                tu.nick as tu_nick,
+                tu.email as tu_email,
+                tu.avatar_url as tu_avatar_url,
+                tu.created_at as tu_created_at,
+                tu.updated_at as tu_updated_at
+            FROM repo r
+            INNER JOIN team t ON t.id = r.team_id
+            INNER JOIN user_team ut ON ut.team_id = t.id
+            INNER JOIN pipeline p ON p.repo_id = r.id
+            LEFT JOIN "user" tu ON p.triggered_by_user = tu.id
+            WHERE
+                ut.user_id = $1 AND
+                t.slug = $2 AND
+                r.slug = $3 AND
+                ($4 IS NULL OR p.id < $4)
+            ORDER BY p.id DESC
+            LIMIT 20
+            "#,
+        )
+        .bind(user_id)
+        .bind(team)
+        .bind(repo)
+        .bind(cursor)
+        .fetch_all(db)
+        .await?;
+
+        if result.is_empty() {
+            return Ok(PipelineListResponse {
+                items: vec![],
+                next_cursor: None,
+            });
+        }
+
+        let len = result.len();
+        let last = result[len - 1].p_id;
+
+        Ok(PipelineListResponse {
+            items: result
+                .into_iter()
+                .map(|x| PipelineResponse {
+                    id: x.p_id,
+                    serial: x.p_serial,
+                    repo_id: x.p_repo_id,
+                    title: x.p_title,
+                    triggered_by: x.p_triggered_by,
+                    triggered_by_user: x.tu_id.map(|id| UserResponse {
+                        id,
+                        username: x.tu_username.expect("must exist"),
+                        nick: x.tu_nick,
+                        email: x.tu_email,
+                        avatar_url: x.tu_avatar_url,
+                        created_at: x.tu_created_at.expect("must exist"),
+                        updated_at: x.tu_updated_at.expect("must exist"),
+                    }),
+                    event_type: x.p_event_type.into(),
+                    event_payload: x.p_event_payload.0,
+                    git_ref: x.p_git_ref,
+                    git_commit_id: x.p_git_commit_id,
+                    status: x.p_status.into(),
+                    created_at: x.p_created_at,
+                    updated_at: x.p_updated_at,
+                })
+                .collect(),
+            next_cursor: Some(last).filter(|_| len == 20),
+        })
     }
 }
