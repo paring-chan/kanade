@@ -163,7 +163,7 @@ async fn forgejo_webhook(
         Json(json!({})) as Json<serde_json::Value>,
         body.r#ref,
         body.after,
-        PipelineStatus::Evaluating as PipelineStatus
+        PipelineStatus::Queued as PipelineStatus
     )
     .execute(&mut *tx)
     .await

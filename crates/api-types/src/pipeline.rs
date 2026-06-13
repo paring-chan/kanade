@@ -16,7 +16,6 @@ pub enum EventTypeResponse {
 
 #[derive(Debug, Enum)]
 pub enum PipelineStatusResponse {
-    Evaluating,
     Queued,
     Running,
     Success,

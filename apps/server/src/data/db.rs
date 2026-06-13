@@ -28,7 +28,6 @@ impl From<EventType> for EventTypeResponse {
 #[derive(Debug, Type)]
 #[sqlx(type_name = "pipeline_status", rename_all = "snake_case")]
 pub enum PipelineStatus {
-    Evaluating,
     Queued,
     Running,
     Success,
@@ -39,7 +38,6 @@ pub enum PipelineStatus {
 impl From<PipelineStatus> for PipelineStatusResponse {
     fn from(value: PipelineStatus) -> Self {
         match value {
-            PipelineStatus::Evaluating => Self::Evaluating,
             PipelineStatus::Queued => Self::Queued,
             PipelineStatus::Running => Self::Running,
             PipelineStatus::Success => Self::Success,
