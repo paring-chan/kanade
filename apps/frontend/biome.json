@@ -13,7 +13,8 @@
     "useIgnoreFile": true
   },
   "formatter": {
-    "indentStyle": "space"
+    "indentStyle": "tab",
+    "lineWidth": 180
   },
   "javascript": {
     "formatter": {
