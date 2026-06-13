@@ -175,13 +175,19 @@ Table pipeline {
 Table pipeline_job {
   id uuid pk [not null, note: 'UUIDv7']
   pipeline_id uuid [not null, ref: > pipeline.id]
-  depends_on uuid[] [ref: > pipeline_job.id]
+  parent_id uuid [ref: > pipeline_job.id]
   key text [not null]
   name text [not null]
   image text [note: '컨테이너 이미지']
   env jsonb [not null, default: '{}']
   timeout int [not null, default: 60, note: '분 단위']
+  status job_status [not null, default: 'pending']
+
   created_at timestamptz [not null, default: `now()`]
+  started_at timestamptz
+  finished_at timestamptz
+
+  agent_id uuid [ref: > agent.id]
 
   indexes {
     (pipeline_id, key) [unique]
@@ -196,6 +202,13 @@ Table pipeline_job_step {
   ordering int [not null]
   command text [not null]
   created_at timestamptz [not null, default: `now()`]
+
+  status job_status [not null, default: 'pending']
+
+  exit_code int
+
+  started_at timestamptz
+  finished_at timestamptz
 }
 
 Enum job_status {
@@ -206,43 +219,6 @@ Enum job_status {
   failed
   skipped
   cancelled
-}
-
-Table pipeline_job_run {
-  id uuid pk [not null, note: 'UUIDv7']
-  job_id uuid [not null, ref: > pipeline_job.id]
-  attempt_serial int [not null]
-  env jsonb [not null, default: '{}', note: 'attempt number 등 메타데이터 주입용']
-
-  status job_status [not null, default: 'pending']
-
-  created_at timestamptz [not null, default: `now()`]
-  started_at timestamptz
-  finished_at timestamptz
-
-  agent_id uuid [ref: > agent.id]
-
-  indexes {
-    (job_id, attempt_serial) [unique]
-  }
-}
-
-Table pipeline_job_step_run {
-  id uuid pk [not null]
-  run_id uuid [not null, ref: > pipeline_job_run.id]
-  step_id uuid [not null, ref: > pipeline_job_step.id]
-
-  status job_status [not null, default: 'pending']
-
-  exit_code int
-
-  created_at timestamptz [not null, default: `now()`]
-  started_at timestamptz
-  finished_at timestamptz
-
-  indexes {
-    (run_id, step_id) [unique]
-  }
 }
 
 Enum agent_status {
