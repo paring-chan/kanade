@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use hmac::{KeyInit, Mac};
 use poem::{
     Body, EndpointExt, Request, Route,
@@ -6,11 +8,13 @@ use poem::{
     handler,
     http::{StatusCode, header::CONTENT_TYPE},
     post,
-    web::Data,
+    web::{Data, Query},
 };
+use secrecy::ExposeSecret;
 use serde::Deserialize;
 use serde_json::json;
 use sha2::Sha256;
+use sqlx::prelude::FromRow;
 use sqlx::{PgPool, types::Json};
 use uuid::Uuid;
 
@@ -18,6 +22,16 @@ use crate::data::db::{EventType, JobStatus, PipelineStatus};
 
 pub fn routes() -> BoxEndpoint<'static> {
     Route::new().just_at(post(forgejo_webhook)).boxed()
+}
+
+#[derive(Deserialize)]
+struct WebhookQueryParams {
+    repo: Uuid,
+}
+
+#[derive(Debug, FromRow)]
+struct RepoWebhookToken {
+    forge_webhook_token: Vec<u8>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -47,7 +61,13 @@ struct ForgejoUser {
 }
 
 #[handler]
-async fn forgejo_webhook(req: &Request, body: Body, db: Data<&PgPool>) -> poem::Result<()> {
+async fn forgejo_webhook(
+    req: &Request,
+    body: Body,
+    Data(db): Data<&PgPool>,
+    crypto: Data<&Arc<crate::crypto::CryptoEngine>>,
+    Query(query): Query<WebhookQueryParams>,
+) -> poem::Result<()> {
     if req.header(CONTENT_TYPE) != Some("application/json") {
         return Err(poem::Error::from_string(
             "invalid content type",
@@ -65,8 +85,22 @@ async fn forgejo_webhook(req: &Request, body: Body, db: Data<&PgPool>) -> poem::
     let body_str = body.into_string().await?;
     let body = serde_json::from_str::<WebhookMessage>(&body_str).map_err(BadRequest)?;
 
-    let mut mac = hmac::Hmac::<Sha256>::new_from_slice(b"hello")
-        .map_err(|_| poem::Error::from_status(StatusCode::INTERNAL_SERVER_ERROR))?;
+    let repo_row =
+        sqlx::query_as::<_, RepoWebhookToken>("SELECT forge_webhook_token FROM repo WHERE id = $1")
+            .bind(query.repo)
+            .fetch_one(db)
+            .await
+            .map_err(|_| poem::Error::from_string("repository not found", StatusCode::NOT_FOUND))?;
+
+    let webhook_token = crypto.decrypt(&repo_row.forge_webhook_token).map_err(|e| {
+        error!("failed to decrypt webhook token: {e}");
+        poem::Error::from_string("internal error", StatusCode::INTERNAL_SERVER_ERROR)
+    })?;
+
+    let mut mac = hmac::Hmac::<Sha256>::new_from_slice(webhook_token.expose_secret().as_bytes())
+        .map_err(|_| {
+            poem::Error::from_string("internal error", StatusCode::INTERNAL_SERVER_ERROR)
+        })?;
 
     mac.update(body_str.as_bytes());
 
@@ -87,24 +121,22 @@ async fn forgejo_webhook(req: &Request, body: Body, db: Data<&PgPool>) -> poem::
 
     let mut tx = db.begin().await.map_err(|e| {
         error!("failed to start tx: {e}");
-        return poem::Error::from_status(StatusCode::INTERNAL_SERVER_ERROR);
+        poem::Error::from_string("internal error", StatusCode::INTERNAL_SERVER_ERROR)
     })?;
 
     let pipeline_id = Uuid::now_v7();
-    // TODO
-    let repo_id = uuid::uuid!("1fa20b2f-f90d-4371-b892-4eaa52652d70");
 
     sqlx::query(
         r#"
         SELECT FROM repo WHERE id = $1 FOR UPDATE;
     "#,
     )
-    .bind(repo_id)
+    .bind(query.repo)
     .execute(&mut *tx)
     .await
     .map_err(|e| {
         error!("failed to lock repository: {e}");
-        return poem::Error::from_status(StatusCode::INTERNAL_SERVER_ERROR);
+        poem::Error::from_string("internal error", StatusCode::INTERNAL_SERVER_ERROR)
     })?;
 
     sqlx::query(
@@ -122,7 +154,7 @@ async fn forgejo_webhook(req: &Request, body: Body, db: Data<&PgPool>) -> poem::
         "#,
     )
     .bind(pipeline_id)
-    .bind(repo_id)
+    .bind(query.repo)
     .bind("Test")
     .bind("wow")
     .bind(Option::<Uuid>::None)
@@ -223,12 +255,12 @@ async fn forgejo_webhook(req: &Request, body: Body, db: Data<&PgPool>) -> poem::
     .await
     .map_err(|e| {
         error!("failed to insert job step run: {e}");
-        return poem::Error::from_status(StatusCode::INTERNAL_SERVER_ERROR);
+        poem::Error::from_string("internal error", StatusCode::INTERNAL_SERVER_ERROR)
     })?;
 
     tx.commit().await.map_err(|e| {
         error!("failed to commit webhook transaction: {e}");
-        return poem::Error::from_status(StatusCode::INTERNAL_SERVER_ERROR);
+        poem::Error::from_string("internal error", StatusCode::INTERNAL_SERVER_ERROR)
     })?;
 
     Ok(())
