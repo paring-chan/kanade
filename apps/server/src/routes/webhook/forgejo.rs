@@ -167,7 +167,7 @@ async fn forgejo_webhook(
     .await
     .map_err(|e| {
         error!("failed to insert pipeline: {e}");
-        return poem::Error::from_status(StatusCode::INTERNAL_SERVER_ERROR);
+        poem::Error::from_string("internal error", StatusCode::INTERNAL_SERVER_ERROR)
     })?;
 
     let evaluation_id = Uuid::now_v7();
@@ -191,7 +191,7 @@ async fn forgejo_webhook(
     .await
     .map_err(|e| {
         error!("failed to insert job: {e}");
-        return poem::Error::from_status(StatusCode::INTERNAL_SERVER_ERROR);
+        return poem::Error::from_string("internal error", StatusCode::INTERNAL_SERVER_ERROR);
     })?;
 
     let step_id = Uuid::now_v7();
@@ -213,7 +213,7 @@ async fn forgejo_webhook(
     .await
     .map_err(|e| {
         error!("failed to insert job step: {e}");
-        return poem::Error::from_status(StatusCode::INTERNAL_SERVER_ERROR);
+        return poem::Error::from_string("internal error", StatusCode::INTERNAL_SERVER_ERROR);
     })?;
 
     let run_id = Uuid::now_v7();
@@ -234,7 +234,7 @@ async fn forgejo_webhook(
     .await
     .map_err(|e| {
         error!("failed to insert job run: {e}");
-        return poem::Error::from_status(StatusCode::INTERNAL_SERVER_ERROR);
+        poem::Error::from_string("internal error", StatusCode::INTERNAL_SERVER_ERROR)
     })?;
 
     let step_run_id = Uuid::now_v7();
