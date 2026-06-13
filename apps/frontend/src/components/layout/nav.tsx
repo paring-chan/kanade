@@ -1,12 +1,11 @@
 import { Link, useMatches } from "react-router";
 import Music2 from "~icons/lucide/music-2";
 import LucideUser from "~icons/lucide/user";
-import ChevronRight from "~icons/lucide/chevron-right";
 import { Avatar, Menu } from "@base-ui/react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { userQueryOptions } from "../../queries/user";
 import { menu } from "../menu";
-import { createElement, Fragment, type ReactNode } from "react";
+import { Fragment } from "react";
 
 const NavMenu = () => {
   return (
