@@ -1,29 +1,29 @@
 {
-  "compilerOptions": {
-    "lib": ["DOM", "ES2020"],
-    "jsx": "react-jsx",
-    "module": "ESNext",
-    "target": "ESNext",
-    "noEmit": true,
-    "skipLibCheck": true,
-    "useDefineForClassFields": true,
+	"compilerOptions": {
+		"lib": ["DOM", "ES2020"],
+		"jsx": "react-jsx",
+		"module": "ESNext",
+		"target": "ESNext",
+		"noEmit": true,
+		"skipLibCheck": true,
+		"useDefineForClassFields": true,
 
-    /* modules */
-    "moduleDetection": "force",
-    "moduleResolution": "bundler",
-    "verbatimModuleSyntax": true,
-    "resolveJsonModule": true,
-    "allowImportingTsExtensions": true,
+		/* modules */
+		"moduleDetection": "force",
+		"moduleResolution": "bundler",
+		"verbatimModuleSyntax": true,
+		"resolveJsonModule": true,
+		"allowImportingTsExtensions": true,
 
-    "noUncheckedIndexedAccess": true,
-    "strictNullChecks": true,
-    "strict": true,
+		"noUncheckedIndexedAccess": true,
+		"strictNullChecks": true,
+		"strict": true,
 
-    /* type checking */
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
+		/* type checking */
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
 
-    "types": ["unplugin-icons/types/react"],
-  },
-  "include": ["src"],
+		"types": ["unplugin-icons/types/react"]
+	},
+	"include": ["src"]
 }

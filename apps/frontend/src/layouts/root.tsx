@@ -1,5 +1,5 @@
 import { Outlet } from 'react-router';
 
 export const Component = () => {
-  return <Outlet />;
+	return <Outlet />;
 };
