@@ -105,6 +105,9 @@ const PipelineList = ({
 
   return (
     <div className="border border-black/10 divide-y divide-black/10 mt-4">
+      {data.items.length === 0 && (
+        <div className="text-center p-4"> -비어있음- </div>
+      )}
       {data.items.map((x) => (
         <PipelineItem pipeline={x} key={x.id} />
       ))}
