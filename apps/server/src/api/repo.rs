@@ -5,7 +5,6 @@ use api_types::{
     RepoCreateEndpointResponse, RepoCreateRequest, RepoCreateResponse, RepoResponse, TeamResponse,
     UserResponse,
 };
-use chrono::{DateTime, Utc};
 use garde::Validate;
 use jsonwebtoken::signature::rand_core::{OsRng, RngCore};
 use poem::web::Data;
@@ -15,7 +14,7 @@ use poem_openapi::{
     payload::Json,
 };
 use rand::rand_core::UnwrapErr;
-use sqlx::{PgPool, prelude::FromRow};
+use sqlx::PgPool;
 use ssh_key::PrivateKey;
 use uuid::Uuid;
 
@@ -73,26 +72,26 @@ impl RepoApi {
             .await?
             .ok_or(AppError::UpstreamRepoNotFound)?;
 
-        let exists: (bool, bool) = sqlx::query_as::<_, (bool, bool)>(
+        let exists = sqlx::query!(
             r#"
             SELECT
-                EXISTS(SELECT 1 FROM repo WHERE team_id = $1 AND slug = $2),
-                EXISTS(SELECT 1 FROM repo WHERE forge_id = $3 AND forge_repo_id = $4)
+                EXISTS(SELECT 1 FROM repo WHERE team_id = $1 AND slug = $2) as slug,
+                EXISTS(SELECT 1 FROM repo WHERE forge_id = $3 AND forge_repo_id = $4) as repo
             "#,
+            payload.team_id,
+            payload.slug,
+            payload.forge_id,
+            upstream_repo.id
         )
-        .bind(&payload.team_id)
-        .bind(&payload.slug)
-        .bind(&payload.forge_id)
-        .bind(&upstream_repo.id)
         .fetch_one(db)
         .await?;
 
-        if exists.0 {
+        if exists.slug.unwrap_or_default() {
             return Ok(RepoCreateEndpointResponse::Conflict(Json(ErrorResponse {
                 message: "해당 팀 내에 이미 동일한 슬러그를 가진 프로젝트가 존재합니다.".into(),
             })));
         }
-        if exists.1 {
+        if exists.repo.unwrap_or_default() {
             return Ok(RepoCreateEndpointResponse::Conflict(Json(ErrorResponse {
                 message: "이 저장소는 이미 다른 프로젝트에 연동되어 있습니다.".into(),
             })));
@@ -126,14 +125,7 @@ impl RepoApi {
         let encrypted_ssh_key = crypto.encrypt(&private_key_encoded)?;
         let mut tx = db.begin().await?;
 
-        #[derive(FromRow)]
-        struct InsertedRow {
-            id: Uuid,
-            repo_slug: String,
-            team_slug: String,
-        }
-
-        let res = sqlx::query_as::<_, InsertedRow>(
+        let res = sqlx::query!(
             r#"
             WITH inserted AS (
                 INSERT INTO repo
@@ -147,17 +139,18 @@ impl RepoApi {
             FROM inserted r
             INNER JOIN team t ON t.id = r.team_id
             "#,
+
+            repo_id,
+            payload.name,
+            payload.slug,
+            payload.team_id,
+            payload.forge_id,
+            upstream_repo.id,
+            encrypted_webhook_token,
+            encrypted_ssh_key,
+            upstream_repo.url,
+            user_id
         )
-        .bind(repo_id)
-        .bind(&payload.name)
-        .bind(&payload.slug)
-        .bind(&payload.team_id)
-        .bind(&payload.forge_id)
-        .bind(&upstream_repo.id)
-        .bind(&encrypted_webhook_token)
-        .bind(&encrypted_ssh_key)
-        .bind(&upstream_repo.url)
-        .bind(user_id)
         .fetch_one(&mut *tx)
         .await?;
 
@@ -190,24 +183,7 @@ impl RepoApi {
         team: &str,
         repo: &str,
     ) -> crate::Result<GetRepoResponse> {
-        #[derive(FromRow)]
-        struct RepoRow {
-            r_id: Uuid,
-            r_name: String,
-            r_slug: String,
-            r_repo_url: String,
-            r_created_at: DateTime<Utc>,
-            r_updated_at: DateTime<Utc>,
-
-            t_id: Uuid,
-            t_name: String,
-            t_slug: String,
-
-            t_created_at: DateTime<Utc>,
-            t_updated_at: DateTime<Utc>,
-        }
-
-        let result = sqlx::query_as::<_, RepoRow>(
+        let result = sqlx::query!(
             r#"
             SELECT
                 r.id as r_id,
@@ -230,10 +206,10 @@ impl RepoApi {
                 t.slug = $2 AND
                 r.slug = $3
             "#,
+            user_id,
+            team,
+            repo
         )
-        .bind(user_id)
-        .bind(team)
-        .bind(repo)
         .fetch_optional(db)
         .await?;
 
@@ -283,31 +259,7 @@ impl RepoApi {
         repo: &str,
         cursor: Option<Uuid>,
     ) -> crate::Result<PipelineListResponse> {
-        #[derive(FromRow)]
-        struct PipelineQueryRow {
-            p_id: Uuid,
-            p_serial: i32,
-            p_repo_id: Uuid,
-            p_title: Option<String>,
-            p_triggered_by: String,
-            p_event_type: EventType,
-            p_event_payload: sqlx::types::Json<serde_json::Value>,
-            p_git_ref: Option<String>,
-            p_git_commit_id: String,
-            p_status: PipelineStatus,
-            p_created_at: DateTime<Utc>,
-            p_updated_at: DateTime<Utc>,
-
-            tu_id: Option<Uuid>,
-            tu_username: Option<String>,
-            tu_nick: Option<String>,
-            tu_email: Option<String>,
-            tu_avatar_url: Option<String>,
-            tu_created_at: Option<DateTime<Utc>>,
-            tu_updated_at: Option<DateTime<Utc>>,
-        }
-
-        let result = sqlx::query_as::<_, PipelineQueryRow>(
+        let result = sqlx::query!(
             r#"
             SELECT
                 p.id as p_id,
@@ -315,21 +267,21 @@ impl RepoApi {
                 p.repo_id p_repo_id,
                 p.title p_title,
                 p.triggered_by p_triggered_by,
-                p.event_type as p_event_type,
+                p.event_type as "p_event_type: EventType",
                 p.event_payload as p_event_payload,
                 p.git_ref as p_git_ref,
                 p.git_commit_id as p_git_commit_id,
-                p.status as p_status,
+                p.status as "p_status: PipelineStatus",
                 p.created_at as p_created_at,
                 p.updated_at as p_updated_at,
 
-                tu.id as tu_id,
-                tu.username as tu_username,
-                tu.nick as tu_nick,
-                tu.email as tu_email,
-                tu.avatar_url as tu_avatar_url,
-                tu.created_at as tu_created_at,
-                tu.updated_at as tu_updated_at
+                tu.id as "tu_id?",
+                tu.username as "tu_username?",
+                tu.nick as "tu_nick?",
+                tu.email as "tu_email?",
+                tu.avatar_url as "tu_avatar_url?",
+                tu.created_at as "tu_created_at?",
+                tu.updated_at as "tu_updated_at?"
             FROM repo r
             INNER JOIN team t ON t.id = r.team_id
             INNER JOIN user_team ut ON ut.team_id = t.id
@@ -339,15 +291,15 @@ impl RepoApi {
                 ut.user_id = $1 AND
                 t.slug = $2 AND
                 r.slug = $3 AND
-                ($4 IS NULL OR p.id < $4)
+                ($4::uuid IS NULL OR p.id < $4)
             ORDER BY p.id DESC
             LIMIT 20
             "#,
+            user_id,
+            team,
+            repo,
+            cursor
         )
-        .bind(user_id)
-        .bind(team)
-        .bind(repo)
-        .bind(cursor)
         .fetch_all(db)
         .await?;
 
@@ -380,7 +332,7 @@ impl RepoApi {
                         updated_at: x.tu_updated_at.expect("must exist"),
                     }),
                     event_type: x.p_event_type.into(),
-                    event_payload: x.p_event_payload.0,
+                    event_payload: x.p_event_payload,
                     git_ref: x.p_git_ref,
                     git_commit_id: x.p_git_commit_id,
                     status: x.p_status.into(),

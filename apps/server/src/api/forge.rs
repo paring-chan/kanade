@@ -8,7 +8,7 @@ use api_types::{
 };
 use poem::web::Data;
 use poem_openapi::{OpenApi, param::Path, payload::Json};
-use sqlx::{PgPool, prelude::FromRow};
+use sqlx::PgPool;
 use uuid::Uuid;
 
 pub struct ForgeApi;
@@ -23,13 +23,7 @@ impl ForgeApi {
 
     #[instrument(skip(self, db))]
     async fn _list_forges(&self, db: &PgPool) -> crate::Result<ForgeInfoEndpointResponse> {
-        #[derive(FromRow, Debug)]
-        struct ForgeRow {
-            id: Uuid,
-            name: String,
-        }
-
-        let forges = sqlx::query_as::<_, ForgeRow>(
+        let forges = sqlx::query!(
             r#"
             SELECT id, name, config
             FROM forge

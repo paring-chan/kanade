@@ -2,11 +2,10 @@ use api_types::{
     ErrorResponse, RepoResponse, TeamCreateEndpointResponse, TeamCreateRequest,
     TeamFindOneResponse, TeamResponse,
 };
-use chrono::{DateTime, Utc};
 use garde::Validate;
 use poem::web::Data;
 use poem_openapi::{OpenApi, param::Path, payload::Json};
-use sqlx::{PgPool, prelude::FromRow};
+use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::{api::security::ApiKeyAuth, data::db::RoleType};
@@ -29,25 +28,15 @@ impl TeamApi {
         user_id: Uuid,
         db: &PgPool,
     ) -> crate::Result<Json<Vec<TeamResponse>>> {
-        #[derive(FromRow)]
-        struct TeamRow {
-            id: Uuid,
-            name: String,
-            slug: String,
-
-            created_at: DateTime<Utc>,
-            updated_at: DateTime<Utc>,
-        }
-
-        let teams = sqlx::query_as::<_, TeamRow>(
+        let teams = sqlx::query!(
             r#"
             SELECT t.* FROM user_team ut
             LEFT JOIN team t ON t.id = ut.team_id
             WHERE ut.user_id  = $1
             ORDER BY ut.updated_at
             "#,
+            user_id
         )
-        .bind(user_id)
         .fetch_all(db)
         .await?;
 
@@ -83,26 +72,16 @@ impl TeamApi {
         team_slug: String,
         db: &PgPool,
     ) -> crate::Result<TeamFindOneResponse> {
-        #[derive(FromRow)]
-        struct TeamRow {
-            id: Uuid,
-            name: String,
-            slug: String,
-
-            created_at: DateTime<Utc>,
-            updated_at: DateTime<Utc>,
-        }
-
-        let team = sqlx::query_as::<_, TeamRow>(
+        let team = sqlx::query!(
             r#"
             SELECT t.* FROM user_team ut
             LEFT JOIN team t ON t.id = ut.team_id
             WHERE ut.user_id  = $1 AND t.slug = $2
             ORDER BY ut.updated_at
             "#,
+            user_id,
+            team_slug,
         )
-        .bind(user_id)
-        .bind(team_slug)
         .fetch_optional(db)
         .await?;
 
@@ -137,23 +116,7 @@ impl TeamApi {
         team_slug: String,
         db: &PgPool,
     ) -> crate::Result<Json<Vec<RepoResponse>>> {
-        #[derive(FromRow)]
-        struct RepoRow {
-            r_id: Uuid,
-            r_name: String,
-            r_slug: String,
-            r_repo_url: String,
-            r_created_at: DateTime<Utc>,
-            r_updated_at: DateTime<Utc>,
-
-            t_id: Uuid,
-            t_name: String,
-            t_slug: String,
-            t_created_at: DateTime<Utc>,
-            t_updated_at: DateTime<Utc>,
-        }
-
-        let res = sqlx::query_as::<_, RepoRow>(
+        let res = sqlx::query!(
             r#"
             SELECT
                 r.id as r_id,
@@ -175,9 +138,9 @@ impl TeamApi {
                 ut.user_id = $1 AND
                 t.slug = $2
             "#,
+            user_id,
+            team_slug,
         )
-        .bind(user_id)
-        .bind(team_slug)
         .fetch_all(db)
         .await?;
 
@@ -232,30 +195,20 @@ impl TeamApi {
 
         let mut tx = db.begin().await?;
 
-        #[derive(FromRow)]
-        struct TeamRow {
-            id: Uuid,
-            name: String,
-            slug: String,
-
-            created_at: DateTime<Utc>,
-            updated_at: DateTime<Utc>,
-        }
-
         let id = Uuid::new_v4();
 
-        let team_result = sqlx::query_as::<_, TeamRow>(
+        let team_result = sqlx::query!(
             r#"
             INSERT INTO team
                 (id, name, slug)
             VALUES
                 ($1, $2, $3)
-            RETURNING *
+            RETURNING id, name, slug, created_at, updated_at
             "#,
+            id,
+            payload.name,
+            payload.slug
         )
-        .bind(id)
-        .bind(payload.name)
-        .bind(payload.slug)
         .fetch_one(&mut *tx)
         .await;
         let team_result = match team_result {
@@ -272,18 +225,18 @@ impl TeamApi {
             Err(e) => return Err(e.into()),
         };
 
-        sqlx::query(
+        sqlx::query!(
             r#"
             INSERT INTO user_team
                 (id, user_id, team_id, role)
             VALUES
                 ($1, $2, $3, $4)
             "#,
+            Uuid::new_v4(),
+            user_id,
+            team_result.id,
+            RoleType::Admin as RoleType
         )
-        .bind(Uuid::new_v4())
-        .bind(user_id)
-        .bind(team_result.id)
-        .bind(RoleType::Admin)
         .execute(&mut *tx)
         .await?;
 

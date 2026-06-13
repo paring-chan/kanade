@@ -14,7 +14,6 @@ use secrecy::ExposeSecret;
 use serde::Deserialize;
 use serde_json::json;
 use sha2::Sha256;
-use sqlx::prelude::FromRow;
 use sqlx::{PgPool, types::Json};
 use uuid::Uuid;
 
@@ -27,11 +26,6 @@ pub fn routes() -> BoxEndpoint<'static> {
 #[derive(Deserialize)]
 struct WebhookQueryParams {
     repo: Uuid,
-}
-
-#[derive(Debug, FromRow)]
-struct RepoWebhookToken {
-    forge_webhook_token: Vec<u8>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -85,12 +79,13 @@ async fn forgejo_webhook(
     let body_str = body.into_string().await?;
     let body = serde_json::from_str::<WebhookMessage>(&body_str).map_err(BadRequest)?;
 
-    let repo_row =
-        sqlx::query_as::<_, RepoWebhookToken>("SELECT forge_webhook_token FROM repo WHERE id = $1")
-            .bind(query.repo)
-            .fetch_one(db)
-            .await
-            .map_err(|_| poem::Error::from_string("repository not found", StatusCode::NOT_FOUND))?;
+    let repo_row = sqlx::query!(
+        r#"SELECT forge_webhook_token FROM repo WHERE id = $1"#,
+        query.repo
+    )
+    .fetch_one(db)
+    .await
+    .map_err(|_| poem::Error::from_string("repository not found", StatusCode::NOT_FOUND))?;
 
     let webhook_token = crypto.decrypt(&repo_row.forge_webhook_token).map_err(|e| {
         error!("failed to decrypt webhook token: {e}");

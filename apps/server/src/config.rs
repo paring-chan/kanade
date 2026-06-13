@@ -1,5 +1,3 @@
-use std::ops::Deref;
-
 use jsonwebtoken::{DecodingKey, EncodingKey};
 use secrecy::SecretString;
 use serde::Deserialize;

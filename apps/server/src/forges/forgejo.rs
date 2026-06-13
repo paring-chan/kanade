@@ -22,7 +22,6 @@ pub struct ForgejoApi {
 
 #[derive(Deserialize, Debug)]
 struct RepoSearchResults {
-    ok: bool,
     data: Vec<Repository>,
 }
 

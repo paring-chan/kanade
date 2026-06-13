@@ -1,10 +1,10 @@
 use std::sync::Arc;
 
-use chrono::{DateTime, Utc};
+use chrono::Utc;
 use oauth2::{RefreshToken, TokenResponse};
 use secrecy::{ExposeSecret, SecretString};
-use sqlx::{PgPool, prelude::FromRow, types::Json};
-use ssh_key::{PublicKey, public};
+use sqlx::{PgPool, types::Json};
+use ssh_key::PublicKey;
 use uuid::Uuid;
 
 use crate::{
@@ -60,20 +60,9 @@ impl AllForges {
     ) -> crate::Result<Option<ForgeAuthInfo>> {
         let mut tx = self.db.begin().await?;
 
-        #[derive(FromRow)]
-        struct UserForgeRow {
-            id: Uuid,
-            access_token: Vec<u8>,
-            refresh_token: Vec<u8>,
-            access_token_expires_at: DateTime<Utc>,
-            forge_user_id: String,
-
-            forge_config: Json<ForgeConfig>,
-        }
-
-        let uf = match sqlx::query_as::<_, UserForgeRow>(
+        let uf = match sqlx::query!(
             r#"
-            SELECT uf.id, uf.access_token, uf.refresh_token, uf.access_token_expires_at, uf.forge_user_id, f.config as forge_config
+            SELECT uf.id, uf.access_token, uf.refresh_token, uf.access_token_expires_at, uf.forge_user_id, f.config as "forge_config: Json<ForgeConfig>"
             FROM user_forge uf
             LEFT JOIN forge f ON f.id = uf.forge_id
             WHERE
@@ -81,9 +70,9 @@ impl AllForges {
                 forge_id = $2
             FOR UPDATE OF uf
             "#,
+            user_id,
+            forge_id
         )
-        .bind(user_id)
-        .bind(forge_id)
         .fetch_optional(&mut *tx)
         .await?
         {
@@ -124,7 +113,7 @@ impl AllForges {
                 .ok_or(AppError::InvalidTokenResponse)?;
             let exp = Utc::now() + tokens.expires_in().ok_or(AppError::InvalidTokenResponse)?;
 
-            sqlx::query(
+            sqlx::query!(
                 r#"
                 UPDATE user_forge
                 SET
@@ -134,11 +123,11 @@ impl AllForges {
                 WHERE
                     id = $4
                 "#,
+                self.crypto.encrypt(at.expose_secret())?,
+                self.crypto.encrypt(rt.secret().as_str())?,
+                exp,
+                uf.id
             )
-            .bind(self.crypto.encrypt(at.expose_secret())?)
-            .bind(self.crypto.encrypt(rt.secret().as_str())?)
-            .bind(exp)
-            .bind(uf.id)
             .execute(&mut *tx)
             .await?;
 

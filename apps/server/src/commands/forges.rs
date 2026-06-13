@@ -7,10 +7,7 @@ use uuid::Uuid;
 
 use crate::{
     config::AppConfig,
-    data::{
-        db::ForgeRow,
-        forges::{ForgeConfig, ForgejoForgeConfig},
-    },
+    data::forges::{ForgeConfig, ForgejoForgeConfig},
     util::open_db,
 };
 
@@ -65,7 +62,7 @@ pub async fn run(config: Arc<AppConfig>, subcommand: Subcommand) -> anyhow::Resu
 async fn list(config: Arc<AppConfig>) -> anyhow::Result<()> {
     let db = open_db(&config).await?;
 
-    let result = sqlx::query_as::<_, ForgeRow>(r#"SELECT * FROM forge ORDER BY created_at"#)
+    let result = sqlx::query!(r#"SELECT id, name, config as "config: Json<ForgeConfig>", created_at, updated_at FROM forge ORDER BY created_at"#)
         .fetch_all(&db)
         .await?;
 
@@ -76,7 +73,7 @@ async fn list(config: Arc<AppConfig>) -> anyhow::Result<()> {
             item.name,
             item.created_at,
             item.updated_at,
-            serde_json::to_string_pretty(&item.config.0)?
+            serde_json::to_string_pretty(&item.config)?
         );
     }
 
@@ -100,12 +97,14 @@ async fn add(
 
     let id = Uuid::new_v4();
 
-    sqlx::query(r#"INSERT INTO "forge" (id, name, config) VALUES ($1, $2, $3)"#)
-        .bind(id)
-        .bind(name)
-        .bind(Json(forge_config))
-        .execute(&db)
-        .await?;
+    sqlx::query!(
+        r#"INSERT INTO "forge" (id, name, config) VALUES ($1, $2, $3::jsonb)"#,
+        id,
+        name,
+        serde_json::to_value(&forge_config)?
+    )
+    .execute(&db)
+    .await?;
 
     info!("added");
 

@@ -1,21 +1,5 @@
 use api_types::{EventTypeResponse, PipelineStatusResponse};
-use chrono::{DateTime, Utc};
-use sqlx::{
-    prelude::{FromRow, Type},
-    types::Json,
-};
-use uuid::Uuid;
-
-use crate::data::forges::ForgeConfig;
-
-#[derive(Debug, FromRow)]
-pub struct ForgeRow {
-    pub id: Uuid,
-    pub name: String,
-    pub config: Json<ForgeConfig>,
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
-}
+use sqlx::prelude::Type;
 
 #[derive(Debug, Type)]
 #[sqlx(type_name = "event_type", rename_all = "snake_case")]

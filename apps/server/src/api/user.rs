@@ -2,10 +2,9 @@ use crate::api::security::ApiKeyAuth;
 
 use super::ApiTags;
 use api_types::{ForgeInfoResponse, UserEndpointResponse, UserForgeResponse, UserResponse};
-use chrono::{DateTime, Utc};
 use poem::web::Data;
 use poem_openapi::{OpenApi, payload::Json};
-use sqlx::{PgPool, prelude::FromRow};
+use sqlx::PgPool;
 use uuid::Uuid;
 
 pub struct UserApi;
@@ -24,19 +23,7 @@ impl UserApi {
 
     #[instrument(skip(self, db), err(Debug))]
     async fn _get_me(&self, user_id: Uuid, db: &PgPool) -> crate::Result<UserEndpointResponse> {
-        #[derive(FromRow)]
-        struct UserRow {
-            id: Uuid,
-            username: String,
-            nick: Option<String>,
-            email: Option<String>,
-            avatar_url: Option<String>,
-            created_at: DateTime<Utc>,
-            updated_at: DateTime<Utc>,
-        }
-
-        let user = sqlx::query_as::<_, UserRow>(r#"SELECT * FROM "user" WHERE id = $1"#)
-            .bind(user_id)
+        let user = sqlx::query!(r#"SELECT * FROM "user" WHERE id = $1"#, user_id)
             .fetch_one(db)
             .await?;
 
@@ -67,18 +54,7 @@ impl UserApi {
         user_id: Uuid,
         db: &PgPool,
     ) -> crate::Result<Json<Vec<UserForgeResponse>>> {
-        #[derive(FromRow)]
-        struct ResultRow {
-            uf_id: Uuid,
-            uf_forge_user_id: String,
-            uf_created_at: DateTime<Utc>,
-            uf_updated_at: DateTime<Utc>,
-
-            f_id: Uuid,
-            f_name: String,
-        }
-
-        let rows = sqlx::query_as::<_, ResultRow>(
+        let rows = sqlx::query!(
             r#"
             SELECT
                 uf.id as uf_id,
@@ -93,8 +69,8 @@ impl UserApi {
             WHERE uf.user_id = $1
             ORDER BY uf.created_at
             "#,
+            user_id,
         )
-        .bind(user_id)
         .fetch_all(db)
         .await?;
 

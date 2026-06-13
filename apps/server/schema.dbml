@@ -48,8 +48,8 @@ Table team {
   name text [not null]
   slug text unique [not null]
 
-  created_at timestamptz [default: `now()`]
-  updated_at timestamptz [default: `now()`]
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
 }
 
 Enum role_type {
@@ -64,8 +64,8 @@ Table user_team {
   team_id uuid [not null, ref: > team.id]
   role role_type [not null]
 
-  created_at timestamptz [default: `now()`]
-  updated_at timestamptz [default: `now()`]
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
 
   indexes {
     (user_id, team_id) [unique]
@@ -77,8 +77,8 @@ Table secret {
   key text
   value bytea [note: 'AES-256-GCM으로 암호화']
 
-  created_at timestamptz [default: `now()`]
-  updated_at timestamptz [default: `now()`]
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
 }
 
 Enum event_type {
@@ -96,8 +96,8 @@ Table team_secret {
   secret_id uuid [not null, ref: > secret.id]
   scopes event_type[]
 
-  created_at timestamptz [default: `now()`]
-  updated_at timestamptz [default: `now()`]
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
 
   indexes {
     (team_id, secret_id) [unique]
@@ -131,8 +131,8 @@ Table repo_secret {
   secret_id uuid [not null, ref: > secret.id]
   scopes event_type[]
 
-  created_at timestamptz [default: `now()`]
-  updated_at timestamptz [default: `now()`]
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
 
   indexes {
     (repo_id, secret_id) [unique]

@@ -1,13 +1,8 @@
-use std::{
-    ops::Add,
-    str::FromStr,
-    sync::{Arc, LazyLock},
-};
+use std::{ops::Add, str::FromStr, sync::Arc};
 
 use chrono::{DateTime, Duration, Utc};
 use jsonwebtoken::{Algorithm, Header, TokenData, Validation};
 use oauth2::{AuthorizationCode, CsrfToken, TokenResponse};
-use oauth2_reqwest::ReqwestClient;
 use poem::{
     IntoResponse, Response, handler,
     web::{Data, Query, Redirect},
@@ -15,7 +10,7 @@ use poem::{
 use reqwest::header::AUTHORIZATION;
 use secrecy::{ExposeSecret, SecretString};
 use serde::Deserialize;
-use sqlx::{PgPool, prelude::FromRow};
+use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::{
@@ -105,16 +100,13 @@ async fn process_callback(
     let forge_id =
         Uuid::from_str(&token.claims.forge_id).map_err(|e| AppError::InternalError(e.into()))?;
 
-    #[derive(FromRow)]
-    struct ForgeRow {
-        pub config: sqlx::types::Json<ForgeConfig>,
-    }
-
-    let forge = sqlx::query_as::<_, ForgeRow>(r#"SELECT config FROM forge WHERE id = $1"#)
-        .bind(forge_id)
-        .fetch_optional(db)
-        .await?
-        .ok_or(crate::AppError::UnknownForge(forge_id))?;
+    let forge = sqlx::query!(
+        r#"SELECT config as "config: sqlx::types::Json<ForgeConfig>" FROM forge WHERE id = $1"#,
+        forge_id
+    )
+    .fetch_optional(db)
+    .await?
+    .ok_or(crate::AppError::UnknownForge(forge_id))?;
 
     let result = match forge.config.0 {
         ForgeConfig::Forgejo(forgejo) => {
@@ -186,12 +178,7 @@ async fn process_callback(
 
     let mut tx = db.begin().await?;
 
-    #[derive(FromRow)]
-    struct UserIdRow {
-        user_id: Uuid,
-    }
-
-    let existing_user = sqlx::query_as::<_, UserIdRow>(
+    let existing_user = sqlx::query!(
         r#"
         SELECT u.id as user_id
         FROM "user" u
@@ -200,16 +187,16 @@ async fn process_callback(
             uf.forge_id = $1 AND
             uf.forge_user_id = $2
         FOR UPDATE OF u
-    "#,
+      "#,
+        forge_id,
+        result.sub as _
     )
-    .bind(forge_id)
-    .bind(&result.sub)
     .fetch_optional(&mut *tx)
     .await?;
 
     let user_id = match existing_user {
         Some(row) => {
-            sqlx::query(
+            sqlx::query!(
                 r#"
                 UPDATE user_forge
                 SET
@@ -218,25 +205,25 @@ async fn process_callback(
                     access_token_expires_at = $3
                 WHERE forge_id = $4 AND user_id = $5
                 "#,
+                &access_token as _,
+                &refresh_token as _,
+                result.access_token_expires_at,
+                forge_id,
+                row.user_id
             )
-            .bind(&access_token)
-            .bind(&refresh_token)
-            .bind(result.access_token_expires_at)
-            .bind(forge_id)
-            .bind(row.user_id)
             .execute(&mut *tx)
             .await?;
 
-            sqlx::query(
+            sqlx::query!(
                 r#"
                 UPDATE "user"
                 SET nick = $1, avatar_url = $2
                 WHERE id = $3
                 "#,
+                result.nick,
+                result.avatar_url,
+                row.user_id
             )
-            .bind(result.nick)
-            .bind(result.avatar_url)
-            .bind(row.user_id)
             .execute(&mut *tx)
             .await?;
 
@@ -245,31 +232,38 @@ async fn process_callback(
         None => {
             let user_id = Uuid::new_v4();
 
-            #[derive(FromRow)]
-            struct UserInsertResult {
-                id: Uuid,
-            }
+            let user_insert_query =
+                |id: Uuid,
+                 username: String,
+                 nick: String,
+                 email: Option<String>,
+                 avatar_url: Option<String>| {
+                    sqlx::query!(
+                        r#"
+                        INSERT INTO "user" (id, username, nick, email, avatar_url)
+                        VALUES ($1, $2, $3, $4, $5)
+                        ON CONFLICT (email) DO UPDATE SET
+                            nick = EXCLUDED.nick,
+                            avatar_url = EXCLUDED.avatar_url
+                        RETURNING id
+                    "#,
+                        id,
+                        username,
+                        nick,
+                        email,
+                        avatar_url
+                    )
+                };
 
-            let user_insert_query = r#"
-                INSERT INTO "user"
-                    (id, username, nick, email, avatar_url)
-                VALUES
-                    ($1, $2, $3, $4, $5)
-                ON CONFLICT (email) DO UPDATE SET
-                    email = EXCLUDED.email,
-                    nick = EXCLUDED.nick,
-                    avatar_url = EXCLUDED.avatar_url
-                RETURNING id
-            "#;
-
-            let user_id = match sqlx::query_as::<_, UserInsertResult>(user_insert_query)
-                .bind(user_id)
-                .bind(&result.login)
-                .bind(&result.nick)
-                .bind(&result.email)
-                .bind(&result.avatar_url)
-                .fetch_one(&mut *tx)
-                .await
+            let user_id = match user_insert_query(
+                user_id,
+                result.login.clone(),
+                result.nick.clone(),
+                result.email.clone(),
+                result.avatar_url.clone(),
+            )
+            .fetch_one(&mut *tx)
+            .await
             {
                 Ok(r) => r.id,
                 // 유저네임 겹침
@@ -280,34 +274,35 @@ async fn process_callback(
                         })
                         .unwrap_or_default() =>
                 {
-                    sqlx::query_as::<_, UserInsertResult>(user_insert_query)
-                        .bind(user_id)
-                        .bind(format!("{}_{}", result.login, nanoid::nanoid!(6)))
-                        .bind(&result.nick)
-                        .bind(&result.email)
-                        .bind(&result.avatar_url)
-                        .fetch_one(&mut *tx)
-                        .await?
-                        .id
+                    user_insert_query(
+                        user_id,
+                        format!("{}_{}", result.login, nanoid::nanoid!(6)),
+                        result.nick.clone(),
+                        result.email.clone(),
+                        result.avatar_url.clone(),
+                    )
+                    .fetch_one(&mut *tx)
+                    .await?
+                    .id
                 }
                 Err(e) => return Err(e.into()),
             };
 
-            sqlx::query(
+            sqlx::query!(
                 r#"
                 INSERT INTO user_forge
                     (id, user_id, forge_id, forge_user_id, access_token, refresh_token, access_token_expires_at)
                 VALUES
                     ($1, $2, $3, $4, $5, $6, $7)
                 "#,
+                Uuid::new_v4(),
+                user_id,
+                forge_id,
+                &result.sub,
+                &access_token as _,
+                &refresh_token as _,
+                result.access_token_expires_at
             )
-            .bind(Uuid::new_v4())
-            .bind(user_id)
-            .bind(forge_id)
-            .bind(&result.sub)
-            .bind(&access_token)
-            .bind(&refresh_token)
-            .bind(result.access_token_expires_at)
             .execute(&mut *tx).await?;
 
             user_id

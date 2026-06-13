@@ -7,7 +7,7 @@ use poem::{
     IntoResponse, Response, handler,
     web::{Data, Path, Redirect},
 };
-use sqlx::{PgPool, prelude::FromRow};
+use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::{
@@ -24,16 +24,13 @@ pub async fn login(
     signing_key: Data<&Arc<JwtSigningKey>>,
     config: Data<&Arc<AppConfig>>,
 ) -> crate::Result<Response> {
-    #[derive(FromRow)]
-    struct ForgeRow {
-        pub config: sqlx::types::Json<ForgeConfig>,
-    }
-
-    let forge = sqlx::query_as::<_, ForgeRow>(r#"SELECT config FROM forge WHERE id = $1"#)
-        .bind(*forge_id)
-        .fetch_optional(db)
-        .await?
-        .ok_or(crate::AppError::UnknownForge(*forge_id))?;
+    let forge = sqlx::query!(
+        r#"SELECT config as "config: sqlx::types::Json<ForgeConfig>" FROM forge WHERE id = $1"#,
+        *forge_id
+    )
+    .fetch_optional(db)
+    .await?
+    .ok_or(crate::AppError::UnknownForge(*forge_id))?;
 
     match forge.config.0 {
         ForgeConfig::Forgejo(forgejo) => {

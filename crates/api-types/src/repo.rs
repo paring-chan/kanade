@@ -1,7 +1,6 @@
 use chrono::{DateTime, Utc};
 use garde::Validate;
 use poem_openapi::{payload::Json, ApiResponse, Object};
-use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::{ErrorResponse, PipelineResponse, TeamResponse};
