@@ -23,18 +23,18 @@ impl AgentJobStepsApi {
     }
 
     #[instrument(skip(self, db), err(Debug))]
-    async fn _started(&self, db: &PgPool, step_run_id: Uuid) -> crate::Result<StepStartedResponse> {
+    async fn _started(&self, db: &PgPool, step_id: Uuid) -> crate::Result<StepStartedResponse> {
         let mut tx = db.begin().await?;
 
-        let result = sqlx::query(
+        let result = sqlx::query!(
             r#"
-            UPDATE pipeline_job_step_run
+            UPDATE pipeline_job_step
             SET status = 'running'::job_status,
                 started_at = NOW()
             WHERE id = $1 AND status = 'pending'::job_status
             "#,
+            step_id
         )
-        .bind(step_run_id)
         .execute(&mut *tx)
         .await?;
 
@@ -73,18 +73,18 @@ impl AgentJobStepsApi {
             JobStatus::Failed
         };
 
-        let result = sqlx::query(
+        let result = sqlx::query!(
             r#"
-            UPDATE pipeline_job_step_run
+            UPDATE pipeline_job_step
             SET status = $1,
                 exit_code = $2,
                 finished_at = NOW()
             WHERE id = $3 AND status = 'running'::job_status
             "#,
+            target_status as JobStatus,
+            request.exit_code,
+            step_run_id
         )
-        .bind(target_status)
-        .bind(request.exit_code)
-        .bind(step_run_id)
         .execute(&mut *tx)
         .await?;
 

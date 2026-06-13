@@ -124,16 +124,16 @@ impl AgentJobsApi {
             JobStatus::Failed
         };
 
-        let result = sqlx::query(
+        let result = sqlx::query!(
             r#"
-            UPDATE pipeline_job_run
+            UPDATE pipeline_job
             SET status = $1,
                 finished_at = NOW()
             WHERE id = $2 AND status = 'running'::job_status
             "#,
+            job_status as JobStatus,
+            run_id
         )
-        .bind(&job_status)
-        .bind(run_id)
         .execute(&mut *tx)
         .await?;
 
@@ -148,19 +148,19 @@ impl AgentJobsApi {
             JobStatus::Skipped
         };
 
-        sqlx::query(
+        sqlx::query!(
             r#"
-            UPDATE pipeline_job_step_run
+            UPDATE pipeline_job_step
             SET status = CASE
-                            WHEN status = 'running'::job_status THEN 'failed'::job_status
-                            ELSE $1
-                         END,
+                WHEN status = 'running'::job_status THEN 'failed'::job_status
+                ELSE $1
+            END,
                 finished_at = NOW()
-            WHERE run_id = $2 AND status NOT IN ('success', 'failed', 'skipped', 'cancelled')
+            WHERE job_id = $2 AND status NOT IN ('success', 'failed', 'skipped', 'cancelled')
             "#,
+            step_status as JobStatus,
+            run_id
         )
-        .bind(&step_status)
-        .bind(run_id)
         .execute(&mut *tx)
         .await?;
 
