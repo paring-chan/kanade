@@ -3,6 +3,17 @@ import createClient from 'openapi-fetch';
 import ky, { HTTPError, type NormalizedOptions } from 'ky';
 import { type } from 'arktype';
 import { router } from '../../router';
+import { QueryClient } from '@tanstack/react-query';
+
+export const queryClient = new QueryClient({
+	defaultOptions: {
+		queries: {
+			staleTime: 1000 * 60 * 5,
+			gcTime: 1000 * 60 * 10,
+			retry: false,
+		},
+	},
+});
 
 const apiErrorSchema = type({
 	message: 'string',

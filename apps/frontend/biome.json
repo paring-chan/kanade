@@ -33,6 +33,9 @@
       "recommended": true,
       "style": {
         "noNonNullAssertion": "off"
+      },
+      "correctness": {
+        "noChildrenProp": "off"
       }
     }
   }
