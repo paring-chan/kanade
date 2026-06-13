@@ -140,7 +140,6 @@ Table repo_secret {
 }
 
 Enum pipeline_status {
-  evaluating
   queued
   running
   success
