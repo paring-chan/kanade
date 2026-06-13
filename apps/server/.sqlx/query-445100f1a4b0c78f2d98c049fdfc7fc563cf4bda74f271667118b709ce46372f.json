@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                UPDATE user_forge\n                SET\n                    access_token = $1,\n                    refresh_token = $2,\n                    access_token_expires_at = $3\n                WHERE forge_id = $4 AND user_id = $5\n                ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Bytea",
+        "Bytea",
+        "Timestamptz",
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "445100f1a4b0c78f2d98c049fdfc7fc563cf4bda74f271667118b709ce46372f"
+}

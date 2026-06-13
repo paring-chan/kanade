@@ -1,0 +1,275 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT\n                p.id as p_id,\n                p.serial as p_serial,\n                p.repo_id p_repo_id,\n                p.title p_title,\n                p.triggered_by p_triggered_by,\n                p.event_type as \"p_event_type: EventType\",\n                p.event_payload as p_event_payload,\n                p.git_ref as p_git_ref,\n                p.git_commit_id as p_git_commit_id,\n                p.status as \"p_status: PipelineStatus\",\n                p.created_at as p_created_at,\n                p.updated_at as p_updated_at,\n\n                tu.id as \"tu_id?\",\n                tu.username as \"tu_username?\",\n                tu.nick as \"tu_nick?\",\n                tu.email as \"tu_email?\",\n                tu.avatar_url as \"tu_avatar_url?\",\n                tu.created_at as \"tu_created_at?\",\n                tu.updated_at as \"tu_updated_at?\"\n            FROM repo r\n            INNER JOIN team t ON t.id = r.team_id\n            INNER JOIN user_team ut ON ut.team_id = t.id\n            INNER JOIN pipeline p ON p.repo_id = r.id\n            LEFT JOIN \"user\" tu ON p.triggered_by_user = tu.id\n            WHERE\n                ut.user_id = $1 AND\n                t.slug = $2 AND\n                r.slug = $3 AND\n                ($4::uuid IS NULL OR p.id < $4)\n            ORDER BY p.id DESC\n            LIMIT 20\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "p_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "pipeline",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "p_serial",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "pipeline",
+            "name": "serial"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "p_repo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "pipeline",
+            "name": "repo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "p_title",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "pipeline",
+            "name": "title"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "p_triggered_by",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "pipeline",
+            "name": "triggered_by"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "p_event_type: EventType",
+        "type_info": {
+          "Custom": {
+            "name": "event_type",
+            "kind": {
+              "Enum": [
+                "push",
+                "tag",
+                "release",
+                "pull_request",
+                "cron",
+                "manual"
+              ]
+            }
+          }
+        },
+        "origin": {
+          "Table": {
+            "table": "pipeline",
+            "name": "event_type"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "p_event_payload",
+        "type_info": "Jsonb",
+        "origin": {
+          "Table": {
+            "table": "pipeline",
+            "name": "event_payload"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "p_git_ref",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "pipeline",
+            "name": "git_ref"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "p_git_commit_id",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "pipeline",
+            "name": "git_commit_id"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "p_status: PipelineStatus",
+        "type_info": {
+          "Custom": {
+            "name": "pipeline_status",
+            "kind": {
+              "Enum": [
+                "evaluating",
+                "queued",
+                "running",
+                "success",
+                "failed",
+                "cancelled"
+              ]
+            }
+          }
+        },
+        "origin": {
+          "Table": {
+            "table": "pipeline",
+            "name": "status"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "p_created_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "pipeline",
+            "name": "created_at"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "p_updated_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "pipeline",
+            "name": "updated_at"
+          }
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "tu_id?",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "\"user\"",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 13,
+        "name": "tu_username?",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "\"user\"",
+            "name": "username"
+          }
+        }
+      },
+      {
+        "ordinal": 14,
+        "name": "tu_nick?",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "\"user\"",
+            "name": "nick"
+          }
+        }
+      },
+      {
+        "ordinal": 15,
+        "name": "tu_email?",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "\"user\"",
+            "name": "email"
+          }
+        }
+      },
+      {
+        "ordinal": 16,
+        "name": "tu_avatar_url?",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "\"user\"",
+            "name": "avatar_url"
+          }
+        }
+      },
+      {
+        "ordinal": 17,
+        "name": "tu_created_at?",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "\"user\"",
+            "name": "created_at"
+          }
+        }
+      },
+      {
+        "ordinal": 18,
+        "name": "tu_updated_at?",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "\"user\"",
+            "name": "updated_at"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "4c0c1c99b36cd613e00db99920c8b53710805e7d6685bae11b5b43cbe9496435"
+}
