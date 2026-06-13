@@ -17,3 +17,14 @@ export const teamBySlugQueryOptions = (slug: string) =>
         })
         .then((x) => x.data!),
   });
+
+export const teamReposQueryOptions = (teamSlug: string) =>
+  queryOptions({
+    queryKey: ["teams", "by-slug", teamSlug, "repos"],
+    queryFn: () =>
+      api
+        .GET("/api/v1/teams/{team_slug}/repos", {
+          params: { path: { team_slug: teamSlug } },
+        })
+        .then((x) => x.data!),
+  });

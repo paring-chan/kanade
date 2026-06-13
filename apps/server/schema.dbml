@@ -114,6 +114,7 @@ Table repo {
   forge_repo_id text [not null]
   forge_webhook_token bytea [not null, note: 'AES-256-GCM으로 암호화']
   created_by uuid [not null, ref: > user.id]
+  repo_url text [not null]
 
   created_at timestamptz [not null, default: `now()`]
   updated_at timestamptz [not null, default: `now()`]

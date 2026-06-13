@@ -1,6 +1,6 @@
-import type { RouteObject } from "react-router";
+import { createBrowserRouter, type RouteObject } from "react-router";
 
-export default [
+const routes = [
   {
     lazy: () => import("./layouts/root"),
     children: [
@@ -39,3 +39,5 @@ export default [
     ],
   },
 ] as RouteObject[];
+
+export const router = createBrowserRouter(routes);

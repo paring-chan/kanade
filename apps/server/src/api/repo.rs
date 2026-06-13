@@ -164,6 +164,7 @@ impl RepoApi {
             r_id: Uuid,
             r_name: String,
             r_slug: String,
+            r_repo_url: String,
             r_created_at: DateTime<Utc>,
             r_updated_at: DateTime<Utc>,
 
@@ -181,6 +182,7 @@ impl RepoApi {
                 r.id as r_id,
                 r.name as r_name,
                 r.slug as r_slug,
+                r.repo_url as r_repo_url,
                 r.created_at as r_created_at,
                 r.updated_at as r_updated_at,
 
@@ -209,6 +211,7 @@ impl RepoApi {
                 id: row.r_id,
                 name: row.r_name,
                 slug: row.r_slug,
+                upstream_url: row.r_repo_url,
                 created_at: row.r_created_at,
                 updated_at: row.r_updated_at,
                 team: TeamResponse {

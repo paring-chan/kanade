@@ -188,6 +188,42 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/teams/{team_slug}/repos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    team_slug: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["RepoResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/forges": {
         parameters: {
             query?: never;
@@ -283,7 +319,7 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ProjectCreateRequest"];
+                    "application/json; charset=utf-8": components["schemas"]["RepoCreateRequest"];
                 };
             };
             responses: {
@@ -292,7 +328,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json; charset=utf-8": components["schemas"]["ProjectCreateResponse"];
+                        "application/json; charset=utf-8": components["schemas"]["RepoCreateResponse"];
                     };
                 };
                 400: {
@@ -313,6 +349,51 @@ export interface paths {
                 };
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/repos/{team}/{repo}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    team: string;
+                    repo: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["RepoResponse"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -632,8 +713,8 @@ export interface components {
             /** @description 실행 명령어 */
             command: string;
         };
-        /** ProjectCreateRequest */
-        ProjectCreateRequest: {
+        /** RepoCreateRequest */
+        RepoCreateRequest: {
             /** Format: uuid */
             teamId: string;
             name: string;
@@ -642,12 +723,25 @@ export interface components {
             /** Format: uuid */
             forgeId: string;
         };
-        /** ProjectCreateResponse */
-        ProjectCreateResponse: {
+        /** RepoCreateResponse */
+        RepoCreateResponse: {
             /** Format: uuid */
             id: string;
             repoSlug: string;
             teamSlug: string;
+        };
+        /** RepoResponse */
+        RepoResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            slug: string;
+            upstream_url: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            team: components["schemas"]["TeamResponse"];
         };
         /**
          * SecretEnv

@@ -1,17 +1,22 @@
 import { Link } from "react-router";
 import GitCommitHorizontal from "~icons/lucide/git-commit-horizontal";
+import type { components } from "../utils/api/types";
 
-export const ProjectItem = () => {
+export const ProjectItem = ({
+  repo,
+}: {
+  repo: components["schemas"]["RepoResponse"];
+}) => {
   return (
     <div className="p-4 flex items-center gap-4 bg-pink-50 border border-black/10 -ml-px -mt-px">
       <div className="max-w-64 grow min-w-0">
         <div className="text-lg leading-3.5 flex whitespace-nowrap truncate pb-1">
           <Link className="hover:underline" to="/teams/mizuki">
-            mizuki
+            {repo.team.slug}
           </Link>
           <span className="px-1">/</span>
           <Link className="hover:underline" to="/repo/mizuki/kurukuru">
-            kurukuru
+            {repo.slug}
           </Link>
         </div>
         <a

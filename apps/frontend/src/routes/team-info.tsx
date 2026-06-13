@@ -1,12 +1,17 @@
 import { ProjectItem } from "../components/project-item";
 import { CreateProjectDialog } from "../components/dialog/create-project";
 import { useParams } from "react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
-import { teamBySlugQueryOptions } from "../queries/team";
+import { useSuspenseQueries } from "@tanstack/react-query";
+import { teamBySlugQueryOptions, teamReposQueryOptions } from "../queries/team";
 
 export const Component = () => {
   const params = useParams<"team">();
-  const { data: team } = useSuspenseQuery(teamBySlugQueryOptions(params.team!));
+  const [{ data: team }, { data: repos }] = useSuspenseQueries({
+    queries: [
+      teamBySlugQueryOptions(params.team!),
+      teamReposQueryOptions(params.team!),
+    ],
+  });
 
   return (
     <div className="px-4">
@@ -23,8 +28,8 @@ export const Component = () => {
         </div>
 
         <div className="mt-4 grid lg:grid-cols-2">
-          {Array.from({ length: 15 }).map((_, i) => (
-            <ProjectItem key={i} />
+          {repos.map((repo, i) => (
+            <ProjectItem repo={repo} key={i} />
           ))}
         </div>
       </div>

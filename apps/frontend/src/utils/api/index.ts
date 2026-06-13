@@ -2,6 +2,7 @@ import type { paths } from "./types";
 import createClient from "openapi-fetch";
 import ky, { HTTPError, type NormalizedOptions } from "ky";
 import { type } from "arktype";
+import { router } from "../../router";
 
 const apiErrorSchema = type({
   message: "string",
@@ -31,7 +32,7 @@ export const api = createClient<paths>({
       afterResponse: [
         async ({ response, request, options }) => {
           if (response.status === 401 && !request.url.endsWith("/users/me")) {
-            window.location.href = "/login";
+            router.navigate("/login");
             return;
           }
 

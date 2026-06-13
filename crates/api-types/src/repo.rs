@@ -53,6 +53,7 @@ pub struct RepoResponse {
     pub id: Uuid,
     pub name: String,
     pub slug: String,
+    pub upstream_url: String,
 
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,

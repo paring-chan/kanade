@@ -142,6 +142,7 @@ impl TeamApi {
             r_id: Uuid,
             r_name: String,
             r_slug: String,
+            r_repo_url: String,
             r_created_at: DateTime<Utc>,
             r_updated_at: DateTime<Utc>,
 
@@ -158,6 +159,7 @@ impl TeamApi {
                 r.id as r_id,
                 r.name as r_name,
                 r.slug as r_slug,
+                r.repo_url as r_repo_url,
                 r.created_at as r_created_at,
                 r.updated_at as r_updated_at,
 
@@ -185,6 +187,7 @@ impl TeamApi {
                     id: x.r_id,
                     name: x.r_name,
                     slug: x.r_slug,
+                    upstream_url: x.r_repo_url,
                     created_at: x.r_created_at,
                     updated_at: x.r_updated_at,
                     team: TeamResponse {

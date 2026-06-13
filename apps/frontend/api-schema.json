@@ -197,6 +197,45 @@
         ]
       }
     },
+    "/api/v1/teams/{team_slug}/repos": {
+      "get": {
+        "tags": [
+          "Team"
+        ],
+        "parameters": [
+          {
+            "name": "team_slug",
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "required": true,
+            "deprecated": false,
+            "explode": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RepoResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
     "/api/v1/forges": {
       "get": {
         "tags": [
@@ -280,7 +319,7 @@
           "content": {
             "application/json; charset=utf-8": {
               "schema": {
-                "$ref": "#/components/schemas/ProjectCreateRequest"
+                "$ref": "#/components/schemas/RepoCreateRequest"
               }
             }
           },
@@ -292,7 +331,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ProjectCreateResponse"
+                  "$ref": "#/components/schemas/RepoCreateResponse"
                 }
               }
             }
@@ -306,6 +345,62 @@
             }
           },
           "401": {
+            "description": "",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/repos/{team}/{repo}": {
+      "get": {
+        "tags": [
+          "Repo"
+        ],
+        "parameters": [
+          {
+            "name": "team",
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "required": true,
+            "deprecated": false,
+            "explode": true
+          },
+          {
+            "name": "repo",
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "required": true,
+            "deprecated": false,
+            "explode": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/RepoResponse"
+                }
+              }
+            }
+          },
+          "404": {
             "description": "",
             "content": {
               "application/json; charset=utf-8": {
@@ -733,9 +828,9 @@
           }
         }
       },
-      "ProjectCreateRequest": {
+      "RepoCreateRequest": {
         "type": "object",
-        "title": "ProjectCreateRequest",
+        "title": "RepoCreateRequest",
         "required": [
           "teamId",
           "name",
@@ -763,9 +858,9 @@
           }
         }
       },
-      "ProjectCreateResponse": {
+      "RepoCreateResponse": {
         "type": "object",
-        "title": "ProjectCreateResponse",
+        "title": "RepoCreateResponse",
         "required": [
           "id",
           "repoSlug",
@@ -781,6 +876,45 @@
           },
           "teamSlug": {
             "type": "string"
+          }
+        }
+      },
+      "RepoResponse": {
+        "type": "object",
+        "title": "RepoResponse",
+        "required": [
+          "id",
+          "name",
+          "slug",
+          "upstream_url",
+          "created_at",
+          "updated_at",
+          "team"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "upstream_url": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "team": {
+            "$ref": "#/components/schemas/TeamResponse"
           }
         }
       },
