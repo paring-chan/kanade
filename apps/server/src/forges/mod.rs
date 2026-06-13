@@ -4,6 +4,7 @@ use chrono::{DateTime, Utc};
 use oauth2::{RefreshToken, TokenResponse};
 use secrecy::{ExposeSecret, SecretString};
 use sqlx::{PgPool, prelude::FromRow, types::Json};
+use ssh_key::{PublicKey, public};
 use uuid::Uuid;
 
 use crate::{
@@ -20,6 +21,8 @@ pub mod forgejo;
 pub struct UpstreamRepositoryInfo {
     pub id: String,
     pub full_name: String,
+    pub url: String,
+    pub ssh_url: String,
 }
 
 pub struct AllForges {
@@ -164,6 +167,25 @@ impl AllForges {
                 access_token,
                 ..
             } => self.forgejo.get_repo(&config, &access_token, repo_id).await,
+        }
+    }
+
+    pub async fn add_ssh_key(
+        &self,
+        auth: &ForgeAuthInfo,
+        repo: &UpstreamRepositoryInfo,
+        public_key: &PublicKey,
+    ) -> crate::Result<()> {
+        match auth {
+            ForgeAuthInfo::Forgejo {
+                config,
+                access_token,
+                ..
+            } => {
+                self.forgejo
+                    .add_ssh_key(&config, repo, &access_token, public_key)
+                    .await
+            }
         }
     }
 

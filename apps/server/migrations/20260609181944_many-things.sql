@@ -1,8 +1,5 @@
 -- column drops are safe for now because I not deployed this anywhere
 
-TRUNCATE "user" CASCADE;
-TRUNCATE "repo" CASCADE;
-
 ALTER TABLE user_forge DROP COLUMN access_token;
 ALTER TABLE user_forge DROP COLUMN refresh_token;
 

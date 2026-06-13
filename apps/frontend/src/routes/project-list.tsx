@@ -12,9 +12,9 @@ export const Component = () => {
         </div>
 
         <div className="mt-4 grid lg:grid-cols-2">
-          {Array.from({ length: 30 }).map((_, i) => (
+          {/*{Array.from({ length: 30 }).map((_, i) => (
             <ProjectItem key={i} />
-          ))}
+          ))}*/}
         </div>
 
         <div className="text-center p-4">-END-</div>

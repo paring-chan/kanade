@@ -5,6 +5,7 @@ use reqwest::{StatusCode, header::AUTHORIZATION};
 use secrecy::{ExposeSecret, SecretString};
 use serde::Deserialize;
 use serde_json::json;
+use ssh_key::PublicKey;
 use uuid::Uuid;
 
 use crate::{
@@ -30,6 +31,8 @@ struct Repository {
     id: i64,
     full_name: String,
     permissions: RepoPermissions,
+    html_url: String,
+    ssh_url: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -73,8 +76,52 @@ impl ForgejoApi {
             .map(|x| UpstreamRepositoryInfo {
                 id: x.id.to_string(),
                 full_name: x.full_name,
+                ssh_url: x.ssh_url,
+                url: x.html_url,
             })
             .collect())
+    }
+    #[instrument(skip(self, config, access_token, public_key), err(Debug))]
+    pub async fn add_ssh_key(
+        &self,
+        config: &ForgejoForgeConfig,
+        repo: &UpstreamRepositoryInfo,
+        access_token: &SecretString,
+        public_key: &PublicKey,
+    ) -> crate::Result<()> {
+        let key = public_key
+            .to_openssh()
+            .map_err(|e| AppError::InternalError(e.into()))?;
+
+        let res = HTTP
+            .post(format!(
+                "{}/api/v1/repos/{}/keys",
+                &config.url, &repo.full_name,
+            ))
+            .header(
+                AUTHORIZATION,
+                format!("token {}", access_token.expose_secret()),
+            )
+            .json(&json!({
+                "title": "Kanade CI",
+                "read_only": false,
+                "key": key,
+            }))
+            .send()
+            .await?;
+
+        let status = res.status();
+
+        let text = res.text().await?;
+        debug!(status = ?status, "response: {text}");
+
+        if status != StatusCode::CREATED {
+            return Err(AppError::InternalError(anyhow::anyhow!(
+                "create webhook request failed with status {status}"
+            )));
+        }
+
+        Ok(())
     }
 
     #[instrument(skip(self, config, access_token, secret), err(Debug))]
@@ -153,6 +200,8 @@ impl ForgejoApi {
         Ok(Some(UpstreamRepositoryInfo {
             id: res.id.to_string(),
             full_name: res.full_name,
+            url: res.html_url,
+            ssh_url: res.ssh_url,
         }))
     }
 

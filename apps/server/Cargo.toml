@@ -32,3 +32,4 @@ nanoid.workspace = true
 aes-gcm.workspace = true
 garde.workspace = true
 rand.workspace = true
+ssh-key.workspace = true

@@ -8,8 +8,10 @@ use chrono::{DateTime, Utc};
 use garde::Validate;
 use jsonwebtoken::signature::rand_core::{OsRng, RngCore};
 use poem::web::Data;
-use poem_openapi::{NewType, Object, OpenApi, param::Path, payload::Json};
+use poem_openapi::{OpenApi, param::Path, payload::Json};
+use rand::rand_core::UnwrapErr;
 use sqlx::{PgPool, prelude::FromRow};
+use ssh_key::PrivateKey;
 use uuid::Uuid;
 
 use crate::{api::security::ApiKeyAuth, crypto::CryptoEngine, error::AppError, forges::AllForges};
@@ -32,6 +34,7 @@ impl RepoApi {
             .map_err(Into::into)
     }
 
+    #[instrument(skip(self, db, forges, crypto, payload), err(Debug))]
     async fn _create(
         &self,
         db: &PgPool,
@@ -90,11 +93,26 @@ impl RepoApi {
         OsRng.fill_bytes(&mut webhook_token);
         let webhook_token = hex::encode(webhook_token);
 
+        let private_key = PrivateKey::random(
+            &mut UnwrapErr(rand::rngs::SysRng),
+            ssh_key::Algorithm::Ed25519,
+        )
+        .map_err(|e| AppError::InternalError(e.into()))?;
+
+        let private_key_encoded = private_key
+            .to_openssh(ssh_key::LineEnding::LF)
+            .map_err(|e| AppError::InternalError(e.into()))?;
+
+        forges
+            .add_ssh_key(&auth, &upstream_repo, private_key.public_key())
+            .await?;
+
         forges
             .setup_webhook(&auth, &upstream_repo, &webhook_token, repo_id)
             .await?;
 
         let encrypted_webhook_token = crypto.encrypt(&webhook_token)?;
+        let encrypted_ssh_key = crypto.encrypt(&private_key_encoded)?;
         let mut tx = db.begin().await?;
 
         #[derive(FromRow)]
@@ -108,9 +126,9 @@ impl RepoApi {
             r#"
             WITH inserted AS (
                 INSERT INTO repo
-                    (id, name, slug, team_id, forge_id, forge_repo_id, forge_webhook_token, created_by)
+                    (id, name, slug, team_id, forge_id, forge_repo_id, forge_webhook_token, ssh_key, repo_url, created_by)
                 VALUES
-                    ($1, $2, $3, $4, $5, $6, $7, $8)
+                    ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
                 RETURNING *
             )
             SELECT
@@ -126,6 +144,8 @@ impl RepoApi {
         .bind(&payload.forge_id)
         .bind(&upstream_repo.id)
         .bind(&encrypted_webhook_token)
+        .bind(&encrypted_ssh_key)
+        .bind(&upstream_repo.url)
         .bind(user_id)
         .fetch_one(&mut *tx)
         .await?;
