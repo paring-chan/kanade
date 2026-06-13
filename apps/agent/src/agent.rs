@@ -48,16 +48,16 @@ impl KanadeAgent {
                                     );
                                     let job_to_run = Job {
                                         id: job.id,
-                                        image: job.job.image.clone(),
+                                        image: job.job.image.clone().unwrap_or_default(),
                                         timeout: Duration::minutes(job.job.timeout as i64),
                                         steps: job
                                             .steps
                                             .into_iter()
                                             .map(|s| JobStep {
                                                 id: s.id,
-                                                name: s.step.name.clone(),
-                                                ordering: s.step.ordering,
-                                                command: s.step.command.clone(),
+                                                name: s.name.clone(),
+                                                ordering: s.ordering,
+                                                command: s.command.clone(),
                                             })
                                             .collect(),
                                     };

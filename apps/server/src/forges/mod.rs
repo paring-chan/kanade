@@ -22,7 +22,7 @@ pub struct UpstreamRepositoryInfo {
     pub id: String,
     pub full_name: String,
     pub url: String,
-    pub ssh_url: String,
+    pub _ssh_url: String,
 }
 
 pub struct AllForges {

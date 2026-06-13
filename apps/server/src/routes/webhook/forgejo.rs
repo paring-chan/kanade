@@ -29,6 +29,7 @@ struct WebhookQueryParams {
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 struct WebhookMessage {
     pub r#ref: String,
     pub after: String,
@@ -38,6 +39,7 @@ struct WebhookMessage {
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 struct ForgejoRepository {
     pub id: u64,
     pub name: String,
@@ -45,6 +47,7 @@ struct ForgejoRepository {
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 struct ForgejoUser {
     pub id: u64,
     pub login: String,
@@ -111,7 +114,10 @@ async fn forgejo_webhook(
 
     let event = match event {
         "push" => EventType::Push,
-        _ => return Ok(()),
+        unhandled => {
+            debug!("unhandled event: {unhandled}");
+            return Ok(());
+        }
     };
 
     let mut tx = db.begin().await.map_err(|e| {
@@ -121,10 +127,11 @@ async fn forgejo_webhook(
 
     let pipeline_id = Uuid::now_v7();
 
-    sqlx::query(
+    sqlx::query!(
         r#"
         SELECT FROM repo WHERE id = $1 FOR UPDATE;
-    "#,
+        "#,
+        query.repo
     )
     .bind(query.repo)
     .execute(&mut *tx)
@@ -134,7 +141,7 @@ async fn forgejo_webhook(
         poem::Error::from_string("internal error", StatusCode::INTERNAL_SERVER_ERROR)
     })?;
 
-    sqlx::query(
+    sqlx::query!(
         r#"
         INSERT INTO pipeline
             (
@@ -147,17 +154,17 @@ async fn forgejo_webhook(
                 (SELECT COALESCE(MAX(serial), 0) + 1 FROM pipeline WHERE repo_id = $2)
             )
         "#,
+        pipeline_id,
+        query.repo,
+        "Test",
+        "wow",
+        Option::<Uuid>::None as Option<Uuid>,
+        event as EventType,
+        Json(json!({})) as Json<serde_json::Value>,
+        body.r#ref,
+        body.after,
+        PipelineStatus::Evaluating as PipelineStatus
     )
-    .bind(pipeline_id)
-    .bind(query.repo)
-    .bind("Test")
-    .bind("wow")
-    .bind(Option::<Uuid>::None)
-    .bind(event)
-    .bind(Json(json!({})))
-    .bind(&body.r#ref)
-    .bind(&body.after)
-    .bind(PipelineStatus::Evaluating)
     .execute(&mut *tx)
     .await
     .map_err(|e| {
@@ -167,89 +174,48 @@ async fn forgejo_webhook(
 
     let evaluation_id = Uuid::now_v7();
 
-    sqlx::query(
+    sqlx::query!(
         r#"
             INSERT INTO pipeline_job
-                (id, pipeline_id, key, name, image, timeout)
+                (id, pipeline_id, key, name, image, timeout, status)
             VALUES
-                ($1, $2, $3, $4, $5, $6)
+                ($1, $2, $3, $4, $5, $6, $7)
         "#,
+        evaluation_id,
+        pipeline_id,
+        "evaluate",
+        "Evaluate Pipeline",
+        "oven/bun:latest",
+        5,
+        JobStatus::Pending as JobStatus
     )
-    .bind(evaluation_id)
-    .bind(pipeline_id)
-    .bind("evaluate")
-    .bind("Evaluate Pipeline")
-    .bind("oven/bun:latest")
-    // .bind("oci.pari.ng/kanade/bun-evaluator")
-    .bind(5)
     .execute(&mut *tx)
     .await
     .map_err(|e| {
         error!("failed to insert job: {e}");
-        return poem::Error::from_string("internal error", StatusCode::INTERNAL_SERVER_ERROR);
+        poem::Error::from_string("internal error", StatusCode::INTERNAL_SERVER_ERROR)
     })?;
 
     let step_id = Uuid::now_v7();
 
-    sqlx::query(
+    sqlx::query!(
         r#"
-            INSERT INTO pipeline_job_step
-                (id, job_id, name, ordering, command)
-            VALUES
-                ($1, $2, $3, $4, $5)
+        INSERT INTO pipeline_job_step
+            (id, job_id, name, ordering, command, status)
+        VALUES
+            ($1, $2, $3, $4, $5, $6)
         "#,
+        step_id,
+        evaluation_id,
+        "Evaluate Pipeline Jobs",
+        1 as i32,
+        "bun test.ts",
+        JobStatus::Pending as JobStatus
     )
-    .bind(step_id)
-    .bind(evaluation_id)
-    .bind("Evaluate Pipeline Jobs")
-    .bind(1)
-    .bind("bun test.ts")
     .execute(&mut *tx)
     .await
     .map_err(|e| {
         error!("failed to insert job step: {e}");
-        return poem::Error::from_string("internal error", StatusCode::INTERNAL_SERVER_ERROR);
-    })?;
-
-    let run_id = Uuid::now_v7();
-
-    sqlx::query(
-        r#"
-            INSERT INTO pipeline_job_run
-                (id, job_id, attempt_serial, status)
-            VALUES
-                ($1, $2, $3, $4)
-        "#,
-    )
-    .bind(run_id)
-    .bind(evaluation_id)
-    .bind(1)
-    .bind(JobStatus::Pending)
-    .execute(&mut *tx)
-    .await
-    .map_err(|e| {
-        error!("failed to insert job run: {e}");
-        poem::Error::from_string("internal error", StatusCode::INTERNAL_SERVER_ERROR)
-    })?;
-
-    let step_run_id = Uuid::now_v7();
-
-    sqlx::query(
-        r#"
-            INSERT INTO pipeline_job_step_run
-                (id, run_id, step_id, status)
-            VALUES
-                ($1, $2, $3, $4)
-        "#,
-    )
-    .bind(step_run_id)
-    .bind(run_id)
-    .bind(step_id)
-    .bind(JobStatus::Pending)
-    .execute(&mut *tx)
-    .await
-    .map_err(|e| {
-        error!("failed to insert job step run: {e}");
         poem::Error::from_string("internal error", StatusCode::INTERNAL_SERVER_ERROR)
     })?;
 

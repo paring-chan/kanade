@@ -76,15 +76,7 @@ pub struct PipelineJobResponse {
     /// 작업 타임아웃 (분 단위)
     pub timeout: i32,
     /// 컨테이너 이미지
-    pub image: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, Object)]
-pub struct JobStepAcquireResponse {
-    /// 스텝 실행 ID
-    pub id: Uuid,
-    /// 스텝 정보
-    pub step: PipelineJobStepResponse,
+    pub image: Option<String>,
 }
 
 /// 환경변수 정의
@@ -114,12 +106,10 @@ pub struct SecretEnv {
 pub struct JobAcquireResponse {
     /// 작업 실행 ID
     pub id: Uuid,
-    /// 작업 재시도 시리얼
-    pub attempt_serial: i32,
     /// 작업 정보
     pub job: PipelineJobResponse,
     /// 스텝 목록
-    pub steps: Vec<JobStepAcquireResponse>,
+    pub steps: Vec<PipelineJobStepResponse>,
     /// Job 스코프 환경변수 목록
     pub env: HashMap<String, EnvDefinition>,
     /// 레퍼런스된 시크릿 목록
