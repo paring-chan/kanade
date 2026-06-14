@@ -4,6 +4,86 @@
  */
 
 export interface paths {
+    "/api/v1/pipelines/{pipeline_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    pipeline_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["PipelineResponse"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pipelines/{pipeline_id}/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    pipeline_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["AgentPipelineJobResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/users/me": {
         parameters: {
             query?: never;
@@ -400,6 +480,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/repos/by-id/{repo_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    repo_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["RepoResponse"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/repos/{team}/{repo}/pipelines": {
         parameters: {
             query?: never;
@@ -639,6 +763,23 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AgentPipelineJobResponse */
+        AgentPipelineJobResponse: {
+            /**
+             * Format: uuid
+             * @description 작업 ID
+             */
+            id: string;
+            /** @description 작업 이름 */
+            name: string;
+            /**
+             * Format: int32
+             * @description 작업 타임아웃 (분 단위)
+             */
+            timeout: number;
+            /** @description 컨테이너 이미지 */
+            image?: string;
+        };
         /** @description 환경변수 정의 */
         EnvDefinition: components["schemas"]["EnvDefinition_StaticEnv"] | components["schemas"]["EnvDefinition_SecretEnv"];
         /** @description 환경변수 정의 */
@@ -662,7 +803,7 @@ export interface components {
             message: string;
         };
         /** @enum {string} */
-        EventTypeResponse: "Push" | "Tag" | "Release" | "PullRequest" | "Cron" | "Manual";
+        EventTypeResponse: "push" | "tag" | "release" | "pullRequest" | "cron" | "manual";
         /** ForgeInfoResponse */
         ForgeInfoResponse: {
             /**
@@ -688,15 +829,10 @@ export interface components {
              * @description 작업 실행 ID
              */
             id: string;
-            /**
-             * Format: int32
-             * @description 작업 재시도 시리얼
-             */
-            attempt_serial: number;
             /** @description 작업 정보 */
-            job: components["schemas"]["PipelineJobResponse"] & unknown;
+            job: components["schemas"]["AgentPipelineJobResponse"] & unknown;
             /** @description 스텝 목록 */
-            steps: components["schemas"]["JobStepAcquireResponse"][];
+            steps: components["schemas"]["PipelineJobStepResponse"][];
             /** @description Job 스코프 환경변수 목록 */
             env: {
                 [key: string]: components["schemas"]["EnvDefinition"];
@@ -709,33 +845,6 @@ export interface components {
         /** JobFinishRequest */
         JobFinishRequest: {
             success: boolean;
-        };
-        /** JobStepAcquireResponse */
-        JobStepAcquireResponse: {
-            /**
-             * Format: uuid
-             * @description 스텝 실행 ID
-             */
-            id: string;
-            /** @description 스텝 정보 */
-            step: components["schemas"]["PipelineJobStepResponse"] & unknown;
-        };
-        /** PipelineJobResponse */
-        PipelineJobResponse: {
-            /**
-             * Format: uuid
-             * @description 작업 ID
-             */
-            id: string;
-            /** @description 작업 이름 */
-            name: string;
-            /**
-             * Format: int32
-             * @description 작업 타임아웃 (분 단위)
-             */
-            timeout: number;
-            /** @description 컨테이너 이미지 */
-            image: string;
         };
         /** PipelineJobStepResponse */
         PipelineJobStepResponse: {
@@ -782,7 +891,7 @@ export interface components {
             updatedAt: string;
         };
         /** @enum {string} */
-        PipelineStatusResponse: "Evaluating" | "Queued" | "Running" | "Success" | "Failed" | "Cancelled";
+        PipelineStatusResponse: "queued" | "running" | "success" | "failed" | "cancelled";
         /** RepoCreateRequest */
         RepoCreateRequest: {
             /** Format: uuid */

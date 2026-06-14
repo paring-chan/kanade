@@ -15,6 +15,10 @@
       "description": "포지 API"
     },
     {
+      "name": "Pipeline",
+      "description": "파이프라인 API"
+    },
+    {
       "name": "Repo",
       "description": "저장소 API"
     },
@@ -28,6 +32,93 @@
     }
   ],
   "paths": {
+    "/api/v1/pipelines/{pipeline_id}": {
+      "get": {
+        "tags": [
+          "Pipeline"
+        ],
+        "parameters": [
+          {
+            "name": "pipeline_id",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "required": true,
+            "deprecated": false,
+            "explode": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/PipelineResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/pipelines/{pipeline_id}/jobs": {
+      "get": {
+        "tags": [
+          "Pipeline"
+        ],
+        "parameters": [
+          {
+            "name": "pipeline_id",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "required": true,
+            "deprecated": false,
+            "explode": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AgentPipelineJobResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
     "/api/v1/users/me": {
       "get": {
         "tags": [
@@ -418,6 +509,53 @@
         ]
       }
     },
+    "/api/v1/repos/by-id/{repo_id}": {
+      "get": {
+        "tags": [
+          "Repo"
+        ],
+        "parameters": [
+          {
+            "name": "repo_id",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "required": true,
+            "deprecated": false,
+            "explode": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/RepoResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
     "/api/v1/repos/{team}/{repo}/pipelines": {
       "get": {
         "tags": [
@@ -608,6 +746,35 @@
   },
   "components": {
     "schemas": {
+      "AgentPipelineJobResponse": {
+        "type": "object",
+        "title": "AgentPipelineJobResponse",
+        "required": [
+          "id",
+          "name",
+          "timeout"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "작업 ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "작업 이름"
+          },
+          "timeout": {
+            "type": "integer",
+            "format": "int32",
+            "description": "작업 타임아웃 (분 단위)"
+          },
+          "image": {
+            "type": "string",
+            "description": "컨테이너 이미지"
+          }
+        }
+      },
       "EnvDefinition": {
         "type": "object",
         "description": "환경변수 정의",
@@ -688,12 +855,12 @@
       "EventTypeResponse": {
         "type": "string",
         "enum": [
-          "Push",
-          "Tag",
-          "Release",
-          "PullRequest",
-          "Cron",
-          "Manual"
+          "push",
+          "tag",
+          "release",
+          "pullRequest",
+          "cron",
+          "manual"
         ]
       },
       "ForgeInfoResponse": {
@@ -747,7 +914,6 @@
         "title": "JobAcquireResponse",
         "required": [
           "id",
-          "attempt_serial",
           "job",
           "steps",
           "env",
@@ -759,16 +925,11 @@
             "format": "uuid",
             "description": "작업 실행 ID"
           },
-          "attempt_serial": {
-            "type": "integer",
-            "format": "int32",
-            "description": "작업 재시도 시리얼"
-          },
           "job": {
             "description": "작업 정보",
             "allOf": [
               {
-                "$ref": "#/components/schemas/PipelineJobResponse"
+                "$ref": "#/components/schemas/AgentPipelineJobResponse"
               },
               {
                 "description": "작업 정보"
@@ -779,7 +940,7 @@
             "type": "array",
             "description": "스텝 목록",
             "items": {
-              "$ref": "#/components/schemas/JobStepAcquireResponse"
+              "$ref": "#/components/schemas/PipelineJobStepResponse"
             }
           },
           "env": {
@@ -807,62 +968,6 @@
         "properties": {
           "success": {
             "type": "boolean"
-          }
-        }
-      },
-      "JobStepAcquireResponse": {
-        "type": "object",
-        "title": "JobStepAcquireResponse",
-        "required": [
-          "id",
-          "step"
-        ],
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "description": "스텝 실행 ID"
-          },
-          "step": {
-            "description": "스텝 정보",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/PipelineJobStepResponse"
-              },
-              {
-                "description": "스텝 정보"
-              }
-            ]
-          }
-        }
-      },
-      "PipelineJobResponse": {
-        "type": "object",
-        "title": "PipelineJobResponse",
-        "required": [
-          "id",
-          "name",
-          "timeout",
-          "image"
-        ],
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "description": "작업 ID"
-          },
-          "name": {
-            "type": "string",
-            "description": "작업 이름"
-          },
-          "timeout": {
-            "type": "integer",
-            "format": "int32",
-            "description": "작업 타임아웃 (분 단위)"
-          },
-          "image": {
-            "type": "string",
-            "description": "컨테이너 이미지"
           }
         }
       },
@@ -978,12 +1083,11 @@
       "PipelineStatusResponse": {
         "type": "string",
         "enum": [
-          "Evaluating",
-          "Queued",
-          "Running",
-          "Success",
-          "Failed",
-          "Cancelled"
+          "queued",
+          "running",
+          "success",
+          "failed",
+          "cancelled"
         ]
       },
       "RepoCreateRequest": {

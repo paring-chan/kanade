@@ -56,7 +56,7 @@ pub enum StepStartedResponse {
 }
 
 #[derive(Debug, Serialize, Deserialize, Object)]
-pub struct PipelineJobStepResponse {
+pub struct AgentPipelineJobStepResponse {
     /// 스텝 ID
     pub id: Uuid,
     /// 스텝 이름
@@ -68,7 +68,7 @@ pub struct PipelineJobStepResponse {
 }
 
 #[derive(Debug, Serialize, Deserialize, Object)]
-pub struct PipelineJobResponse {
+pub struct AgentPipelineJobResponse {
     /// 작업 ID
     pub id: Uuid,
     /// 작업 이름
@@ -107,9 +107,9 @@ pub struct JobAcquireResponse {
     /// 작업 실행 ID
     pub id: Uuid,
     /// 작업 정보
-    pub job: PipelineJobResponse,
+    pub job: AgentPipelineJobResponse,
     /// 스텝 목록
-    pub steps: Vec<PipelineJobStepResponse>,
+    pub steps: Vec<AgentPipelineJobStepResponse>,
     /// Job 스코프 환경변수 목록
     pub env: HashMap<String, EnvDefinition>,
     /// 레퍼런스된 시크릿 목록

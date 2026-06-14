@@ -235,6 +235,74 @@ impl RepoApi {
         }
     }
 
+    #[oai(path = "/by-id/:repo_id", method = "get")]
+    async fn get_by_id(
+        &self,
+        Data(db): Data<&PgPool>,
+        Path(repo_id): Path<Uuid>,
+        ApiKeyAuth(user_id): ApiKeyAuth,
+    ) -> poem::Result<GetRepoResponse> {
+        self._get_by_id(db, user_id, repo_id)
+            .await
+            .map_err(Into::into)
+    }
+
+    async fn _get_by_id(
+        &self,
+        db: &PgPool,
+        user_id: Uuid,
+        repo_id: Uuid,
+    ) -> crate::Result<GetRepoResponse> {
+        let result = sqlx::query!(
+            r#"
+            SELECT
+                r.id as r_id,
+                r.name as r_name,
+                r.slug as r_slug,
+                r.repo_url as r_repo_url,
+                r.created_at as r_created_at,
+                r.updated_at as r_updated_at,
+
+                t.id as t_id,
+                t.name as t_name,
+                t.slug as t_slug,
+                t.created_at as t_created_at,
+                t.updated_at as t_updated_at
+            FROM repo r
+            INNER JOIN team t ON t.id = r.team_id
+            INNER JOIN user_team ut ON ut.team_id = t.id
+            WHERE
+                ut.user_id = $1 AND
+                r.id = $2
+            "#,
+            user_id,
+            repo_id
+        )
+        .fetch_optional(db)
+        .await?;
+
+        match result {
+            Some(row) => Ok(GetRepoResponse::Ok(Json(RepoResponse {
+                id: row.r_id,
+                name: row.r_name,
+                slug: row.r_slug,
+                upstream_url: row.r_repo_url,
+                created_at: row.r_created_at,
+                updated_at: row.r_updated_at,
+                team: TeamResponse {
+                    id: row.t_id,
+                    name: row.t_name,
+                    slug: row.t_slug,
+                    created_at: row.t_created_at,
+                    updated_at: row.t_updated_at,
+                },
+            }))),
+            None => Ok(GetRepoResponse::NotFound(Json(ErrorResponse {
+                message: "repo not found".to_string(),
+            }))),
+        }
+    }
+
     #[oai(path = "/:team/:repo/pipelines", method = "get")]
     async fn list_pipelines(
         &self,

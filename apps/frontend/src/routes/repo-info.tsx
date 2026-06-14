@@ -120,7 +120,7 @@ const PipelineItem = ({
 }: {
   pipeline: components["schemas"]["PipelineResponse"];
 }) => {
-  const pipelineLink = generatePath("/pipelines/:id", { id: pipeline.id });
+  const pipelineLink = generatePath("/p/:id", { id: pipeline.id });
 
   return (
     <div className="py-4 px-6 gap-4 flex items-center">

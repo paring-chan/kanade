@@ -1,0 +1,188 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT\n                p.id as p_id,\n                p.serial as p_serial,\n                p.repo_id as p_repo_id,\n                p.title as p_title,\n                p.triggered_by as p_triggered_by,\n                p.event_type as \"event_type: EventType\",\n                p.event_payload as p_event_payload,\n                p.git_ref as p_git_ref,\n                p.git_commit_id as p_git_commit_id,\n                p.status as \"status: PipelineStatus\",\n                p.created_at as p_created_at,\n                p.updated_at as p_updated_at\n\n            FROM\n                pipeline p\n            INNER JOIN repo r ON r.id = p.repo_id\n            INNER JOIN team t ON t.id = r.team_id\n            INNER JOIN user_team ut ON t.id = ut.team_id\n            WHERE\n                ut.user_id = $1 AND\n                p.id = $2\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "p_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "pipeline",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "p_serial",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "pipeline",
+            "name": "serial"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "p_repo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "pipeline",
+            "name": "repo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "p_title",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "pipeline",
+            "name": "title"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "p_triggered_by",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "pipeline",
+            "name": "triggered_by"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "event_type: EventType",
+        "type_info": {
+          "Custom": {
+            "name": "event_type",
+            "kind": {
+              "Enum": [
+                "push",
+                "tag",
+                "release",
+                "pull_request",
+                "cron",
+                "manual"
+              ]
+            }
+          }
+        },
+        "origin": {
+          "Table": {
+            "table": "pipeline",
+            "name": "event_type"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "p_event_payload",
+        "type_info": "Jsonb",
+        "origin": {
+          "Table": {
+            "table": "pipeline",
+            "name": "event_payload"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "p_git_ref",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "pipeline",
+            "name": "git_ref"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "p_git_commit_id",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "pipeline",
+            "name": "git_commit_id"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "status: PipelineStatus",
+        "type_info": {
+          "Custom": {
+            "name": "pipeline_status",
+            "kind": {
+              "Enum": [
+                "queued",
+                "running",
+                "success",
+                "failed",
+                "cancelled"
+              ]
+            }
+          }
+        },
+        "origin": {
+          "Table": {
+            "table": "pipeline",
+            "name": "status"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "p_created_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "pipeline",
+            "name": "created_at"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "p_updated_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "pipeline",
+            "name": "updated_at"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "8a74a5866c06bbf38fb82b4154e85b67114b9de5db72bb71d4b1828d6855c396"
+}

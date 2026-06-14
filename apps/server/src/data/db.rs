@@ -1,4 +1,4 @@
-use api_types::{EventTypeResponse, PipelineStatusResponse};
+use api_types::{EventTypeResponse, JobStatusResponse, PipelineStatusResponse};
 use sqlx::prelude::Type;
 
 #[derive(Debug, Type, Clone)]
@@ -57,6 +57,20 @@ pub enum JobStatus {
     Failed,
     Skipped,
     Cancelled,
+}
+
+impl From<JobStatus> for JobStatusResponse {
+    fn from(value: JobStatus) -> Self {
+        match value {
+            JobStatus::Waiting => Self::Waiting,
+            JobStatus::Pending => Self::Pending,
+            JobStatus::Running => Self::Running,
+            JobStatus::Success => Self::Success,
+            JobStatus::Failed => Self::Failed,
+            JobStatus::Skipped => Self::Skipped,
+            JobStatus::Cancelled => Self::Cancelled,
+        }
+    }
 }
 
 #[derive(Debug, Type)]

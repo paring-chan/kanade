@@ -3,8 +3,8 @@ use std::collections::HashMap;
 use crate::api::ApiTags;
 use crate::data::db::JobStatus;
 use api_types::{
-    JobAcquireEndpointResponse, JobAcquireResponse, JobFinishRequest, JobFinishResponse,
-    PipelineJobResponse, PipelineJobStepResponse,
+    AgentPipelineJobResponse, AgentPipelineJobStepResponse, JobAcquireEndpointResponse,
+    JobAcquireResponse, JobFinishRequest, JobFinishResponse,
 };
 use poem::web::Data;
 use poem_openapi::{OpenApi, param::Path, payload::Json};
@@ -55,7 +55,7 @@ impl AgentJobsApi {
         .execute(&mut *tx)
         .await?;
 
-        let job = PipelineJobResponse {
+        let job = AgentPipelineJobResponse {
             id: job.id,
             name: job.name,
             timeout: job.timeout,
@@ -78,7 +78,7 @@ impl AgentJobsApi {
         .fetch_all(&mut *tx)
         .await?
         .into_iter()
-        .map(|x| PipelineJobStepResponse {
+        .map(|x| AgentPipelineJobStepResponse {
             id: x.id,
             name: x.name,
             ordering: x.ordering,

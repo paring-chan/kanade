@@ -1,10 +1,11 @@
 use chrono::{DateTime, Utc};
-use poem_openapi::{Enum, Object};
+use poem_openapi::{payload::Json, ApiResponse, Enum, Object};
 use uuid::Uuid;
 
-use crate::UserResponse;
+use crate::{ErrorResponse, UserResponse};
 
 #[derive(Debug, Enum)]
+#[oai(rename_all = "camelCase")]
 pub enum EventTypeResponse {
     Push,
     Tag,
@@ -15,6 +16,7 @@ pub enum EventTypeResponse {
 }
 
 #[derive(Debug, Enum)]
+#[oai(rename_all = "camelCase")]
 pub enum PipelineStatusResponse {
     Queued,
     Running,
@@ -39,4 +41,54 @@ pub struct PipelineResponse {
     pub status: PipelineStatusResponse,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+}
+
+#[derive(ApiResponse)]
+pub enum GetPipelineResponse {
+    #[oai(status = 200)]
+    Ok(Json<PipelineResponse>),
+    #[oai(status = 404)]
+    NotFound(Json<ErrorResponse>),
+}
+
+#[derive(Debug, Enum)]
+#[oai(rename_all = "camelCase")]
+pub enum JobStatusResponse {
+    Waiting,
+    Pending,
+    Running,
+    Success,
+    Failed,
+    Skipped,
+    Cancelled,
+}
+
+#[derive(Debug, Object)]
+pub struct PipelineJobResponse {
+    pub id: Uuid,
+    pub key: String,
+    pub name: String,
+    pub timeout: i32,
+    pub status: JobStatusResponse,
+
+    pub steps: Vec<PipelineJobStepResponse>,
+    pub parents: Vec<Uuid>,
+
+    pub created_at: DateTime<Utc>,
+    pub started_at: Option<DateTime<Utc>>,
+    pub finished_at: Option<DateTime<Utc>>,
+}
+
+#[derive(Debug, Object)]
+pub struct PipelineJobStepResponse {
+    pub id: Uuid,
+    pub name: String,
+    pub ordering: i32,
+    pub command: String,
+
+    pub created_at: DateTime<Utc>,
+    pub exit_code: Option<i32>,
+
+    pub started_at: Option<DateTime<Utc>>,
+    pub finished_at: Option<DateTime<Utc>>,
 }

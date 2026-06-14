@@ -3331,6 +3331,7 @@ dependencies = [
  "garde",
  "hex",
  "hmac 0.13.0",
+ "itertools",
  "jsonwebtoken",
  "nanoid",
  "oauth2",

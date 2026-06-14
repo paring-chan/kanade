@@ -42,10 +42,7 @@ export const ProjectItem = ({
       </div>
 
       <div className="grow text-right">
-        <Link
-          to="/repo/mizuki/kurukuru/pipelines/123"
-          className="max-w-14 w-full hover:underline"
-        >
+        <Link to="/p/123" className="max-w-14 w-full hover:underline">
           #123
         </Link>
         <div className="grow truncate text-sm flex items-center justify-end">
