@@ -32,6 +32,8 @@ impl KanadeAgent {
                     match status {
                         reqwest::StatusCode::NO_CONTENT => {
                             tracing::debug!("No job acquired");
+
+                            sleep(tokio::time::Duration::from_secs(5)).await;
                         }
                         reqwest::StatusCode::OK => {
                             let body = response
@@ -85,8 +87,6 @@ impl KanadeAgent {
                     tracing::error!("Failed to acquire job: {}", e);
                 }
             }
-
-            sleep(tokio::time::Duration::from_secs(5)).await;
         }
     }
 }
