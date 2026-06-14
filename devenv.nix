@@ -5,6 +5,11 @@
     channel = "nightly";
   };
 
+  services.redis = {
+    enable = true;
+    package = pkgs.valkey;
+  };
+
   packages = with pkgs; [
     openssl
     sqlx-cli
