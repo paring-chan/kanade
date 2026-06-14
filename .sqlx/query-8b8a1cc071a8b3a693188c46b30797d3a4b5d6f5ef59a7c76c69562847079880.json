@@ -1,0 +1,62 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT j.id, j.name, j.timeout, j.image\n            FROM pipeline_job j\n            WHERE j.status = 'pending'::job_status\n            ORDER BY j.created_at ASC\n            LIMIT 1\n            FOR UPDATE OF j SKIP LOCKED\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "pipeline_job",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "pipeline_job",
+            "name": "name"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "timeout",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "pipeline_job",
+            "name": "timeout"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "image",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "pipeline_job",
+            "name": "image"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "8b8a1cc071a8b3a693188c46b30797d3a4b5d6f5ef59a7c76c69562847079880"
+}

@@ -1,0 +1,88 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT\n                uf.id as uf_id,\n                uf.forge_user_id as uf_forge_user_id,\n                uf.created_at as uf_created_at,\n                uf.updated_at as uf_updated_at,\n\n                f.id as f_id,\n                f.name as f_name\n            FROM user_forge uf\n            LEFT JOIN forge f ON f.id = uf.forge_id\n            WHERE uf.user_id = $1\n            ORDER BY uf.created_at\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "uf_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "user_forge",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "uf_forge_user_id",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "user_forge",
+            "name": "forge_user_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "uf_created_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "user_forge",
+            "name": "created_at"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "uf_updated_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "user_forge",
+            "name": "updated_at"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "f_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "forge",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "f_name",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "forge",
+            "name": "name"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "fe3f283d41372353ee9e88c0f86c113ca2a93d2782f6966cf71522ad2b6997e1"
+}

@@ -1,0 +1,50 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO pipeline\n                (\n                    id, repo_id, title, triggered_by, triggered_by_user,\n                    event_type, event_payload, git_ref, git_commit_id, status,\n                    serial\n                )\n            VALUES\n                ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10,\n                    (SELECT COALESCE(MAX(serial), 0) + 1 FROM pipeline WHERE repo_id = $2)\n                )\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Uuid",
+        {
+          "Custom": {
+            "name": "event_type",
+            "kind": {
+              "Enum": [
+                "push",
+                "tag",
+                "release",
+                "pull_request",
+                "cron",
+                "manual"
+              ]
+            }
+          }
+        },
+        "Jsonb",
+        "Text",
+        "Text",
+        {
+          "Custom": {
+            "name": "pipeline_status",
+            "kind": {
+              "Enum": [
+                "queued",
+                "running",
+                "success",
+                "failed",
+                "cancelled"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "eb9b512e6800b08b5495a0a8eed160bb6d2b44f677bd2760c7815412807b6d0f"
+}

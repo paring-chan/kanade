@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                    INSERT INTO pipeline_job_depend\n                        (upstream_id, downstream_id)\n                    VALUES\n                        ($1, $2)\n                    ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "c510b64976d897ebb9653edbd5c7d90ad6a599d8d2ec15469d24e8a7b3b62375"
+}

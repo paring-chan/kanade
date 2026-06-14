@@ -1,0 +1,29 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT u.id as user_id\n        FROM \"user\" u\n        LEFT JOIN user_forge uf ON u.id = uf.user_id\n        WHERE\n            uf.forge_id = $1 AND\n            uf.forge_user_id = $2\n        FOR UPDATE OF u\n      ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "user_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "\"user\"",
+            "name": "id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "7a86d9522c91164fa9c1076b600d5bab85c6e4dd57c3d05b0d67e896e8bfdb22"
+}

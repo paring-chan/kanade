@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE pipeline_job_step\n            SET status = 'running'::job_status,\n                started_at = NOW()\n            WHERE id = $1 AND status = 'pending'::job_status\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "6c9ed58ee8f9965c904b80f616266f3cf6559fa4504e722f1e309f6880d69f4b"
+}

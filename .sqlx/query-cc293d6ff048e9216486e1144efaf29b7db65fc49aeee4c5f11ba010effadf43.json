@@ -1,0 +1,35 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                    INSERT INTO pipeline_job_step\n                        (id, job_id, name, ordering, command, status, env)\n                    VALUES\n                        ($1, $2, $3, $4, $5, $6, $7)\n                    ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Int4",
+        "Text",
+        {
+          "Custom": {
+            "name": "job_status",
+            "kind": {
+              "Enum": [
+                "waiting",
+                "pending",
+                "running",
+                "success",
+                "failed",
+                "skipped",
+                "cancelled"
+              ]
+            }
+          }
+        },
+        "Jsonb"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "cc293d6ff048e9216486e1144efaf29b7db65fc49aeee4c5f11ba010effadf43"
+}

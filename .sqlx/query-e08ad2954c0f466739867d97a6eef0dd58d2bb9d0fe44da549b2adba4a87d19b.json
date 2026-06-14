@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT config as \"config: sqlx::types::Json<ForgeConfig>\" FROM forge WHERE id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "config: sqlx::types::Json<ForgeConfig>",
+        "type_info": "Jsonb",
+        "origin": {
+          "Table": {
+            "table": "forge",
+            "name": "config"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "e08ad2954c0f466739867d97a6eef0dd58d2bb9d0fe44da549b2adba4a87d19b"
+}

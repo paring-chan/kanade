@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT FROM repo WHERE id = $1 FOR UPDATE",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "564a03f19b33d82f934dbd2934b63803d25764b760b6b36c6ec29c12dcbfa843"
+}

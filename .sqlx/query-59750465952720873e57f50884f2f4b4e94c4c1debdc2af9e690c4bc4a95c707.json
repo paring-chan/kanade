@@ -1,0 +1,31 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE pipeline_job_step\n            SET status = $1,\n                exit_code = $2,\n                finished_at = NOW()\n            WHERE id = $3 AND status = 'running'::job_status\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        {
+          "Custom": {
+            "name": "job_status",
+            "kind": {
+              "Enum": [
+                "waiting",
+                "pending",
+                "running",
+                "success",
+                "failed",
+                "skipped",
+                "cancelled"
+              ]
+            }
+          }
+        },
+        "Int4",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "59750465952720873e57f50884f2f4b4e94c4c1debdc2af9e690c4bc4a95c707"
+}

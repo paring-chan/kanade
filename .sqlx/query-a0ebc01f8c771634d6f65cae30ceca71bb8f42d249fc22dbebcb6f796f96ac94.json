@@ -1,0 +1,64 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                SELECT\n                    s.id,\n                    s.name,\n                    s.ordering,\n                    s.command\n                FROM pipeline_job_step s\n                WHERE\n                    s.job_id = $1\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "pipeline_job_step",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "pipeline_job_step",
+            "name": "name"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "ordering",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "pipeline_job_step",
+            "name": "ordering"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "command",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "pipeline_job_step",
+            "name": "command"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "a0ebc01f8c771634d6f65cae30ceca71bb8f42d249fc22dbebcb6f796f96ac94"
+}
