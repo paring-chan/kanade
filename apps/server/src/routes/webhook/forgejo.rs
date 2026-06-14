@@ -1,6 +1,6 @@
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
-use event_evaluator::script::EvalContext;
+use event_evaluator::{script::EvalContext, types::EnvDefinition};
 use hmac::{KeyInit, Mac};
 use poem::{
     Body, EndpointExt, Request, Route,
@@ -13,11 +13,16 @@ use poem::{
 };
 use secrecy::ExposeSecret;
 use serde::Deserialize;
+use serde_json::json;
 use sha2::Sha256;
-use sqlx::PgPool;
+use sqlx::{PgPool, types::Json};
 use uuid::Uuid;
 
-use crate::{data::db::EventType, error::AppError, forges::AllForges};
+use crate::{
+    data::db::{EventType, JobStatus, PipelineStatus},
+    error::AppError,
+    forges::AllForges,
+};
 
 pub fn routes() -> BoxEndpoint<'static> {
     Route::new().just_at(post(forgejo_webhook)).boxed()
@@ -28,7 +33,7 @@ struct WebhookQueryParams {
     repo: Uuid,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 #[allow(dead_code)]
 struct WebhookMessage {
     pub r#ref: String,
@@ -36,9 +41,15 @@ struct WebhookMessage {
     pub repository: ForgejoRepository,
     pub pusher: ForgejoUser,
     pub sender: ForgejoUser,
+    pub head_commit: ForgejoCommit,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
+struct ForgejoCommit {
+    pub message: String,
+}
+
+#[derive(Debug, Deserialize, Clone)]
 #[allow(dead_code)]
 struct ForgejoRepository {
     pub id: u64,
@@ -46,7 +57,7 @@ struct ForgejoRepository {
     pub full_name: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 #[allow(dead_code)]
 struct ForgejoUser {
     pub id: u64,
@@ -149,145 +160,162 @@ async fn forgejo_webhook(
         }
     };
 
-    let pipelines = tokio::task::spawn_blocking(move || {
-        event_evaluator::evaluate(
-            &script,
-            EvalContext {
-                event: match event {
-                    EventType::Push => "push",
-                    EventType::Tag => "tag",
-                    EventType::Release => "release",
-                    EventType::PullRequest => "pull_request",
-                    EventType::Cron => "cron",
-                    EventType::Manual => "manual",
+    let pipelines = tokio::task::spawn_blocking({
+        let body = body.clone();
+        let event = match &event {
+            EventType::Push => "push",
+            EventType::Tag => "tag",
+            EventType::Release => "release",
+            EventType::PullRequest => "pull_request",
+            EventType::Cron => "cron",
+            EventType::Manual => "manual",
+        };
+        move || {
+            event_evaluator::evaluate(
+                &script,
+                EvalContext {
+                    event,
+                    branch: body
+                        .r#ref
+                        .strip_prefix("refs/heads/")
+                        .map(|x| x.to_string()),
+                    tag: body.r#ref.strip_prefix("refs/tags/").map(|x| x.to_string()),
+                    r#ref: body.r#ref.clone(),
+                    args: Default::default(),
+                    default_image: "oven/bun:latest".to_string(),
+                    default_shell: "/bin/sh".to_string(),
+                    pipelines: Default::default(),
                 },
-                branch: body
-                    .r#ref
-                    .strip_prefix("refs/heads/")
-                    .map(|x| x.to_string()),
-                tag: body.r#ref.strip_prefix("refs/tags/").map(|x| x.to_string()),
-                r#ref: body.r#ref,
-                args: Default::default(),
-                default_image: "oven/bun:latest".to_string(),
-                default_shell: "/bin/sh".to_string(),
-                pipelines: Default::default(),
-            },
-        )
-        .map_err(|e| {
-            return poem::Error::from_string(
-                format!("failed to evaluate script: {e}"),
-                StatusCode::INTERNAL_SERVER_ERROR,
-            );
-        })
+            )
+            .map_err(|e| {
+                return poem::Error::from_string(
+                    format!("failed to evaluate script: {e}"),
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                );
+            })
+        }
     })
     .await
     .map_err(AppError::from)??;
 
-    println!("{pipelines:?}");
+    let mut tx = db.begin().await.map_err(|e| {
+        error!("failed to start tx: {e}");
+        poem::Error::from_string("internal error", StatusCode::INTERNAL_SERVER_ERROR)
+    })?;
 
-    // let mut tx = db.begin().await.map_err(|e| {
-    //     error!("failed to start tx: {e}");
-    //     poem::Error::from_string("internal error", StatusCode::INTERNAL_SERVER_ERROR)
-    // })?;
+    sqlx::query!("SELECT FROM repo WHERE id = $1 FOR UPDATE", query.repo)
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| {
+            error!("failed to lock repo: {e}");
+            poem::Error::from_string("internal error", StatusCode::INTERNAL_SERVER_ERROR)
+        })?;
 
-    // let pipeline_id = Uuid::now_v7();
+    for pipeline in pipelines {
+        sqlx::query!(
+            r#"
+            INSERT INTO pipeline
+                (
+                    id, repo_id, title, triggered_by, triggered_by_user,
+                    event_type, event_payload, git_ref, git_commit_id, status,
+                    serial
+                )
+            VALUES
+                ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
+                    (SELECT COALESCE(MAX(serial), 0) + 1 FROM pipeline WHERE repo_id = $2)
+                )
+            "#,
+            pipeline.id,
+            query.repo,
+            format!("{} ({})", &body.head_commit.message, pipeline.name),
+            body.sender.username,
+            Option::<Uuid>::None as Option<Uuid>,
+            event.clone() as EventType,
+            Json(json!({})) as Json<serde_json::Value>,
+            body.r#ref,
+            body.after,
+            PipelineStatus::Queued as PipelineStatus
+        )
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| {
+            error!("failed to insert pipeline: {e}");
+            poem::Error::from_string("internal error", StatusCode::INTERNAL_SERVER_ERROR)
+        })?;
 
-    // sqlx::query!(
-    //     r#"
-    //     SELECT FROM repo WHERE id = $1 FOR UPDATE;
-    //     "#,
-    //     query.repo
-    // )
-    // .bind(query.repo)
-    // .execute(&mut *tx)
-    // .await
-    // .map_err(|e| {
-    //     error!("failed to lock repository: {e}");
-    //     poem::Error::from_string("internal error", StatusCode::INTERNAL_SERVER_ERROR)
-    // })?;
+        for job in pipeline.jobs {
+            sqlx::query!(
+                r#"
+                    INSERT INTO pipeline_job
+                        (id, pipeline_id, key, name, image, timeout, status, env)
+                    VALUES
+                        ($1, $2, $3, $4, $5, $6, $7, $8)
+                "#,
+                job.id,
+                pipeline.id,
+                job.key,
+                job.name,
+                job.image,
+                job.timeout.min(60 * 6), // 최대 6시간
+                JobStatus::Pending as JobStatus,
+                Json(job.env) as Json<HashMap<String, EnvDefinition>>,
+            )
+            .execute(&mut *tx)
+            .await
+            .map_err(|e| {
+                error!("failed to insert job: {e}");
+                poem::Error::from_string("internal error", StatusCode::INTERNAL_SERVER_ERROR)
+            })?;
 
-    // sqlx::query!(
-    //     r#"
-    //     INSERT INTO pipeline
-    //         (
-    //             id, repo_id, title, triggered_by, triggered_by_user,
-    //             event_type, event_payload, git_ref, git_commit_id, status,
-    //             serial
-    //         )
-    //     VALUES
-    //         ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-    //             (SELECT COALESCE(MAX(serial), 0) + 1 FROM pipeline WHERE repo_id = $2)
-    //         )
-    //     "#,
-    //     pipeline_id,
-    //     query.repo,
-    //     "Test",
-    //     "wow",
-    //     Option::<Uuid>::None as Option<Uuid>,
-    //     event as EventType,
-    //     Json(json!({})) as Json<serde_json::Value>,
-    //     body.r#ref,
-    //     body.after,
-    //     PipelineStatus::Queued as PipelineStatus
-    // )
-    // .execute(&mut *tx)
-    // .await
-    // .map_err(|e| {
-    //     error!("failed to insert pipeline: {e}");
-    //     poem::Error::from_string("internal error", StatusCode::INTERNAL_SERVER_ERROR)
-    // })?;
+            for parent_id in job.parents {
+                sqlx::query!(
+                    r#"
+                    INSERT INTO pipeline_job_depend
+                        (upstream_id, downstream_id)
+                    VALUES
+                        ($1, $2)
+                    "#,
+                    parent_id,
+                    job.id
+                )
+                .execute(&mut *tx)
+                .await
+                .map_err(|e| {
+                    error!("failed to insert job depend: {e}");
+                    poem::Error::from_string("internal error", StatusCode::INTERNAL_SERVER_ERROR)
+                })?;
+            }
 
-    // let evaluation_id = Uuid::now_v7();
+            for (idx, step) in job.steps.into_iter().enumerate() {
+                sqlx::query!(
+                    r#"
+                    INSERT INTO pipeline_job_step
+                        (id, job_id, name, ordering, command, status, env)
+                    VALUES
+                        ($1, $2, $3, $4, $5, $6, $7)
+                    "#,
+                    step.id,
+                    job.id,
+                    step.name,
+                    (idx + 1) as i32,
+                    step.command,
+                    JobStatus::Pending as JobStatus,
+                    Json(step.env) as Json<HashMap<String, EnvDefinition>>,
+                )
+                .execute(&mut *tx)
+                .await
+                .map_err(|e| {
+                    error!("failed to insert job step: {e}");
+                    poem::Error::from_string("internal error", StatusCode::INTERNAL_SERVER_ERROR)
+                })?;
+            }
+        }
+    }
 
-    // sqlx::query!(
-    //     r#"
-    //         INSERT INTO pipeline_job
-    //             (id, pipeline_id, key, name, image, timeout, status)
-    //         VALUES
-    //             ($1, $2, $3, $4, $5, $6, $7)
-    //     "#,
-    //     evaluation_id,
-    //     pipeline_id,
-    //     "evaluate",
-    //     "Evaluate Pipeline",
-    //     "oven/bun:latest",
-    //     5,
-    //     JobStatus::Pending as JobStatus
-    // )
-    // .execute(&mut *tx)
-    // .await
-    // .map_err(|e| {
-    //     error!("failed to insert job: {e}");
-    //     poem::Error::from_string("internal error", StatusCode::INTERNAL_SERVER_ERROR)
-    // })?;
-
-    // let step_id = Uuid::now_v7();
-
-    // sqlx::query!(
-    //     r#"
-    //     INSERT INTO pipeline_job_step
-    //         (id, job_id, name, ordering, command, status)
-    //     VALUES
-    //         ($1, $2, $3, $4, $5, $6)
-    //     "#,
-    //     step_id,
-    //     evaluation_id,
-    //     "Evaluate Pipeline Jobs",
-    //     1 as i32,
-    //     "bun test.ts",
-    //     JobStatus::Pending as JobStatus
-    // )
-    // .execute(&mut *tx)
-    // .await
-    // .map_err(|e| {
-    //     error!("failed to insert job step: {e}");
-    //     poem::Error::from_string("internal error", StatusCode::INTERNAL_SERVER_ERROR)
-    // })?;
-
-    // tx.commit().await.map_err(|e| {
-    //     error!("failed to commit webhook transaction: {e}");
-    //     poem::Error::from_string("internal error", StatusCode::INTERNAL_SERVER_ERROR)
-    // })?;
+    tx.commit().await.map_err(|e| {
+        error!("failed to commit transaction: {e}");
+        poem::Error::from_string("internal error", StatusCode::INTERNAL_SERVER_ERROR)
+    })?;
 
     Ok(())
 }

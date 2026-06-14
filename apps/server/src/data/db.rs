@@ -1,7 +1,7 @@
 use api_types::{EventTypeResponse, PipelineStatusResponse};
 use sqlx::prelude::Type;
 
-#[derive(Debug, Type)]
+#[derive(Debug, Type, Clone)]
 #[sqlx(type_name = "event_type", rename_all = "snake_case")]
 pub enum EventType {
     Push,

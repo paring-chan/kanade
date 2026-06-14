@@ -38,6 +38,7 @@ pub struct Job {
     pub shell: String,
     pub image: String,
     pub depends: Vec<String>,
+    pub timeout: i32,
 
     pub steps: Vec<Rc<RefCell<Step>>>,
 }
@@ -49,6 +50,7 @@ pub struct JobConfig {
     pub env: HashMap<String, EnvDefinition>,
     pub shell: Option<String>,
     pub image: Option<String>,
+    pub timeout: Option<i32>,
 }
 
 impl Job {
@@ -67,6 +69,7 @@ impl Job {
             image: config.image.unwrap_or_else(|| default_image.into()),
             depends: Vec::new(),
             steps: Vec::new(),
+            timeout: config.timeout.unwrap_or(30),
         }
     }
 }

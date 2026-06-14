@@ -26,6 +26,7 @@ pub struct EvaluatedJob {
     pub shell: String,
     pub image: String,
     pub parents: Vec<Uuid>,
+    pub timeout: i32,
 
     pub steps: Vec<EvaluatedStep>,
 }

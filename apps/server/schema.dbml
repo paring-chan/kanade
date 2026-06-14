@@ -174,7 +174,6 @@ Table pipeline {
 Table pipeline_job {
   id uuid pk [not null, note: 'UUIDv7']
   pipeline_id uuid [not null, ref: > pipeline.id]
-  parent_id uuid [ref: > pipeline_job.id]
   key text [not null]
   name text [not null]
   image text [note: '컨테이너 이미지']
@@ -190,6 +189,15 @@ Table pipeline_job {
 
   indexes {
     (pipeline_id, key) [unique]
+  }
+}
+
+Table pipeline_job_depend {
+  upstream_id uuid [not null]
+  downstream_id uuid [not null]
+
+  indexes {
+    (upstream_id, downstream_id) [pk]
   }
 }
 

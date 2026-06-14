@@ -128,6 +128,7 @@ pub fn evaluate(script: &str, context: EvalContext) -> crate::Result<Vec<Evaluat
                 image: job.image.clone(),
                 parents: parent_ids,
                 steps,
+                timeout: job.timeout,
             };
 
             evaluated_jobs.push(evaluated_job);
