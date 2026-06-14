@@ -40,6 +40,7 @@ pub fn evaluate(script: &str, context: EvalContext) -> crate::Result<Vec<Evaluat
 
     scope.push("ctx", ctx.clone());
 
+    engine.set_max_operations(500_000);
     engine.run_with_scope(&mut scope, script)?;
 
     let mut pipelines = Vec::new();

@@ -32,6 +32,7 @@ pub struct AllForges {
     pub forgejo: ForgejoApi,
 }
 
+#[derive(Debug)]
 pub enum ForgeAuthInfo {
     Forgejo {
         config: ForgejoForgeConfig,
@@ -156,6 +157,25 @@ impl AllForges {
                 access_token,
                 ..
             } => self.forgejo.get_repo(&config, &access_token, repo_id).await,
+        }
+    }
+
+    pub async fn get_repo_script(
+        &self,
+        auth: &ForgeAuthInfo,
+        repo: &UpstreamRepositoryInfo,
+        commit: &str,
+    ) -> crate::Result<Option<String>> {
+        match auth {
+            ForgeAuthInfo::Forgejo {
+                config,
+                access_token,
+                ..
+            } => {
+                self.forgejo
+                    .get_repo_config(&config, &access_token, repo, commit)
+                    .await
+            }
         }
     }
 

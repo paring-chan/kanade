@@ -8,8 +8,9 @@ use crate::types::EnvDefinition;
 
 #[derive(Debug)]
 pub struct EvalContext {
-    pub event: String,
-    pub branch: String,
+    pub event: &'static str,
+    pub branch: Option<String>,
+    pub r#ref: String,
     pub tag: Option<String>,
     pub args: Dynamic,
     pub default_image: String,
@@ -103,17 +104,30 @@ pub mod kanade_rhai_module {
 
     #[rhai_fn(get = "branch")]
     pub fn eval_branch(ctx: &mut Rc<RefCell<EvalContext>>) -> String {
-        ctx.borrow().branch.to_string()
+        ctx.borrow()
+            .branch
+            .as_ref()
+            .map(|x| x.to_string())
+            .unwrap_or_default()
     }
 
     #[rhai_fn(get = "tag")]
-    pub fn eval_tag(ctx: &mut Rc<RefCell<EvalContext>>) -> Option<String> {
-        ctx.borrow().tag.clone()
+    pub fn eval_tag(ctx: &mut Rc<RefCell<EvalContext>>) -> String {
+        ctx.borrow()
+            .tag
+            .as_ref()
+            .map(|x| x.to_string())
+            .unwrap_or_default()
     }
 
     #[rhai_fn(get = "args")]
     pub fn eval_args(ctx: &mut Rc<RefCell<EvalContext>>) -> Dynamic {
         ctx.borrow().args.clone()
+    }
+
+    #[rhai_fn(get = "ref")]
+    pub fn eval_ref(ctx: &mut Rc<RefCell<EvalContext>>) -> String {
+        ctx.borrow().r#ref.clone()
     }
 
     #[rhai_fn(name = "pipeline")]

@@ -33,3 +33,6 @@ aes-gcm.workspace = true
 garde.workspace = true
 rand.workspace = true
 ssh-key.workspace = true
+base64.workspace = true
+
+event-evaluator.workspace = true

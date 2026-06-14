@@ -17,8 +17,9 @@ fn main() {
         "#,
         EvalContext {
             event: "push".into(),
-            branch: "main".into(),
+            branch: Some("main".into()),
             tag: None,
+            r#ref: "refs/heads/main".into(),
             args: to_dynamic(serde_json::json!({
                 "wow": true
             }))

@@ -21,6 +21,8 @@ pub enum AppError {
     ForgeNotLinked,
     #[error("upstream repo not found")]
     UpstreamRepoNotFound,
+    #[error("task join error: {0}")]
+    Task(#[from] tokio::task::JoinError),
 }
 
 impl From<reqwest::Error> for AppError {
@@ -43,6 +45,7 @@ impl ResponseError for AppError {
             AppError::Json(_) => StatusCode::INTERNAL_SERVER_ERROR,
             AppError::ForgeNotLinked => StatusCode::UNAUTHORIZED,
             AppError::UpstreamRepoNotFound => StatusCode::INTERNAL_SERVER_ERROR,
+            AppError::Task(_) => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
 }

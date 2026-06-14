@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use base64::{Engine, prelude::BASE64_STANDARD};
 use oauth2::{RefreshToken, TokenResponse};
 use reqwest::{StatusCode, header::AUTHORIZATION};
 use secrecy::{ExposeSecret, SecretString};
@@ -121,6 +122,49 @@ impl ForgejoApi {
         }
 
         Ok(())
+    }
+
+    pub async fn get_repo_config(
+        &self,
+
+        config: &ForgejoForgeConfig,
+        access_token: &SecretString,
+        repo: &UpstreamRepositoryInfo,
+        commit: &str,
+    ) -> crate::Result<Option<String>> {
+        let res = HTTP
+            .get(format!(
+                "{}/api/v1/repos/{}/contents/.kanade.rhai?ref={}",
+                &config.url,
+                &repo.full_name,
+                urlencoding::encode(commit)
+            ))
+            .header(
+                AUTHORIZATION,
+                format!("token {}", access_token.expose_secret()),
+            )
+            .send()
+            .await?;
+
+        if res.status() == StatusCode::NOT_FOUND {
+            return Ok(None);
+        }
+
+        let res = res.error_for_status()?;
+
+        #[derive(Deserialize)]
+        struct ContentRes {
+            content: String,
+        }
+
+        let res: ContentRes = res.json().await?;
+
+        let content = BASE64_STANDARD
+            .decode(res.content)
+            .map_err(|e| AppError::InternalError(e.into()))?;
+        let content = String::from_utf8(content).map_err(|e| AppError::InternalError(e.into()))?;
+
+        Ok(Some(content))
     }
 
     #[instrument(skip(self, config, access_token, secret), err(Debug))]

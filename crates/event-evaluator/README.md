@@ -8,6 +8,7 @@
 #### 필드
 - `event`: 이벤트 타입 - push / pull_request / release / cron / manual
 - `branch`: 이벤트 발생 브랜치 이름 (비어있을 수 있음)
+- `ref`: git ref
 - `tag`: git 태그 (태그 푸시 시 포함)
 - `args`: 수동 실행 시 지정한 json
 
