@@ -38,4 +38,4 @@ aes-gcm = "0.11.0-rc.4"
 garde = { version = "0.22.1", features = ["full"] }
 rand = "0.10.1"
 ssh-key = { version = "0.7.0-rc.10", features = ["ed25519"] }
-rhai = "1.25.1"
+rhai = { version = "1.25.1", features = ["serde"] }
