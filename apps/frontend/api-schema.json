@@ -105,7 +105,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/AgentPipelineJobResponse"
+                    "$ref": "#/components/schemas/PipelineJobResponse"
                   }
                 }
               }
@@ -775,6 +775,36 @@
           }
         }
       },
+      "AgentPipelineJobStepResponse": {
+        "type": "object",
+        "title": "AgentPipelineJobStepResponse",
+        "required": [
+          "id",
+          "name",
+          "ordering",
+          "command"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "스텝 ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "스텝 이름"
+          },
+          "ordering": {
+            "type": "integer",
+            "format": "int32",
+            "description": "스텝 순서(정렬용)"
+          },
+          "command": {
+            "type": "string",
+            "description": "실행 명령어"
+          }
+        }
+      },
       "EnvDefinition": {
         "type": "object",
         "description": "환경변수 정의",
@@ -940,7 +970,7 @@
             "type": "array",
             "description": "스텝 목록",
             "items": {
-              "$ref": "#/components/schemas/PipelineJobStepResponse"
+              "$ref": "#/components/schemas/AgentPipelineJobStepResponse"
             }
           },
           "env": {
@@ -971,6 +1001,76 @@
           }
         }
       },
+      "JobStatusResponse": {
+        "type": "string",
+        "enum": [
+          "waiting",
+          "pending",
+          "running",
+          "success",
+          "failed",
+          "skipped",
+          "cancelled"
+        ]
+      },
+      "PipelineJobResponse": {
+        "type": "object",
+        "title": "PipelineJobResponse",
+        "required": [
+          "id",
+          "key",
+          "name",
+          "timeout",
+          "status",
+          "steps",
+          "parents",
+          "created_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "key": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "timeout": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "status": {
+            "$ref": "#/components/schemas/JobStatusResponse"
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PipelineJobStepResponse"
+            }
+          },
+          "parents": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "finished_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "PipelineJobStepResponse": {
         "type": "object",
         "title": "PipelineJobStepResponse",
@@ -978,26 +1078,39 @@
           "id",
           "name",
           "ordering",
-          "command"
+          "command",
+          "created_at"
         ],
         "properties": {
           "id": {
             "type": "string",
-            "format": "uuid",
-            "description": "스텝 ID"
+            "format": "uuid"
           },
           "name": {
-            "type": "string",
-            "description": "스텝 이름"
+            "type": "string"
           },
           "ordering": {
             "type": "integer",
-            "format": "int32",
-            "description": "스텝 순서(정렬용)"
+            "format": "int32"
           },
           "command": {
+            "type": "string"
+          },
+          "created_at": {
             "type": "string",
-            "description": "실행 명령어"
+            "format": "date-time"
+          },
+          "exit_code": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "finished_at": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },

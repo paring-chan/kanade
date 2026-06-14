@@ -71,7 +71,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json; charset=utf-8": components["schemas"]["AgentPipelineJobResponse"][];
+                        "application/json; charset=utf-8": components["schemas"]["PipelineJobResponse"][];
                     };
                 };
             };
@@ -780,6 +780,23 @@ export interface components {
             /** @description 컨테이너 이미지 */
             image?: string;
         };
+        /** AgentPipelineJobStepResponse */
+        AgentPipelineJobStepResponse: {
+            /**
+             * Format: uuid
+             * @description 스텝 ID
+             */
+            id: string;
+            /** @description 스텝 이름 */
+            name: string;
+            /**
+             * Format: int32
+             * @description 스텝 순서(정렬용)
+             */
+            ordering: number;
+            /** @description 실행 명령어 */
+            command: string;
+        };
         /** @description 환경변수 정의 */
         EnvDefinition: components["schemas"]["EnvDefinition_StaticEnv"] | components["schemas"]["EnvDefinition_SecretEnv"];
         /** @description 환경변수 정의 */
@@ -832,7 +849,7 @@ export interface components {
             /** @description 작업 정보 */
             job: components["schemas"]["AgentPipelineJobResponse"] & unknown;
             /** @description 스텝 목록 */
-            steps: components["schemas"]["PipelineJobStepResponse"][];
+            steps: components["schemas"]["AgentPipelineJobStepResponse"][];
             /** @description Job 스코프 환경변수 목록 */
             env: {
                 [key: string]: components["schemas"]["EnvDefinition"];
@@ -846,22 +863,42 @@ export interface components {
         JobFinishRequest: {
             success: boolean;
         };
+        /** @enum {string} */
+        JobStatusResponse: "waiting" | "pending" | "running" | "success" | "failed" | "skipped" | "cancelled";
+        /** PipelineJobResponse */
+        PipelineJobResponse: {
+            /** Format: uuid */
+            id: string;
+            key: string;
+            name: string;
+            /** Format: int32 */
+            timeout: number;
+            status: components["schemas"]["JobStatusResponse"];
+            steps: components["schemas"]["PipelineJobStepResponse"][];
+            parents: string[];
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            started_at?: string;
+            /** Format: date-time */
+            finished_at?: string;
+        };
         /** PipelineJobStepResponse */
         PipelineJobStepResponse: {
-            /**
-             * Format: uuid
-             * @description 스텝 ID
-             */
+            /** Format: uuid */
             id: string;
-            /** @description 스텝 이름 */
             name: string;
-            /**
-             * Format: int32
-             * @description 스텝 순서(정렬용)
-             */
+            /** Format: int32 */
             ordering: number;
-            /** @description 실행 명령어 */
             command: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: int32 */
+            exit_code?: number;
+            /** Format: date-time */
+            started_at?: string;
+            /** Format: date-time */
+            finished_at?: string;
         };
         /** PipelineListResponse */
         PipelineListResponse: {

@@ -41,14 +41,14 @@ const NavBreadcrumb = () => {
   const breadcrumb = match
     .filter(
       (x) =>
-        typeof x.handle === "object" && x.handle && "breadcrumb" in x.handle,
+        typeof x.handle === "object" && x.handle && "Breadcrumb" in x.handle,
     )
     .map((x: any, i) => {
       return (
         <Fragment key={x.id}>
           {i > 0 && <span> / </span>}
 
-          {x.handle.breadcrumb(x.loaderData)}
+          <x.handle.Breadcrumb {...x.loaderData} />
         </Fragment>
       );
     });
