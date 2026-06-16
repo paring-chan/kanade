@@ -1,7 +1,7 @@
 use std::{fs::File, io::Write};
 
 use poem_openapi::OpenApiService;
-use server::EventMessage;
+use server::{EventMessage, LogEntry};
 
 fn main() {
     File::create("apps/frontend/api-schema.json")
@@ -14,7 +14,9 @@ fn main() {
         )
         .unwrap();
 
-    let types = specta::Types::default().register::<EventMessage>();
+    let types = specta::Types::default()
+        .register::<EventMessage>()
+        .register::<LogEntry>();
     let data = specta_typescript::Typescript::default()
         .export(&types, specta_serde::PhasesFormat)
         .unwrap();

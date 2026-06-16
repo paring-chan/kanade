@@ -38,7 +38,12 @@ impl HttpReporter {
 impl JobStatusReport for HttpReporter {
     type Error = ReporterError;
 
-    async fn step_started(&self, step_id: Uuid, step_name: &str) -> Result<(), Self::Error> {
+    async fn step_started(
+        &self,
+        job_id: Uuid,
+        step_id: Uuid,
+        step_name: &str,
+    ) -> Result<(), Self::Error> {
         info!(step_id = %step_id, step_name = %step_name, "Step started");
         let url = format!("{}/api/v1/agent/steps/{}/started", self.base_url, step_id);
         self.client
@@ -49,7 +54,12 @@ impl JobStatusReport for HttpReporter {
         Ok(())
     }
 
-    async fn step_finished(&self, step_id: Uuid, exit_code: i32) -> Result<(), Self::Error> {
+    async fn step_finished(
+        &self,
+        job_id: Uuid,
+        step_id: Uuid,
+        exit_code: i32,
+    ) -> Result<(), Self::Error> {
         info!(step_id = %step_id, exit_code = %exit_code, "Step finished");
         let url = format!("{}/api/v1/agent/steps/{}/finish", self.base_url, step_id);
         let request = StepFinishRequest {
@@ -65,7 +75,12 @@ impl JobStatusReport for HttpReporter {
         Ok(())
     }
 
-    async fn step_log(&self, step_id: Uuid, line: LogLine) -> Result<(), Self::Error> {
+    async fn step_log(
+        &self,
+        job_id: Uuid,
+        step_id: Uuid,
+        line: LogLine,
+    ) -> Result<(), Self::Error> {
         debug!(step_id = %step_id, line = ?line, "Step log");
 
         self.log_sender
@@ -73,11 +88,13 @@ impl JobStatusReport for HttpReporter {
             .send(match line {
                 LogLine::StdIn(_) => return Ok(()),
                 LogLine::StdOut(stdout) => AgentLogMessage::Log {
+                    job_id,
                     step_id,
                     kind: AgentLogKind::Stdout,
                     content: stdout,
                 },
                 LogLine::StdErr(stderr) => AgentLogMessage::Log {
+                    job_id,
                     step_id,
                     kind: AgentLogKind::Stderr,
                     content: stderr,

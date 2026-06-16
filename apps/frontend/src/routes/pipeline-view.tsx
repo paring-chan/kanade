@@ -11,7 +11,7 @@ import {
 } from "../queries/pipeline";
 import { repoByIdQueryOptions } from "../queries/repo";
 
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import type { components } from "../utils/api/types";
 
@@ -105,6 +105,8 @@ export const Component = () => {
     pipelineQueryOptions(params.pipeline!),
   );
 
+  const [currentJob, setCurrentJob] = useState<string | null>(null);
+
   return (
     <div className="flex grow">
       <div className="grow w-0 flex flex-col">
@@ -130,42 +132,56 @@ export const Component = () => {
               </div>
             }
           >
-            <JobTree pipelineId={pipeline.id} />
+            <JobTree onSelect={setCurrentJob} pipelineId={pipeline.id} />
           </Suspense>
         </div>
       </div>
-      <div className="grow w-0 border-l border-black/10 flex flex-col">
-        <div className="flex w-full relative h-8">
-          <div className="absolute inset-0 pointer-events-none border-b  border-black/10"></div>
-          <button className="flex items-center cursor-pointer px-3 hover:bg-black/10 transition-colors border-b  border-black">
-            로그
-          </button>
-          <button className="flex items-center cursor-pointer px-3 hover:bg-black/10 transition-colors">
-            아티팩트
-          </button>
-          <button className="flex items-center cursor-pointer px-3 hover:bg-black/10 transition-colors">
-            상세정보
-          </button>
-          <div className="grow" />
-          <button className="h-8 w-8 flex justify-center items-center cursor-pointer hover:bg-black/10 transition-colors">
-            <LuX className="size-4" />
-          </button>
+      {currentJob && (
+        <div className="grow w-0 border-l border-black/10 flex flex-col">
+          <div className="flex w-full relative h-8">
+            <div className="absolute inset-0 pointer-events-none border-b  border-black/10"></div>
+            <button className="flex items-center cursor-pointer px-3 hover:bg-black/10 transition-colors border-b  border-black">
+              로그
+            </button>
+            <button className="flex items-center cursor-pointer px-3 hover:bg-black/10 transition-colors">
+              아티팩트
+            </button>
+            <button className="flex items-center cursor-pointer px-3 hover:bg-black/10 transition-colors">
+              상세정보
+            </button>
+            <div className="grow" />
+            <button className="h-8 w-8 flex justify-center items-center cursor-pointer hover:bg-black/10 transition-colors">
+              <LuX className="size-4" />
+            </button>
+          </div>
+          <div className="bg-pink-100 grow ">
+            <LogView pipelineId={pipeline.id} jobId={currentJob} />
+          </div>
         </div>
-        <div className="bg-pink-100 grow ">
-          <LogView />
-        </div>
-      </div>
+      )}
     </div>
   );
 };
 
-const JobTree = ({ pipelineId }: { pipelineId: string }) => {
+const JobTree = ({
+  pipelineId,
+  onSelect,
+}: {
+  pipelineId: string;
+  onSelect: (jobId: string) => void;
+}) => {
   const { data: job } = useSuspenseQuery(pipelineJobsQueryOptions(pipelineId));
 
   return (
     <div className="flex flex-col">
       {job.map((job) => (
-        <JobItem key={job.id} job={job} />
+        <JobItem
+          onSelect={() => {
+            onSelect(job.id);
+          }}
+          key={job.id}
+          job={job}
+        />
       ))}
     </div>
   );
@@ -173,8 +189,10 @@ const JobTree = ({ pipelineId }: { pipelineId: string }) => {
 
 const JobItem = ({
   job,
+  onSelect,
 }: {
   job: components["schemas"]["PipelineJobResponse"];
+  onSelect: () => void;
 }) => {
   const icon = (() => {
     switch (job.status) {
@@ -198,7 +216,10 @@ const JobItem = ({
   })();
 
   return (
-    <button className="px-4 py-1 flex items-center gap-2 transition-colors text-left cursor-pointer hover:bg-black/5">
+    <button
+      className="px-4 py-1 flex items-center gap-2 transition-colors text-left cursor-pointer hover:bg-black/5"
+      onClick={onSelect}
+    >
       <div className="size-4">{icon}</div>
       <div className="grow">{job.name}</div>
     </button>

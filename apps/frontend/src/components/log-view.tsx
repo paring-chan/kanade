@@ -1,10 +1,19 @@
 import { ScrollArea } from "@base-ui/react";
-import { Fragment, useRef, useState, useSyncExternalStore } from "react";
+import {
+  Fragment,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { cn } from "tailwind-variants";
 import { useVirtualizer } from "@tanstack/react-virtual";
 
 import LuChevronRight from "~icons/lucide/chevron-right";
-import { keepPreviousData } from "@tanstack/react-query";
+import type { LogEntry } from "../ws-types";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { pipelineJobsQueryOptions } from "../queries/pipeline";
 import type { components } from "../utils/api/types";
 
 type Step = {
@@ -35,43 +44,79 @@ type ElementInfo =
     };
 
 class LogStore {
-  steps: Step[];
+  shouldConnect = false;
+
+  steps!: Step[];
   currentMeta!: StoreMeta;
   logs = new Map<string, string[]>();
   callbacks = new Set<() => void>();
 
-  constructor() {
-    this.steps = [
-      {
-        id: "step1",
-        name: "Step 1",
-      },
-      {
-        id: "step2",
-        name: "Step 2",
-      },
-      {
-        id: "step2",
-        name: "Step 3",
-      },
-    ];
+  private ws?: WebSocket;
 
-    this.logs.set(
-      "step1",
-      Array.from({ length: 1000 }, (_, i) => `Log ${i}`),
-    );
+  constructor(public job: components["schemas"]["PipelineJobResponse"]) {
+    this.setJob(job);
+  }
 
-    this.logs.set(
-      "step2",
-      Array.from({ length: 5000 }, (_, i) => `Log ${i}`),
-    );
-
-    this.logs.set(
-      "step3",
-      Array.from({ length: 2000 }, (_, i) => `Log ${i}`),
-    );
+  setJob(job: components["schemas"]["PipelineJobResponse"]) {
+    this.job = job;
+    this.logs.clear();
+    this.steps = job.steps.map((x) => ({ id: x.id, name: x.name }));
 
     this.rebuildMeta();
+  }
+
+  append(stepId: string, message: string) {
+    let logs = this.logs.get(stepId);
+    if (!logs) {
+      logs = [];
+      this.logs.set(stepId, logs);
+    }
+
+    logs.push(message);
+    this.rebuildMeta();
+  }
+
+  connect() {
+    if (this.ws) {
+      this.ws.close();
+    }
+
+    const ws = new WebSocket("/_/ws/logs/" + this.job.id);
+    this.ws = ws;
+
+    ws.onopen = () => {
+      console.log("ws connected");
+    };
+
+    ws.onmessage = (ev) => {
+      try {
+        const data = JSON.parse(ev.data) as LogEntry;
+        const lines = data.content
+          .split("\r\n")
+          .filter((x, i, arr) => x || i !== arr.length - 1);
+        for (const line of lines) {
+          this.append(data.step_id, line);
+        }
+      } catch (e) {
+        console.error("failed to parse message:", ev.data, e);
+      }
+    };
+
+    ws.onclose = () => {
+      console.log("connection closed");
+
+      if (this.shouldConnect) return;
+      setTimeout(() => {
+        if (this.shouldConnect) return;
+        console.log("reconnecting...");
+        this.connect();
+      }, 1000);
+    };
+  }
+
+  disconnect() {
+    this.shouldConnect = true;
+    this.ws?.close();
   }
 
   private notify() {
@@ -130,10 +175,33 @@ class LogStore {
   }
 }
 
-export const LogView = () => {
+export const LogView = ({
+  jobId,
+  pipelineId,
+}: {
+  pipelineId: string;
+  jobId: string;
+}) => {
+  const { data: jobs } = useSuspenseQuery(pipelineJobsQueryOptions(pipelineId));
+  const job = jobs.find((x) => x.id === jobId);
+  if (!job) throw new Error("job not found");
+
   const container = useRef<HTMLDivElement>(null);
 
-  const [store] = useState(() => new LogStore());
+  const [store] = useState(() => new LogStore(job));
+
+  useEffect(() => {
+    if (store.job.id !== job.id) {
+      store.setJob(job);
+    }
+  }, [job]);
+
+  useEffect(() => {
+    store.connect();
+    return () => {
+      store.disconnect();
+    };
+  }, [store, job.id]);
   const meta = useSyncExternalStore(
     (cb) => store.subscribe(cb),
     () => store.currentMeta,
@@ -172,7 +240,7 @@ export const LogView = () => {
                       <div className="size-4">
                         <LuChevronRight className="size-4 rotate-90" />
                       </div>
-                      <div className="text-sm">Step</div>
+                      <div className="text-sm">{item.step.name}</div>
                     </button>
                   );
                 case "line":

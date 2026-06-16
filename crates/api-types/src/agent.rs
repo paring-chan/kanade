@@ -142,6 +142,7 @@ pub enum AgentLogKind {
 #[serde(tag = "t", content = "p")]
 pub enum AgentLogMessage {
     Log {
+        job_id: Uuid,
         step_id: Uuid,
         kind: AgentLogKind,
         content: String,

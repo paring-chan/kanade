@@ -5,15 +5,20 @@ use secrecy::ExposeSecret;
 use tokio::sync::broadcast;
 use tracing::Instrument;
 
-use crate::{config::AppConfig, realtime::types::EventMessage};
+use crate::{
+    config::AppConfig,
+    realtime::types::{EventMessage, LogMessage},
+};
 
 pub mod types;
 
 pub struct Realtime {
     client: Client,
     _subscriber_client: Client,
+    _log_client: Client,
 
     pub event_stream: broadcast::Sender<EventMessage>,
+    pub log_stream: broadcast::Sender<LogMessage>,
 }
 
 impl Realtime {
@@ -27,9 +32,11 @@ impl Realtime {
             .build()?;
 
         let subscriber_client = client.clone_new();
+        let log_client = client.clone_new();
 
         client.init().await?;
         subscriber_client.init().await?;
+        log_client.init().await?;
 
         client.on_error(|(error, server)| async move {
             error!(server = ?server, "valkey error: {error}");
@@ -38,6 +45,11 @@ impl Realtime {
 
         subscriber_client.on_error(|(error, server)| async move {
             error!(server = ?server, "subscriber error: {error}");
+            Ok(())
+        });
+
+        log_client.on_error(|(error, server)| async move {
+            error!(server = ?server, "log subscriber error: {error}");
             Ok(())
         });
 
@@ -52,7 +64,19 @@ impl Realtime {
             }
         });
 
+        log_client.on_reconnect({
+            let log_client = log_client.clone();
+            move |_| {
+                let c = log_client.clone();
+                async move {
+                    c.subscribe("kanade:logs").await?;
+                    Ok(())
+                }
+            }
+        });
+
         subscriber_client.subscribe("kanade:events").await?;
+        log_client.subscribe("kanade:logs").await?;
         let mut message_stream = subscriber_client.message_rx();
 
         let (event_sender, _) = broadcast::channel(100);
@@ -86,10 +110,45 @@ impl Realtime {
             .instrument(info_span!("event-receiver"))
         });
 
+        let mut log_stream = log_client.message_rx();
+
+        let (log_sender, _) = broadcast::channel(100);
+
+        tokio::spawn({
+            let sender = log_sender.clone();
+            async move {
+                info!("realtime receiver started");
+
+                while let Ok(message) = log_stream.recv().await {
+                    let fred::types::Value::String(data) = message.value else {
+                        warn!("invalid data received: {:?}", message.value);
+                        continue;
+                    };
+                    let message: LogMessage = match serde_json::from_str(&data) {
+                        Ok(message) => message,
+                        Err(err) => {
+                            warn!("json parse failed: {:?}", err);
+                            continue;
+                        }
+                    };
+                    debug!("realtime message: {message:?}");
+
+                    _ = sender.send(message).inspect_err(|e| {
+                        warn!("event send failed: {:?}", e);
+                    });
+                }
+
+                info!("realtime receiver stopped")
+            }
+            .instrument(info_span!("event-receiver"))
+        });
+
         Ok(Self {
             client,
             _subscriber_client: subscriber_client,
+            _log_client: log_client,
             event_stream: event_sender,
+            log_stream: log_sender,
         })
     }
 
@@ -97,6 +156,15 @@ impl Realtime {
         let _: () = self
             .client
             .publish("kanade:events", serde_json::to_string(&payload)?)
+            .await?;
+
+        Ok(())
+    }
+
+    pub async fn publish_log(&self, payload: &LogMessage) -> crate::Result<()> {
+        let _: () = self
+            .client
+            .publish("kanade:logs", serde_json::to_string(&payload)?)
             .await?;
 
         Ok(())

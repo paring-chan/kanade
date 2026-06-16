@@ -7,18 +7,52 @@ use poem::{
     endpoint::BoxEndpoint,
     get, handler,
     web::{
-        Data,
+        Data, Path,
         websocket::{Message, WebSocket},
     },
 };
+use uuid::Uuid;
 
-use crate::realtime::Realtime;
+use crate::realtime::{
+    Realtime,
+    types::{LogEntry, LogKind, LogMessage},
+};
 
 pub fn routes() -> BoxEndpoint<'static> {
     Route::new()
         .at("/events", get(events_ws))
         .at("/agent", get(handle_agent))
+        .at("/logs/:job_id", get(log_ws))
         .boxed()
+}
+
+#[handler]
+async fn log_ws(
+    ws: WebSocket,
+    Data(realtime): Data<&Arc<Realtime>>,
+    Path(job_id_param): Path<Uuid>,
+) -> impl IntoResponse {
+    let realtime = realtime.clone();
+
+    ws.on_upgrade(move |socket| async move {
+        let (mut sink, _) = socket.split();
+        let mut receiver = realtime.log_stream.subscribe();
+
+        while let Ok(msg) = receiver.recv().await {
+            match msg {
+                LogMessage::Log { job_id, entry } => {
+                    if job_id != job_id_param {
+                        continue;
+                    }
+                    if let Ok(data) = serde_json::to_string(&entry)
+                        && let Err(_) = sink.send(Message::Text(data)).await
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+    })
 }
 
 #[handler]
@@ -55,20 +89,24 @@ async fn handle_agent(ws: WebSocket, Data(realtime): Data<&Arc<Realtime>>) -> im
             for msg in msgs {
                 match msg {
                     AgentLogMessage::Log {
+                        job_id,
                         step_id,
                         kind,
                         content,
                     } => {
-                        for line in content.trim().lines() {
-                            info!(
-                                "{} {step_id} {}",
-                                match kind {
-                                    api_types::AgentLogKind::Stdout => "[STDOUT]",
-                                    api_types::AgentLogKind::Stderr => "[STDERR]",
+                        _ = realtime
+                            .publish_log(&LogMessage::Log {
+                                job_id: job_id,
+                                entry: LogEntry {
+                                    content,
+                                    step_id,
+                                    kind: match kind {
+                                        api_types::AgentLogKind::Stdout => LogKind::Stdout,
+                                        api_types::AgentLogKind::Stderr => LogKind::Stderr,
+                                    },
                                 },
-                                line
-                            );
-                        }
+                            })
+                            .await;
                     }
                 }
             }

@@ -15,3 +15,23 @@ pub enum EventMessage {
         status: JobStatusResponse,
     },
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub enum LogKind {
+    Stdout,
+    Stderr,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
+pub struct LogEntry {
+    pub step_id: Uuid,
+    pub content: String,
+    pub kind: LogKind,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
+#[serde(tag = "t", content = "p", rename_all = "camelCase")]
+pub enum LogMessage {
+    Log { job_id: Uuid, entry: LogEntry },
+}

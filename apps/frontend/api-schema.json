@@ -782,7 +782,8 @@
           "id",
           "name",
           "ordering",
-          "command"
+          "command",
+          "env"
         ],
         "properties": {
           "id": {
@@ -802,29 +803,36 @@
           "command": {
             "type": "string",
             "description": "실행 명령어"
+          },
+          "env": {
+            "type": "object",
+            "description": "스텝 스코프 환경변수 목록",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/EnvDefinitionResponse"
+            }
           }
         }
       },
-      "EnvDefinition": {
+      "EnvDefinitionResponse": {
         "type": "object",
         "description": "환경변수 정의",
         "anyOf": [
           {
-            "$ref": "#/components/schemas/EnvDefinition_StaticEnv"
+            "$ref": "#/components/schemas/EnvDefinitionResponse_StaticEnv"
           },
           {
-            "$ref": "#/components/schemas/EnvDefinition_SecretEnv"
+            "$ref": "#/components/schemas/EnvDefinitionResponse_SecretEnv"
           }
         ],
         "discriminator": {
           "propertyName": "type",
           "mapping": {
-            "static": "#/components/schemas/EnvDefinition_StaticEnv",
-            "secret": "#/components/schemas/EnvDefinition_SecretEnv"
+            "static": "#/components/schemas/EnvDefinitionResponse_StaticEnv",
+            "secret": "#/components/schemas/EnvDefinitionResponse_SecretEnv"
           }
         }
       },
-      "EnvDefinition_SecretEnv": {
+      "EnvDefinitionResponse_SecretEnv": {
         "description": "환경변수 정의",
         "allOf": [
           {
@@ -847,7 +855,7 @@
           }
         ]
       },
-      "EnvDefinition_StaticEnv": {
+      "EnvDefinitionResponse_StaticEnv": {
         "description": "환경변수 정의",
         "allOf": [
           {
@@ -947,7 +955,8 @@
           "job",
           "steps",
           "env",
-          "secrets"
+          "secrets",
+          "ssh_key"
         ],
         "properties": {
           "id": {
@@ -977,7 +986,7 @@
             "type": "object",
             "description": "Job 스코프 환경변수 목록",
             "additionalProperties": {
-              "$ref": "#/components/schemas/EnvDefinition"
+              "$ref": "#/components/schemas/EnvDefinitionResponse"
             }
           },
           "secrets": {
@@ -986,6 +995,9 @@
             "additionalProperties": {
               "type": "string"
             }
+          },
+          "ssh_key": {
+            "type": "string"
           }
         }
       },
