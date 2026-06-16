@@ -21,6 +21,7 @@ import LuHourglass from "~icons/lucide/hourglass";
 import LuBan from "~icons/lucide/ban";
 import LuChevronsRight from "~icons/lucide/chevrons-right";
 import LuCheck from "~icons/lucide/check";
+import { LogView } from "../components/log-view";
 
 export const loader = (async ({ params }) => {
   const pipeline = await queryClient.ensureQueryData(
@@ -150,7 +151,9 @@ export const Component = () => {
             <LuX className="size-4" />
           </button>
         </div>
-        <div className="bg-white grow overflow-y-auto">대충로그뷰</div>
+        <div className="bg-pink-100 grow ">
+          <LogView />
+        </div>
       </div>
     </div>
   );
