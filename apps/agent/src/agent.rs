@@ -1,5 +1,5 @@
-use crate::config::AgentConfig;
 use crate::reporter::HttpReporter;
+use crate::{config::AgentConfig, ws::LogSender};
 use api_types::JobAcquireResponse;
 use chrono::Duration;
 use job_executor::{Job, JobExecutor, JobStep};
@@ -10,13 +10,15 @@ use tokio::time::sleep;
 
 pub struct KanadeAgent {
     config: Arc<AgentConfig>,
+    log_sender: Arc<LogSender>,
     client: Client,
 }
 
 impl KanadeAgent {
-    pub fn new(config: Arc<AgentConfig>) -> Self {
+    pub fn new(config: Arc<AgentConfig>, log_sender: Arc<LogSender>) -> Self {
         Self {
             config,
+            log_sender,
             client: Client::new(),
         }
     }
@@ -48,6 +50,7 @@ impl KanadeAgent {
                                     let reporter = HttpReporter::new(
                                         self.config.api_uri.clone(),
                                         self.client.clone(),
+                                        self.log_sender.clone(),
                                     );
                                     let job_to_run = Job {
                                         id: job.id,

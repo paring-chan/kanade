@@ -1,6 +1,7 @@
 mod agent;
 mod config;
 mod reporter;
+mod ws;
 
 use std::sync::Arc;
 
@@ -14,6 +15,8 @@ use figment::{
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 use tracing_subscriber::{EnvFilter, fmt};
+
+use crate::ws::LogSender;
 
 #[macro_use]
 extern crate tracing;
@@ -49,7 +52,8 @@ async fn main() -> anyhow::Result<()> {
 
     debug!("config: {config:?}");
 
-    let agent = Arc::new(agent::KanadeAgent::new(config));
+    let log_sender = Arc::new(LogSender::new(config.clone()));
+    let agent = Arc::new(agent::KanadeAgent::new(config, log_sender));
     agent.run().await;
 
     Ok(())

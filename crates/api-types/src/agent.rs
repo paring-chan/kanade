@@ -130,3 +130,20 @@ pub enum JobAcquireEndpointResponse {
     #[oai(status = 204)]
     NoContent,
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum AgentLogKind {
+    Stdout,
+    Stderr,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(tag = "t", content = "p")]
+pub enum AgentLogMessage {
+    Log {
+        step_id: Uuid,
+        kind: AgentLogKind,
+        content: String,
+    },
+}

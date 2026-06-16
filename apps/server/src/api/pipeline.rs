@@ -53,13 +53,13 @@ impl PipelineApi {
                 p.created_at as p_created_at,
                 p.updated_at as p_updated_at,
 
-                tu.id as tu_id,
-                tu.username as tu_username,
-                tu.nick as tu_nick,
-                tu.email as tu_email,
-                tu.avatar_url as tu_avatar_url,
-                tu.created_at as tu_created_at,
-                tu.updated_at as tu_updated_at
+                tu.id as "tu_id?",
+                tu.username as "tu_username?",
+                tu.nick as "tu_nick?",
+                tu.email as "tu_email?",
+                tu.avatar_url as "tu_avatar_url?",
+                tu.created_at as "tu_created_at?",
+                tu.updated_at as "tu_updated_at?"
             FROM
                 pipeline p
             INNER JOIN repo r ON r.id = p.repo_id

@@ -1,8 +1,12 @@
-use api_types::{JobFinishRequest, StepFinishRequest};
+use std::sync::Arc;
+
+use api_types::{AgentLogKind, AgentLogMessage, JobFinishRequest, StepFinishRequest};
 use job_executor::adapter::{JobStatusReport, LogLine};
 use reqwest::Client;
 use tracing::info;
 use uuid::Uuid;
+
+use crate::ws::LogSender;
 
 #[derive(Debug)]
 pub struct ReporterError(pub anyhow::Error);
@@ -18,11 +22,16 @@ impl std::fmt::Display for ReporterError {
 pub struct HttpReporter {
     base_url: String,
     client: Client,
+    log_sender: Arc<LogSender>,
 }
 
 impl HttpReporter {
-    pub fn new(base_url: String, client: Client) -> Self {
-        Self { base_url, client }
+    pub fn new(base_url: String, client: Client, log_sender: Arc<LogSender>) -> Self {
+        Self {
+            base_url,
+            client,
+            log_sender,
+        }
     }
 }
 
@@ -58,6 +67,25 @@ impl JobStatusReport for HttpReporter {
 
     async fn step_log(&self, step_id: Uuid, line: LogLine) -> Result<(), Self::Error> {
         debug!(step_id = %step_id, line = ?line, "Step log");
+
+        self.log_sender
+            .sender
+            .send(match line {
+                LogLine::StdIn(_) => return Ok(()),
+                LogLine::StdOut(stdout) => AgentLogMessage::Log {
+                    step_id,
+                    kind: AgentLogKind::Stdout,
+                    content: stdout,
+                },
+                LogLine::StdErr(stderr) => AgentLogMessage::Log {
+                    step_id,
+                    kind: AgentLogKind::Stderr,
+                    content: stderr,
+                },
+            })
+            .await
+            .map_err(|e| ReporterError(e.into()))?;
+
         Ok(())
     }
 
