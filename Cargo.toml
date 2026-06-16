@@ -51,5 +51,6 @@ fred = "10.1.0"
 specta = { version = "2.0.0-rc.25", features = ["derive", "uuid"] }
 specta-typescript = "0.0.12"
 specta-serde = "0.0.12"
+tempfile = "3.27.0"
 
 event-evaluator = { path = "./crates/event-evaluator" }

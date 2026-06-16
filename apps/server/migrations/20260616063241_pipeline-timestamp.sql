@@ -1,0 +1,2 @@
+ALTER TABLE pipeline ADD COLUMN started_at TIMESTAMPTZ;
+ALTER TABLE pipeline ADD COLUMN finished_at TIMESTAMPTZ;

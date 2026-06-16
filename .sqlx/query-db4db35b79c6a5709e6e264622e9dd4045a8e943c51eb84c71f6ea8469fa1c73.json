@@ -1,0 +1,98 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT\n                j.id,\n                j.name,\n                j.timeout,\n                j.image,\n                j.pipeline_id,\n                j.env as \"env: sqlx::types::Json<HashMap<String, EnvDefinition>>\",\n                r.ssh_key\n            FROM pipeline_job j\n            INNER JOIN pipeline p ON p.id = j.pipeline_id\n            INNER JOIN repo r ON r.id = p.repo_id\n            WHERE j.status = 'pending'::job_status\n            ORDER BY j.created_at ASC\n            LIMIT 1\n            FOR UPDATE OF j SKIP LOCKED\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "pipeline_job",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "pipeline_job",
+            "name": "name"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "timeout",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "pipeline_job",
+            "name": "timeout"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "image",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "pipeline_job",
+            "name": "image"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "pipeline_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "pipeline_job",
+            "name": "pipeline_id"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "env: sqlx::types::Json<HashMap<String, EnvDefinition>>",
+        "type_info": "Jsonb",
+        "origin": {
+          "Table": {
+            "table": "pipeline_job",
+            "name": "env"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "ssh_key",
+        "type_info": "Bytea",
+        "origin": {
+          "Table": {
+            "table": "repo",
+            "name": "ssh_key"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "db4db35b79c6a5709e6e264622e9dd4045a8e943c51eb84c71f6ea8469fa1c73"
+}

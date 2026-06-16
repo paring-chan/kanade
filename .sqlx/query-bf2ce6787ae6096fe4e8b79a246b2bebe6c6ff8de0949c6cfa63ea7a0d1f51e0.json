@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE pipeline\n            SET\n                status = 'running'::pipeline_status,\n                started_at = now()\n            WHERE\n                id = $1\n                AND status = 'queued'::pipeline_status\n                AND started_at IS NULL\n            RETURNING id\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "pipeline",
+            "name": "id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "bf2ce6787ae6096fe4e8b79a246b2bebe6c6ff8de0949c6cfa63ea7a0d1f51e0"
+}

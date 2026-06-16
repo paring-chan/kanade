@@ -4,6 +4,7 @@ use api_types::JobAcquireResponse;
 use chrono::Duration;
 use job_executor::{Job, JobExecutor, JobStep};
 use reqwest::Client;
+use secrecy::SecretString;
 use std::sync::Arc;
 use tokio::time::sleep;
 
@@ -60,18 +61,29 @@ impl KanadeAgent {
                                                 name: s.name.clone(),
                                                 ordering: s.ordering,
                                                 command: s.command.clone(),
+                                                env: s.env,
                                             })
                                             .collect(),
+                                        env: job.env,
+                                        secrets: job
+                                            .secrets
+                                            .into_iter()
+                                            .map(|(k, v)| (k, v.into()))
+                                            .collect(),
+                                        ssh_key: SecretString::from(job.ssh_key),
                                     };
                                     if let Err(e) = executor.run(job_to_run, &reporter).await {
                                         tracing::error!("Failed to run job: {:?}", e);
                                     }
                                 }
-                                Err(e) => tracing::error!(
-                                    "Failed to parse job JSON: {}. Raw body: {}",
-                                    e,
-                                    body
-                                ),
+                                Err(e) => {
+                                    tracing::error!(
+                                        "Failed to parse job JSON: {}. Raw body: {}",
+                                        e,
+                                        body
+                                    );
+                                    sleep(tokio::time::Duration::from_secs(5)).await;
+                                }
                             }
                         }
                         _ => {
@@ -80,6 +92,7 @@ impl KanadeAgent {
                                 .await
                                 .unwrap_or_else(|_| "Could not read body".to_string());
                             tracing::error!("Unexpected status {}: {}", status, body);
+                            sleep(tokio::time::Duration::from_secs(5)).await;
                         }
                     }
                 }

@@ -76,7 +76,7 @@ impl ForgejoApi {
             .map(|x| UpstreamRepositoryInfo {
                 id: x.id.to_string(),
                 full_name: x.full_name,
-                _ssh_url: x.ssh_url,
+                ssh_url: x.ssh_url,
                 url: x.html_url,
             })
             .collect())
@@ -244,7 +244,7 @@ impl ForgejoApi {
             id: res.id.to_string(),
             full_name: res.full_name,
             url: res.html_url,
-            _ssh_url: res.ssh_url,
+            ssh_url: res.ssh_url,
         }))
     }
 

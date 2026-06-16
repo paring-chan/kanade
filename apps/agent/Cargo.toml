@@ -17,3 +17,4 @@ serde_json.workspace = true
 job-executor.workspace = true
 chrono.workspace = true
 uuid.workspace = true
+secrecy.workspace = true

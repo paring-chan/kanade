@@ -52,7 +52,7 @@ const Breadcrumb = ({
       case "failed":
         return <LuX className="size-4 text-red-500" />;
       case "success":
-        return <LuCheck className="size-4 text-pink-400" />;
+        return <LuCheck className="size-4 text-green-500" />;
     }
   })();
 
@@ -190,7 +190,7 @@ const JobItem = ({
       case "failed":
         return <LuX className="size-4 text-red-500" />;
       case "success":
-        return <LuCheck className="size-4 text-pink-400" />;
+        return <LuCheck className="size-4 text-green-500" />;
     }
   })();
 

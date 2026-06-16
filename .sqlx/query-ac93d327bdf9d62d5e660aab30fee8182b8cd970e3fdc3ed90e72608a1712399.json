@@ -1,0 +1,53 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE pipeline\n            SET status = CASE\n                WHEN EXISTS(\n                    SELECT 1 FROM pipeline_job\n                    WHERE pipeline_id = $1 AND status IN ('failed'::job_status, 'cancelled'::job_status)\n                ) THEN 'failed'::pipeline_status\n                ELSE 'success'::pipeline_status\n                END,\n                finished_at = now()\n            WHERE\n                id = $1 AND status = 'running'::pipeline_status\n                AND NOT EXISTS (\n                    SELECT 1 FROM pipeline_job\n                    WHERE pipeline_id = $1 AND finished_at IS NULL\n                )\n            RETURNING id, status as \"status: PipelineStatus\"\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "pipeline",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "status: PipelineStatus",
+        "type_info": {
+          "Custom": {
+            "name": "pipeline_status",
+            "kind": {
+              "Enum": [
+                "queued",
+                "running",
+                "success",
+                "failed",
+                "cancelled"
+              ]
+            }
+          }
+        },
+        "origin": {
+          "Table": {
+            "table": "pipeline",
+            "name": "status"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "ac93d327bdf9d62d5e660aab30fee8182b8cd970e3fdc3ed90e72608a1712399"
+}

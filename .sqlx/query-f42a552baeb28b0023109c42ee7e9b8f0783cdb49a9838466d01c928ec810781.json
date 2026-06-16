@@ -1,0 +1,40 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT\n                d.upstream_id, d.downstream_id\n            FROM pipeline_job_depend d\n            INNER JOIN pipeline_job j ON j.id = d.downstream_id\n            INNER JOIN pipeline p ON p.id = j.pipeline_id\n            WHERE p.id = $1\n            ORDER BY d.downstream_id ASC\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "upstream_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "pipeline_job_depend",
+            "name": "upstream_id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "downstream_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "pipeline_job_depend",
+            "name": "downstream_id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "f42a552baeb28b0023109c42ee7e9b8f0783cdb49a9838466d01c928ec810781"
+}

@@ -56,6 +56,7 @@ dependencies = [
  "figment",
  "job-executor",
  "reqwest 0.13.4",
+ "secrecy",
  "serde",
  "serde_json",
  "tokio",
@@ -1092,6 +1093,7 @@ dependencies = [
 name = "event-evaluator"
 version = "0.1.0"
 dependencies = [
+ "api-types",
  "petgraph",
  "rhai",
  "serde",
@@ -2000,9 +2002,12 @@ dependencies = [
 name = "job-executor"
 version = "0.1.0"
 dependencies = [
+ "api-types",
  "bollard",
  "chrono",
  "futures-util",
+ "secrecy",
+ "tempfile",
  "thiserror 2.0.18",
  "tokio",
  "tracing",

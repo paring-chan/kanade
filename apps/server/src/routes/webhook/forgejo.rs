@@ -243,7 +243,12 @@ async fn forgejo_webhook(
             poem::Error::from_string("internal error", StatusCode::INTERNAL_SERVER_ERROR)
         })?;
 
-        for job in pipeline.jobs {
+        for mut job in pipeline.jobs {
+            job.env.insert(
+                "CLONE_URL".to_string(),
+                EnvDefinition::Static(upstream_repo.ssh_url.clone()),
+            );
+
             sqlx::query!(
                 r#"
                     INSERT INTO pipeline_job

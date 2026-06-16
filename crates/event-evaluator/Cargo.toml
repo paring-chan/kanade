@@ -10,3 +10,5 @@ serde.workspace = true
 uuid.workspace = true
 thiserror.workspace = true
 petgraph.workspace = true
+
+api-types.workspace = true

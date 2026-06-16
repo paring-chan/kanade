@@ -1,0 +1,224 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT\n                j.id as j_id,\n                j.key as j_key,\n                j.name as j_name,\n                j.timeout as j_timeout,\n                j.status as \"j_status: JobStatus\",\n                j.created_at as j_created_at,\n                j.started_at as j_started_at,\n                j.finished_at as j_finished_at,\n\n                s.id as \"s_id?\",\n                s.name as \"s_name?\",\n                s.ordering as \"s_ordering?\",\n                s.command as \"s_command?\",\n                s.created_at as \"s_created_at?\",\n                s.exit_code as \"s_exit_code?\",\n                s.started_at as \"s_started_at?\",\n                s.finished_at as \"s_finished_at?\"\n            FROM\n                pipeline p\n            INNER JOIN repo r ON r.id = p.repo_id\n            INNER JOIN team t ON t.id = r.team_id\n            INNER JOIN user_team ut ON t.id = ut.team_id\n            INNER JOIN pipeline_job j ON j.pipeline_id = p.id\n            LEFT JOIN pipeline_job_step s ON s.job_id = j.id\n            WHERE\n                ut.user_id = $1 AND\n                p.id = $2\n            ORDER BY j.id ASC, s.ordering ASC\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "j_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "pipeline_job",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "j_key",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "pipeline_job",
+            "name": "key"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "j_name",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "pipeline_job",
+            "name": "name"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "j_timeout",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "pipeline_job",
+            "name": "timeout"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "j_status: JobStatus",
+        "type_info": {
+          "Custom": {
+            "name": "job_status",
+            "kind": {
+              "Enum": [
+                "waiting",
+                "pending",
+                "running",
+                "success",
+                "failed",
+                "skipped",
+                "cancelled"
+              ]
+            }
+          }
+        },
+        "origin": {
+          "Table": {
+            "table": "pipeline_job",
+            "name": "status"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "j_created_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "pipeline_job",
+            "name": "created_at"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "j_started_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "pipeline_job",
+            "name": "started_at"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "j_finished_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "pipeline_job",
+            "name": "finished_at"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "s_id?",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "pipeline_job_step",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "s_name?",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "pipeline_job_step",
+            "name": "name"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "s_ordering?",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "pipeline_job_step",
+            "name": "ordering"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "s_command?",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "pipeline_job_step",
+            "name": "command"
+          }
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "s_created_at?",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "pipeline_job_step",
+            "name": "created_at"
+          }
+        }
+      },
+      {
+        "ordinal": 13,
+        "name": "s_exit_code?",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "pipeline_job_step",
+            "name": "exit_code"
+          }
+        }
+      },
+      {
+        "ordinal": 14,
+        "name": "s_started_at?",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "pipeline_job_step",
+            "name": "started_at"
+          }
+        }
+      },
+      {
+        "ordinal": 15,
+        "name": "s_finished_at?",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "pipeline_job_step",
+            "name": "finished_at"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "18da08c52409902784372de4bab590cdfb15e4d1b59c6378ec44129a8a30ed30"
+}

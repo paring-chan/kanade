@@ -65,6 +65,8 @@ pub struct AgentPipelineJobStepResponse {
     pub ordering: i32,
     /// 실행 명령어
     pub command: String,
+    /// 스텝 스코프 환경변수 목록
+    pub env: HashMap<String, EnvDefinitionResponse>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Object)]
@@ -80,10 +82,11 @@ pub struct AgentPipelineJobResponse {
 }
 
 /// 환경변수 정의
+
 #[derive(Union, Serialize, Deserialize, Debug)]
 #[serde(tag = "type", rename_all = "snake_case")]
 #[oai(discriminator_name = "type", rename_all = "snake_case")]
-pub enum EnvDefinition {
+pub enum EnvDefinitionResponse {
     Static(StaticEnv),
     Secret(SecretEnv),
 }
@@ -111,9 +114,10 @@ pub struct JobAcquireResponse {
     /// 스텝 목록
     pub steps: Vec<AgentPipelineJobStepResponse>,
     /// Job 스코프 환경변수 목록
-    pub env: HashMap<String, EnvDefinition>,
+    pub env: HashMap<String, EnvDefinitionResponse>,
     /// 레퍼런스된 시크릿 목록
     pub secrets: HashMap<String, String>,
+    pub ssh_key: String,
 }
 
 #[derive(ApiResponse)]

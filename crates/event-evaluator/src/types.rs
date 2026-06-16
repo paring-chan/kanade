@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use api_types::EnvDefinitionResponse;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -15,6 +16,17 @@ pub struct EvaluatedPipeline {
 pub enum EnvDefinition {
     Static(String),
     Secret { secret: String },
+}
+
+impl From<EnvDefinition> for EnvDefinitionResponse {
+    fn from(value: EnvDefinition) -> Self {
+        match value {
+            EnvDefinition::Static(value) => Self::Static(api_types::StaticEnv { value }),
+            EnvDefinition::Secret { secret } => {
+                Self::Secret(api_types::SecretEnv { secret_key: secret })
+            }
+        }
+    }
 }
 
 #[derive(Debug)]

@@ -1,6 +1,8 @@
-use std::collections::HashMap;
+use std::io::ErrorKind;
 use std::marker::PhantomData;
+use std::{collections::HashMap, path::Path};
 
+use api_types::{EnvDefinitionResponse, SecretEnv, StaticEnv};
 use bollard::{
     Docker,
     container::LogOutput,
@@ -12,6 +14,13 @@ use bollard::{
 };
 use chrono::Duration;
 use futures_util::StreamExt;
+use secrecy::{ExposeSecret, SecretString};
+use tempfile::{NamedTempFile, TempDir, tempfile};
+use tokio::io::AsyncReadExt;
+use tokio::{
+    fs::{File, create_dir_all, read_dir},
+    io::AsyncWriteExt,
+};
 use tracing::{debug, instrument};
 use uuid::Uuid;
 
@@ -26,6 +35,9 @@ pub struct Job {
     pub image: String,
     pub timeout: Duration,
     pub steps: Vec<JobStep>,
+    pub env: HashMap<String, EnvDefinitionResponse>,
+    pub secrets: HashMap<String, SecretString>,
+    pub ssh_key: SecretString,
 }
 
 pub struct JobStep {
@@ -33,6 +45,7 @@ pub struct JobStep {
     pub name: String,
     pub ordering: i32,
     pub command: String,
+    pub env: HashMap<String, EnvDefinitionResponse>,
 }
 
 pub struct JobExecutor<R: adapter::JobStatusReport> {
@@ -67,6 +80,41 @@ impl<R: adapter::JobStatusReport> JobExecutor<R> {
             }
         }
 
+        let dir = TempDir::new()?;
+        let ssh_dir = dir.path().join(".ssh");
+        create_dir_all(&ssh_dir).await?;
+
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            tokio::fs::set_permissions(dir.path(), std::fs::Permissions::from_mode(0o755)).await?;
+            tokio::fs::set_permissions(&ssh_dir, std::fs::Permissions::from_mode(0o755)).await?;
+        }
+
+        let mut key_file = tokio::fs::File::create(ssh_dir.join("id_ed25519")).await?;
+        key_file
+            .write_all(job.ssh_key.expose_secret().as_bytes())
+            .await?;
+        key_file.flush().await?;
+        drop(key_file);
+
+        let mut env = job
+            .env
+            .iter()
+            .filter_map(|(k, v)| match v {
+                EnvDefinitionResponse::Static(StaticEnv { value }) => Some(format!("{k}={value}")),
+                EnvDefinitionResponse::Secret(SecretEnv { secret_key }) => job
+                    .secrets
+                    .get(secret_key)
+                    .map(|v| format!("{k}={}", v.expose_secret())),
+            })
+            .collect::<Vec<_>>();
+
+        env.extend_from_slice(&[
+            format!("HOME=/workspace"),
+            format!("GIT_SSH_COMMAND=ssh -i /workspace/.ssh/id_ed25519 -o UserKnownHostsFile=/workspace/.ssh/known_hosts -o StrictHostKeyChecking=accept-new")
+        ]);
+
         let name = format!("kanade-job--{}", job.id);
         let container = self
             .docker
@@ -85,13 +133,16 @@ impl<R: adapter::JobStatusReport> JobExecutor<R> {
                         map
                     }),
                     stop_timeout: Some(job.timeout.num_seconds()),
+                    env: Some(env),
                     cmd: Some(vec![
                         "/bin/sh".into(),
                         "-c".into(),
-                        "mkdir /work && tail -f /dev/null".into(),
+                        "tail -f /dev/null".into(),
                     ]),
+                    working_dir: Some("/workspace".to_string()),
                     host_config: Some(HostConfig {
                         auto_remove: Some(true),
+                        binds: Some(vec![format!("{}:{}", dir.path().display(), "/workspace")]),
                         ..Default::default()
                     }),
                     ..Default::default()
@@ -100,7 +151,7 @@ impl<R: adapter::JobStatusReport> JobExecutor<R> {
             .await?;
         debug!("container created: {container:?}");
 
-        let result = self.run_steps(&name, job.steps, reporter).await;
+        let result = self.run_steps(&name, dir.path(), job.steps, reporter).await;
 
         self.docker
             .remove_container(
@@ -128,6 +179,7 @@ impl<R: adapter::JobStatusReport> JobExecutor<R> {
     async fn run_steps(
         &self,
         container_name: &str,
+        work_dir: &Path,
         mut steps: Vec<JobStep>,
         reporter: &R,
     ) -> Result<i32> {
@@ -144,17 +196,30 @@ impl<R: adapter::JobStatusReport> JobExecutor<R> {
 
         steps.sort_by(|a, b| a.ordering.cmp(&b.ordering));
 
+        let cwd_path = work_dir.join("cwd");
+
         for step in steps {
             reporter
                 .step_started(step.id, &step.name)
                 .await
                 .map_err(|e| Error::Reporter(Box::new(e)))?;
+
+            let cwd = match File::open(&cwd_path).await {
+                Ok(mut file) => {
+                    let mut string = String::new();
+                    file.read_to_string(&mut string).await?;
+                    string.trim().to_string()
+                }
+                Err(e) if e.kind() == ErrorKind::NotFound => "/workspace".to_string(),
+                Err(e) => return Err(Error::Io(e)),
+            };
+
             let exec = self
                 .docker
                 .create_exec(
                     container_name,
                     CreateExecOptions::<String> {
-                        working_dir: Some("/work".to_string()),
+                        working_dir: Some(cwd),
                         cmd: Some(vec!["/bin/sh".to_string(), "-c".to_string(), step.command]),
                         attach_stderr: Some(true),
                         attach_stdout: Some(true),

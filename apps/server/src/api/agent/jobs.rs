@@ -1,14 +1,17 @@
 use std::{collections::HashMap, sync::Arc};
 
 use crate::EventMessage;
-use crate::data::db::JobStatus;
+use crate::crypto::CryptoEngine;
+use crate::data::db::{JobStatus, PipelineStatus};
 use crate::{api::ApiTags, realtime::Realtime};
 use api_types::{
     AgentPipelineJobResponse, AgentPipelineJobStepResponse, JobAcquireEndpointResponse,
-    JobAcquireResponse, JobFinishRequest, JobFinishResponse,
+    JobAcquireResponse, JobFinishRequest, JobFinishResponse, PipelineStatusResponse,
 };
+use event_evaluator::types::EnvDefinition;
 use poem::web::Data;
 use poem_openapi::{OpenApi, param::Path, payload::Json};
+use secrecy::ExposeSecret;
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -22,22 +25,35 @@ impl AgentJobsApi {
         &self,
         Data(db): Data<&PgPool>,
         Data(realtime): Data<&Arc<Realtime>>,
+        Data(crypto): Data<&Arc<CryptoEngine>>,
     ) -> poem::Result<JobAcquireEndpointResponse> {
-        self._acquire(db, realtime).await.map_err(Into::into)
+        self._acquire(db, realtime, crypto)
+            .await
+            .map_err(Into::into)
     }
 
-    #[instrument(skip(self, db, realtime), err(Debug))]
+    #[instrument(skip(self, db, realtime, crypto), err(Debug))]
     async fn _acquire(
         &self,
         db: &PgPool,
         realtime: &Realtime,
+        crypto: &CryptoEngine,
     ) -> crate::Result<JobAcquireEndpointResponse> {
         let mut tx = db.begin().await?;
 
         let row = sqlx::query!(
             r#"
-            SELECT j.id, j.name, j.timeout, j.image, j.pipeline_id
+            SELECT
+                j.id,
+                j.name,
+                j.timeout,
+                j.image,
+                j.pipeline_id,
+                j.env as "env: sqlx::types::Json<HashMap<String, EnvDefinition>>",
+                r.ssh_key
             FROM pipeline_job j
+            INNER JOIN pipeline p ON p.id = j.pipeline_id
+            INNER JOIN repo r ON r.id = p.repo_id
             WHERE j.status = 'pending'::job_status
             ORDER BY j.created_at ASC
             LIMIT 1
@@ -52,6 +68,19 @@ impl AgentJobsApi {
             return Ok(JobAcquireEndpointResponse::NoContent);
         };
 
+        let ssh_key = crypto.decrypt(&job.ssh_key)?;
+
+        sqlx::query!(
+            r#"
+            SELECT FROM pipeline
+            WHERE id = $1
+            FOR UPDATE
+            "#,
+            job.pipeline_id
+        )
+        .execute(&mut *tx)
+        .await?;
+
         sqlx::query!(
             r#"
             UPDATE pipeline_job
@@ -62,6 +91,23 @@ impl AgentJobsApi {
             job.id
         )
         .execute(&mut *tx)
+        .await?;
+
+        let pipeline_started = sqlx::query!(
+            r#"
+            UPDATE pipeline
+            SET
+                status = 'running'::pipeline_status,
+                started_at = now()
+            WHERE
+                id = $1
+                AND status = 'queued'::pipeline_status
+                AND started_at IS NULL
+            RETURNING id
+            "#,
+            job.pipeline_id,
+        )
+        .fetch_optional(&mut *tx)
         .await?;
 
         let job_res = AgentPipelineJobResponse {
@@ -77,7 +123,8 @@ impl AgentJobsApi {
                     s.id,
                     s.name,
                     s.ordering,
-                    s.command
+                    s.command,
+                    s.env as "env: sqlx::types::Json<HashMap<String, EnvDefinition>>"
                 FROM pipeline_job_step s
                 WHERE
                     s.job_id = $1
@@ -92,6 +139,7 @@ impl AgentJobsApi {
             name: x.name,
             ordering: x.ordering,
             command: x.command,
+            env: x.env.0.into_iter().map(|(k, v)| (k, v.into())).collect(),
         })
         .collect::<Vec<_>>();
 
@@ -99,11 +147,21 @@ impl AgentJobsApi {
             id: job_res.id,
             job: job_res,
             steps,
-            env: HashMap::default(),
+            env: job.env.0.into_iter().map(|(k, v)| (k, v.into())).collect(),
             secrets: HashMap::default(),
+            ssh_key: ssh_key.expose_secret().to_string(),
         };
 
         tx.commit().await?;
+
+        if pipeline_started.is_some() {
+            realtime
+                .publish(&EventMessage::UpdatePipelineStatus {
+                    pipeline: job.pipeline_id,
+                    status: PipelineStatusResponse::Running,
+                })
+                .await?;
+        }
 
         realtime
             .publish(&EventMessage::UpdateJobStatus {
@@ -188,6 +246,41 @@ impl AgentJobsApi {
         .fetch_all(&mut *tx)
         .await?;
 
+        sqlx::query!(
+            r#"
+            SELECT FROM pipeline
+            WHERE id = $1
+            FOR UPDATE
+            "#,
+            result.pipeline_id
+        )
+        .execute(&mut *tx)
+        .await?;
+
+        let updated_pipeline = sqlx::query!(
+            r#"
+            UPDATE pipeline
+            SET status = CASE
+                WHEN EXISTS(
+                    SELECT 1 FROM pipeline_job
+                    WHERE pipeline_id = $1 AND status IN ('failed'::job_status, 'cancelled'::job_status)
+                ) THEN 'failed'::pipeline_status
+                ELSE 'success'::pipeline_status
+                END,
+                finished_at = now()
+            WHERE
+                id = $1 AND status = 'running'::pipeline_status
+                AND NOT EXISTS (
+                    SELECT 1 FROM pipeline_job
+                    WHERE pipeline_id = $1 AND finished_at IS NULL
+                )
+            RETURNING id, status as "status: PipelineStatus"
+            "#,
+            result.pipeline_id
+        )
+        .fetch_optional(&mut *tx)
+        .await?;
+
         tx.commit().await?;
 
         realtime
@@ -197,6 +290,15 @@ impl AgentJobsApi {
                 status: job_status.into(),
             })
             .await?;
+
+        if let Some(pipeline) = updated_pipeline {
+            realtime
+                .publish(&EventMessage::UpdatePipelineStatus {
+                    pipeline: pipeline.id,
+                    status: pipeline.status.into(),
+                })
+                .await?;
+        }
 
         // TODO: publish step status update
 

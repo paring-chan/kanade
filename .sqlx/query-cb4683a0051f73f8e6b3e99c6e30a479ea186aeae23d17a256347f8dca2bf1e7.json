@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT FROM pipeline\n            WHERE id = $1\n            FOR UPDATE\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "cb4683a0051f73f8e6b3e99c6e30a479ea186aeae23d17a256347f8dca2bf1e7"
+}
