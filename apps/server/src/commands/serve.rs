@@ -24,7 +24,7 @@ pub async fn run(config: Arc<AppConfig>) -> anyhow::Result<()> {
         Vec::<u8>::from_hex(config.encryption_key.expose_secret())?.into(),
     )?);
 
-    let _realtime = Arc::new(Realtime::new(config.clone()).await?);
+    let realtime = Arc::new(Realtime::new(config.clone()).await?);
 
     let app = routes()
         .data(db.clone())
@@ -33,7 +33,8 @@ pub async fn run(config: Arc<AppConfig>) -> anyhow::Result<()> {
         )))
         .data(config.clone())
         .data(crypto.clone())
-        .data(Arc::new(AllForges::new(config.clone(), crypto, db)?));
+        .data(Arc::new(AllForges::new(config.clone(), crypto, db)?))
+        .data(realtime.clone());
 
     Server::new(listener)
         .name("kanade-server")

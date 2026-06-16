@@ -1,5 +1,7 @@
 use chrono::{DateTime, Utc};
 use poem_openapi::{payload::Json, ApiResponse, Enum, Object};
+use serde::{Deserialize, Serialize};
+use specta::Type;
 use uuid::Uuid;
 
 use crate::{ErrorResponse, UserResponse};
@@ -15,8 +17,9 @@ pub enum EventTypeResponse {
     Manual,
 }
 
-#[derive(Debug, Enum)]
+#[derive(Debug, Clone, Copy, Enum, Serialize, Deserialize, Type)]
 #[oai(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
 pub enum PipelineStatusResponse {
     Queued,
     Running,
@@ -51,8 +54,9 @@ pub enum GetPipelineResponse {
     NotFound(Json<ErrorResponse>),
 }
 
-#[derive(Debug, Enum)]
+#[derive(Debug, Enum, Type, Serialize, Deserialize, Clone, Copy)]
 #[oai(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
 pub enum JobStatusResponse {
     Waiting,
     Pending,

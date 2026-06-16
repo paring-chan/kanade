@@ -25,7 +25,10 @@ export default defineConfig({
 	},
 	server: {
 		proxy: {
-			'/_/': 'http://localhost:4000',
+      '/_/': {
+        target: 'http://localhost:4000',
+        ws:true
+			},
 			'/api/': 'http://localhost:4000',
 		},
 	},

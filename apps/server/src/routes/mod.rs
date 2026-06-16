@@ -13,6 +13,6 @@ pub fn routes() -> BoxEndpoint<'static> {
         .nest("/_/auth", auth::routes())
         .nest("/api", svc.scalar())
         .nest("/api/v1", svc)
-        .nest("/ws", ws::routes())
+        .nest("/_/ws", ws::routes())
         .boxed()
 }

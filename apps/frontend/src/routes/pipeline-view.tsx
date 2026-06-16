@@ -109,15 +109,15 @@ export const Component = () => {
       <div className="grow w-0 flex flex-col">
         <div className="flex w-full relative h-8">
           <div className="absolute inset-0 pointer-events-none border-b  border-black/10"></div>
-          <button className="flex items-center cursor-pointer px-3 hover:bg-black/10 transition-colors">
+          {/*<button className="flex items-center cursor-pointer px-3 hover:bg-black/10 transition-colors">
             파이프라인 정보
-          </button>
+          </button>*/}
           <button className="flex items-center cursor-pointer px-3 hover:bg-black/10 transition-colors border-b  border-black">
-            트리
+            작업 목록
           </button>
-          <button className="flex items-center cursor-pointer px-3 hover:bg-black/10 transition-colors">
+          {/*<button className="flex items-center cursor-pointer px-3 hover:bg-black/10 transition-colors">
             DAG
-          </button>
+          </button>*/}
         </div>
 
         {/*content*/}

@@ -36,5 +36,9 @@ ssh-key.workspace = true
 base64.workspace = true
 itertools.workspace = true
 fred.workspace = true
+futures-util.workspace = true
+specta.workspace = true
+specta-typescript.workspace = true
+specta-serde.workspace = true
 
 event-evaluator.workspace = true

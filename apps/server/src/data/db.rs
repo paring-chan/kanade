@@ -47,7 +47,7 @@ impl From<PipelineStatus> for PipelineStatusResponse {
     }
 }
 
-#[derive(Debug, Type)]
+#[derive(Debug, Type, Clone, Copy)]
 #[sqlx(type_name = "job_status", rename_all = "snake_case")]
 pub enum JobStatus {
     Waiting,

@@ -11,3 +11,4 @@ poem-openapi.workspace = true
 anyhow.workspace = true
 chrono.workspace = true
 garde.workspace = true
+specta.workspace = true

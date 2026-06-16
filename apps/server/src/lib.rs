@@ -15,6 +15,7 @@ use poem::handler;
 extern crate tracing;
 
 pub use api::api;
+pub use realtime::types::EventMessage;
 
 mod api;
 mod auth;
