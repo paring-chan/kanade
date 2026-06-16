@@ -29,6 +29,9 @@
     ];
   };
 
-  env.KANADE_SERVER__DB__URL = "postgresql://kanade:hello@127.0.0.1:5439/kanade";
-  env.DATABASE_URL = "postgresql://kanade:hello@127.0.0.1:5439/kanade";
+  env = {
+    KANADE_SERVER__DB__URL = "postgresql://kanade:hello@127.0.0.1:5439/kanade";
+    DATABASE_URL = "postgresql://kanade:hello@127.0.0.1:5439/kanade";
+    KANADE_SERVER__VALKEY__URL = "redis://127.0.0.1:6379";
+  };
 }

@@ -23,6 +23,7 @@ mod crypto;
 mod data;
 mod error;
 mod forges;
+mod realtime;
 mod routes;
 mod util;
 

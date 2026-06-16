@@ -3,6 +3,7 @@ use poem_openapi::OpenApiService;
 
 mod auth;
 mod webhook;
+mod ws;
 
 pub fn routes() -> BoxEndpoint<'static> {
     let svc = OpenApiService::new(crate::api::api(), "Kanade API", "1.0").url_prefix("/api/v1");
@@ -12,5 +13,6 @@ pub fn routes() -> BoxEndpoint<'static> {
         .nest("/_/auth", auth::routes())
         .nest("/api", svc.scalar())
         .nest("/api/v1", svc)
+        .nest("/ws", ws::routes())
         .boxed()
 }

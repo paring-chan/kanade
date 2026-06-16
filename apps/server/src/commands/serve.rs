@@ -9,6 +9,7 @@ use crate::{
     config::{AppConfig, JwtSigningKey},
     crypto::CryptoEngine,
     forges::AllForges,
+    realtime::Realtime,
     routes::routes,
     util::open_db,
 };
@@ -22,6 +23,8 @@ pub async fn run(config: Arc<AppConfig>) -> anyhow::Result<()> {
     let crypto = Arc::new(CryptoEngine::new(
         Vec::<u8>::from_hex(config.encryption_key.expose_secret())?.into(),
     )?);
+
+    let _realtime = Arc::new(Realtime::new(config.clone()).await?);
 
     let app = routes()
         .data(db.clone())

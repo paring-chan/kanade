@@ -214,7 +214,7 @@ pub mod kanade_rhai_module {
 
     #[rhai_fn(get = "env", return_raw)]
     pub fn job_env(job: &mut Rc<RefCell<Job>>) -> Result<Dynamic, Box<EvalAltResult>> {
-        to_dynamic(&job.borrow().env).map_err(Into::into)
+        to_dynamic(&job.borrow().env)
     }
 
     #[rhai_fn(name = "depend")]

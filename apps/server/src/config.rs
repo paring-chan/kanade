@@ -8,6 +8,12 @@ pub struct AppConfig {
     pub db: DbConfig,
     pub encryption_key: SecretString,
     pub jwt_secret: SecretString,
+    pub valkey: ValkeyConfig,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ValkeyConfig {
+    pub url: SecretString,
 }
 
 #[derive(Debug, Deserialize)]
