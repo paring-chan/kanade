@@ -2,6 +2,7 @@ use poem_openapi::{OpenApi, Tags};
 
 mod agent;
 mod forge;
+mod jobs;
 mod pipeline;
 mod repo;
 mod security;
@@ -27,6 +28,7 @@ enum ApiTags {
 pub fn api() -> impl OpenApi {
     (
         pipeline::PipelineApi,
+        jobs::JobsApi,
         user::UserApi,
         team::TeamApi,
         forge::ForgeApi,

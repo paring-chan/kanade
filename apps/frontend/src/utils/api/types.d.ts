@@ -84,6 +84,42 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/jobs/{job_id}/logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    job_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["LogEntry"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/users/me": {
         parameters: {
             query?: never;
@@ -796,11 +832,15 @@ export interface components {
             ordering: number;
             /** @description 실행 명령어 */
             command: string;
+            /** @description 스텝 스코프 환경변수 목록 */
+            env: {
+                [key: string]: components["schemas"]["EnvDefinitionResponse"];
+            };
         };
         /** @description 환경변수 정의 */
-        EnvDefinition: components["schemas"]["EnvDefinition_StaticEnv"] | components["schemas"]["EnvDefinition_SecretEnv"];
+        EnvDefinitionResponse: components["schemas"]["EnvDefinitionResponse_StaticEnv"] | components["schemas"]["EnvDefinitionResponse_SecretEnv"];
         /** @description 환경변수 정의 */
-        EnvDefinition_SecretEnv: {
+        EnvDefinitionResponse_SecretEnv: {
             /**
              * @example secret
              * @enum {string}
@@ -808,7 +848,7 @@ export interface components {
             type: "secret";
         } & components["schemas"]["SecretEnv"];
         /** @description 환경변수 정의 */
-        EnvDefinition_StaticEnv: {
+        EnvDefinitionResponse_StaticEnv: {
             /**
              * @example static
              * @enum {string}
@@ -852,12 +892,13 @@ export interface components {
             steps: components["schemas"]["AgentPipelineJobStepResponse"][];
             /** @description Job 스코프 환경변수 목록 */
             env: {
-                [key: string]: components["schemas"]["EnvDefinition"];
+                [key: string]: components["schemas"]["EnvDefinitionResponse"];
             };
             /** @description 레퍼런스된 시크릿 목록 */
             secrets: {
                 [key: string]: string;
             };
+            ssh_key: string;
         };
         /** JobFinishRequest */
         JobFinishRequest: {
@@ -865,6 +906,15 @@ export interface components {
         };
         /** @enum {string} */
         JobStatusResponse: "waiting" | "pending" | "running" | "success" | "failed" | "skipped" | "cancelled";
+        /** LogEntry */
+        LogEntry: {
+            /** Format: uuid */
+            stepId: string;
+            content: string;
+            kind: components["schemas"]["LogKind"];
+        };
+        /** @enum {string} */
+        LogKind: "stdout" | "stderr";
         /** PipelineJobResponse */
         PipelineJobResponse: {
             /** Format: uuid */

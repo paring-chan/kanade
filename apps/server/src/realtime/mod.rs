@@ -13,7 +13,7 @@ use crate::{
 pub mod types;
 
 pub struct Realtime {
-    client: Client,
+    pub client: Client,
     _subscriber_client: Client,
     _log_client: Client,
 
@@ -165,6 +165,17 @@ impl Realtime {
         let _: () = self
             .client
             .publish("kanade:logs", serde_json::to_string(&payload)?)
+            .await?;
+
+        let _: () = self
+            .client
+            .xadd(
+                format!("kanade:logs:{}", payload.job_id),
+                false,
+                None,
+                "*",
+                ("data", serde_json::to_string(&payload.entry)?),
+            )
             .await?;
 
         Ok(())

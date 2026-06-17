@@ -15,7 +15,7 @@ use uuid::Uuid;
 
 use crate::realtime::{
     Realtime,
-    types::{LogEntry, LogKind, LogMessage},
+    types::{LogEntry, LogMessage},
 };
 
 pub fn routes() -> BoxEndpoint<'static> {
@@ -40,7 +40,7 @@ async fn log_ws(
 
         while let Ok(msg) = receiver.recv().await {
             match msg {
-                LogMessage::Log { job_id, entry } => {
+                LogMessage { job_id, entry } => {
                     if job_id != job_id_param {
                         continue;
                     }
@@ -91,20 +91,12 @@ async fn handle_agent(ws: WebSocket, Data(realtime): Data<&Arc<Realtime>>) -> im
                     AgentLogMessage::Log {
                         job_id,
                         step_id,
-                        kind,
                         content,
                     } => {
                         _ = realtime
-                            .publish_log(&LogMessage::Log {
+                            .publish_log(&LogMessage {
                                 job_id: job_id,
-                                entry: LogEntry {
-                                    content,
-                                    step_id,
-                                    kind: match kind {
-                                        api_types::AgentLogKind::Stdout => LogKind::Stdout,
-                                        api_types::AgentLogKind::Stderr => LogKind::Stderr,
-                                    },
-                                },
+                                entry: LogEntry { content, step_id },
                             })
                             .await;
                     }

@@ -2,7 +2,6 @@ import { ScrollArea } from "@base-ui/react";
 import {
   Fragment,
   useEffect,
-  useMemo,
   useRef,
   useState,
   useSyncExternalStore,
@@ -15,6 +14,7 @@ import type { LogEntry } from "../ws-types";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { pipelineJobsQueryOptions } from "../queries/pipeline";
 import type { components } from "../utils/api/types";
+import { api } from "../utils/api";
 
 type Step = {
   id: string;
@@ -62,6 +62,30 @@ class LogStore {
     this.logs.clear();
     this.steps = job.steps.map((x) => ({ id: x.id, name: x.name }));
 
+    api
+      .GET("/api/v1/jobs/{job_id}/logs", {
+        params: { path: { job_id: job.id } },
+      })
+      .then((x) => {
+        if (job !== this.job) return;
+        const data = x.data!;
+
+        const logsMap = new Map<string, string[]>();
+
+        for (const log of data) {
+          let logs = logsMap.get(log.stepId);
+          if (!logs) {
+            logs = [];
+            logsMap.set(log.stepId, logs);
+          }
+
+          logs.push(log.content);
+        }
+
+        this.logs = logsMap;
+        this.rebuildMeta();
+      });
+
     this.rebuildMeta();
   }
 
@@ -81,8 +105,9 @@ class LogStore {
       this.ws.close();
     }
 
-    const ws = new WebSocket("/_/ws/logs/" + this.job.id);
+    const ws = new WebSocket(`/_/ws/logs/${this.job.id}`);
     this.ws = ws;
+    this.shouldConnect = true;
 
     ws.onopen = () => {
       console.log("ws connected");
@@ -95,7 +120,7 @@ class LogStore {
           .split("\r\n")
           .filter((x, i, arr) => x || i !== arr.length - 1);
         for (const line of lines) {
-          this.append(data.step_id, line);
+          this.append(data.stepId, line);
         }
       } catch (e) {
         console.error("failed to parse message:", ev.data, e);
@@ -105,9 +130,9 @@ class LogStore {
     ws.onclose = () => {
       console.log("connection closed");
 
-      if (this.shouldConnect) return;
+      if (!this.shouldConnect) return;
       setTimeout(() => {
-        if (this.shouldConnect) return;
+        if (!this.shouldConnect) return;
         console.log("reconnecting...");
         this.connect();
       }, 1000);
@@ -115,12 +140,14 @@ class LogStore {
   }
 
   disconnect() {
-    this.shouldConnect = true;
+    this.shouldConnect = false;
     this.ws?.close();
   }
 
   private notify() {
-    this.callbacks.forEach((x) => x());
+    this.callbacks.forEach((x) => {
+      x();
+    });
   }
 
   private rebuildMeta() {
@@ -194,14 +221,15 @@ export const LogView = ({
     if (store.job.id !== job.id) {
       store.setJob(job);
     }
-  }, [job]);
+  }, [job, store]);
 
   useEffect(() => {
     store.connect();
     return () => {
       store.disconnect();
     };
-  }, [store, job.id]);
+  }, [store]);
+
   const meta = useSyncExternalStore(
     (cb) => store.subscribe(cb),
     () => store.currentMeta,
@@ -212,6 +240,14 @@ export const LogView = ({
     getScrollElement: () => container.current,
     estimateSize: () => 24,
   });
+
+  const totalSize = virtualizer.getTotalSize();
+
+  useEffect(() => {
+    if (container.current) {
+      container.current.scrollTo({ top: totalSize, behavior: "smooth" });
+    }
+  }, [totalSize]);
 
   return (
     <ScrollArea.Root className="flex flex-col size-full">
@@ -257,6 +293,8 @@ export const LogView = ({
                       {item.line}
                     </div>
                   );
+                default:
+                  throw new Error("what");
               }
             })}
           </div>

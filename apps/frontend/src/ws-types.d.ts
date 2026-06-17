@@ -11,7 +11,7 @@ export type EventMessage = { t: "updatePipelineStatus"; p: {
 export type JobStatusResponse = "waiting" | "pending" | "running" | "success" | "failed" | "skipped" | "cancelled";
 
 export type LogEntry = {
-	step_id: string,
+	stepId: string,
 	content: string,
 	kind: LogKind,
 };

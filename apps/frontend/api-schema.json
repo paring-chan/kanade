@@ -119,6 +119,41 @@
         ]
       }
     },
+    "/api/v1/jobs/{job_id}/logs": {
+      "get": {
+        "tags": [
+          "Pipeline"
+        ],
+        "parameters": [
+          {
+            "name": "job_id",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "required": true,
+            "deprecated": false,
+            "explode": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LogEntry"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/users/me": {
       "get": {
         "tags": [
@@ -1023,6 +1058,34 @@
           "failed",
           "skipped",
           "cancelled"
+        ]
+      },
+      "LogEntry": {
+        "type": "object",
+        "title": "LogEntry",
+        "required": [
+          "stepId",
+          "content",
+          "kind"
+        ],
+        "properties": {
+          "stepId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "content": {
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/LogKind"
+          }
+        }
+      },
+      "LogKind": {
+        "type": "string",
+        "enum": [
+          "stdout",
+          "stderr"
         ]
       },
       "PipelineJobResponse": {

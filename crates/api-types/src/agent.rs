@@ -132,19 +132,11 @@ pub enum JobAcquireEndpointResponse {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub enum AgentLogKind {
-    Stdout,
-    Stderr,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "t", content = "p")]
 pub enum AgentLogMessage {
     Log {
         job_id: Uuid,
         step_id: Uuid,
-        kind: AgentLogKind,
         content: String,
     },
 }

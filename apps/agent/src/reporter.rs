@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use api_types::{AgentLogKind, AgentLogMessage, JobFinishRequest, StepFinishRequest};
+use api_types::{AgentLogMessage, JobFinishRequest, StepFinishRequest};
 use job_executor::adapter::{JobStatusReport, LogLine};
 use reqwest::Client;
 use tracing::info;
@@ -90,13 +90,11 @@ impl JobStatusReport for HttpReporter {
                 LogLine::StdOut(stdout) => AgentLogMessage::Log {
                     job_id,
                     step_id,
-                    kind: AgentLogKind::Stdout,
                     content: stdout,
                 },
                 LogLine::StdErr(stderr) => AgentLogMessage::Log {
                     job_id,
                     step_id,
-                    kind: AgentLogKind::Stderr,
                     content: stderr,
                 },
             })
