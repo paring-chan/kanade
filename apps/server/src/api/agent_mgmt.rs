@@ -1,4 +1,6 @@
-use api_types::{AgentCreateEndpointResponse, AgentCreateRequest, AgentCreateResponse};
+use api_types::{
+    AgentCreateEndpointResponse, AgentCreateRequest, AgentCreateResponse, AgentResponse,
+};
 use poem::web::Data;
 use poem_openapi::{OpenApi, payload::Json};
 use rand::{TryRng, rngs::SysRng};
@@ -15,6 +17,52 @@ pub struct AgentManagementApi;
 
 #[OpenApi(prefix_path = "/agents", tag = "super::ApiTags::AgentManagement")]
 impl AgentManagementApi {
+    #[oai(path = "/", method = "get")]
+    async fn list_agents(
+        &self,
+        Data(db): Data<&PgPool>,
+        ApiKeyAuth(user_id): ApiKeyAuth,
+    ) -> poem::Result<Json<Vec<AgentResponse>>> {
+        self._list_agents(db, user_id)
+            .await
+            .map(Json)
+            .map_err(Into::into)
+    }
+
+    async fn _list_agents(&self, db: &PgPool, user_id: Uuid) -> crate::Result<Vec<AgentResponse>> {
+        let mut tx = db.begin_as(user_id).await?;
+
+        // TODO: filter owned
+        let results = sqlx::query!(
+            r#"
+            SELECT
+                id,
+                name,
+                status as "status: AgentStatus",
+                is_global,
+                created_at,
+                updated_at,
+                last_heartbeat_at
+            FROM agent
+            "#
+        )
+        .fetch_all(&mut *tx)
+        .await?;
+
+        Ok(results
+            .into_iter()
+            .map(|x| AgentResponse {
+                id: x.id,
+                name: x.name,
+                status: x.status.into(),
+                is_global: x.is_global,
+                created_at: x.created_at,
+                updated_at: x.updated_at,
+                last_heartbeat_at: x.last_heartbeat_at,
+            })
+            .collect())
+    }
+
     #[oai(path = "/", method = "post")]
     async fn create_agent(
         &self,

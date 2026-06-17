@@ -1,4 +1,5 @@
-use poem_openapi::{payload::Json, ApiResponse, Object};
+use chrono::{DateTime, Utc};
+use poem_openapi::{payload::Json, ApiResponse, Enum, Object};
 use uuid::Uuid;
 
 use crate::ErrorResponse;
@@ -26,4 +27,24 @@ pub struct AgentCreateResponse {
     pub name: String,
 
     pub token: String,
+}
+
+#[derive(Debug, Enum)]
+#[oai(rename_all = "camelCase")]
+pub enum AgentStatusResponse {
+    Idle,
+    Busy,
+    Offline,
+}
+
+#[derive(Debug, Object)]
+pub struct AgentResponse {
+    pub id: Uuid,
+    pub name: String,
+    pub status: AgentStatusResponse,
+    pub is_global: bool,
+
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+    pub last_heartbeat_at: Option<DateTime<Utc>>,
 }

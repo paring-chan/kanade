@@ -127,7 +127,25 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["AgentResponse"][];
+                    };
+                };
+            };
+        };
         put?: never;
         post: {
             parameters: {
@@ -904,6 +922,22 @@ export interface components {
                 [key: string]: components["schemas"]["EnvDefinitionResponse"];
             };
         };
+        /** AgentResponse */
+        AgentResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            status: components["schemas"]["AgentStatusResponse"];
+            is_global: boolean;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            /** Format: date-time */
+            last_heartbeat_at?: string;
+        };
+        /** @enum {string} */
+        AgentStatusResponse: "idle" | "busy" | "offline";
         /** @description 환경변수 정의 */
         EnvDefinitionResponse: components["schemas"]["EnvDefinitionResponse_StaticEnv"] | components["schemas"]["EnvDefinitionResponse_SecretEnv"];
         /** @description 환경변수 정의 */

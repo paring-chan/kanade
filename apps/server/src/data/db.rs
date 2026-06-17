@@ -1,4 +1,6 @@
-use api_types::{EventTypeResponse, JobStatusResponse, PipelineStatusResponse};
+use api_types::{
+    AgentStatusResponse, EventTypeResponse, JobStatusResponse, PipelineStatusResponse,
+};
 use sqlx::prelude::Type;
 
 #[derive(Debug, Type, Clone)]
@@ -87,4 +89,14 @@ pub enum AgentStatus {
     Idle,
     Busy,
     Offline,
+}
+
+impl From<AgentStatus> for AgentStatusResponse {
+    fn from(value: AgentStatus) -> Self {
+        match value {
+            AgentStatus::Idle => AgentStatusResponse::Idle,
+            AgentStatus::Busy => Self::Busy,
+            AgentStatus::Offline => Self::Offline,
+        }
+    }
 }

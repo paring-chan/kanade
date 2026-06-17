@@ -1,6 +1,10 @@
 import { AlertDialog, Button, Combobox, Dialog, Field } from "@base-ui/react";
 import { useForm } from "@tanstack/react-form";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useQuery,
+  useQueryClient,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
 import { type } from "arktype";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
@@ -12,6 +16,7 @@ import LucideChevronDown from "~icons/lucide/chevron-down";
 import LucideCheck from "~icons/lucide/check";
 import { useMemo } from "react";
 import { api } from "../utils/api";
+import { agentsQueryOptions } from "../queries/agent";
 
 export const Component = () => {
   return (
@@ -29,7 +34,15 @@ export const Component = () => {
 };
 
 export const AgentList = () => {
-  return <div>Wow</div>;
+  const { data: agents } = useSuspenseQuery(agentsQueryOptions());
+
+  return (
+    <div>
+      <pre>
+        <code>{JSON.stringify(agents, null, 2)}</code>
+      </pre>
+    </div>
+  );
 };
 
 const createAgentSchema = type({

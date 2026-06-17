@@ -159,6 +159,31 @@
       }
     },
     "/api/v1/agents": {
+      "get": {
+        "tags": [
+          "AgentManagement"
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AgentResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
       "post": {
         "tags": [
           "AgentManagement"
@@ -946,6 +971,53 @@
             }
           }
         }
+      },
+      "AgentResponse": {
+        "type": "object",
+        "title": "AgentResponse",
+        "required": [
+          "id",
+          "name",
+          "status",
+          "is_global",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AgentStatusResponse"
+          },
+          "is_global": {
+            "type": "boolean"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "last_heartbeat_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "AgentStatusResponse": {
+        "type": "string",
+        "enum": [
+          "idle",
+          "busy",
+          "offline"
+        ]
       },
       "EnvDefinitionResponse": {
         "type": "object",
