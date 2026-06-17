@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT\n                r.id as r_id,\n                r.name as r_name,\n                r.slug as r_slug,\n                r.repo_url as r_repo_url,\n                r.created_at as r_created_at,\n                r.updated_at as r_updated_at,\n\n                t.id as t_id,\n                t.name as t_name,\n                t.slug as t_slug,\n                t.created_at as t_created_at,\n                t.updated_at as t_updated_at\n            FROM repo r\n            INNER JOIN team t ON t.id = r.team_id\n            INNER JOIN user_team ut ON ut.team_id = t.id\n            WHERE\n                ut.user_id = $1 AND\n                t.slug = $2 AND\n                r.slug = $3\n            ",
+  "query": "\n            SELECT\n                r.id as r_id,\n                r.name as r_name,\n                r.slug as r_slug,\n                r.repo_url as r_repo_url,\n                r.created_at as r_created_at,\n                r.updated_at as r_updated_at,\n\n                t.id as t_id,\n                t.name as t_name,\n                t.slug as t_slug,\n                t.created_at as t_created_at,\n                t.updated_at as t_updated_at\n            FROM repo r\n            INNER JOIN team t ON t.id = r.team_id\n            WHERE\n                r.id = $1\n            ",
   "describe": {
     "columns": [
       {
@@ -127,9 +127,7 @@
     ],
     "parameters": {
       "Left": [
-        "Uuid",
-        "Text",
-        "Text"
+        "Uuid"
       ]
     },
     "nullable": [
@@ -146,5 +144,5 @@
       false
     ]
   },
-  "hash": "51931b6b129ed62dc4020e744952d425ec4aec4f55557428f125fe616c862b87"
+  "hash": "5bbe757dc04a61b53ed651a3ad4d300f6589e11d576b0c7b801654bdfc0a616c"
 }

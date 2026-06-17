@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT\n                j.id as j_id,\n                j.key as j_key,\n                j.name as j_name,\n                j.timeout as j_timeout,\n                j.status as \"j_status: JobStatus\",\n                j.created_at as j_created_at,\n                j.started_at as j_started_at,\n                j.finished_at as j_finished_at,\n\n                s.id as \"s_id?\",\n                s.name as \"s_name?\",\n                s.ordering as \"s_ordering?\",\n                s.command as \"s_command?\",\n                s.created_at as \"s_created_at?\",\n                s.exit_code as \"s_exit_code?\",\n                s.started_at as \"s_started_at?\",\n                s.finished_at as \"s_finished_at?\"\n            FROM\n                pipeline p\n            INNER JOIN repo r ON r.id = p.repo_id\n            INNER JOIN team t ON t.id = r.team_id\n            INNER JOIN user_team ut ON t.id = ut.team_id\n            INNER JOIN pipeline_job j ON j.pipeline_id = p.id\n            LEFT JOIN pipeline_job_step s ON s.job_id = j.id\n            WHERE\n                ut.user_id = $1 AND\n                p.id = $2\n            ORDER BY j.id ASC, s.ordering ASC\n            ",
+  "query": "\n            SELECT\n                j.id as j_id,\n                j.key as j_key,\n                j.name as j_name,\n                j.timeout as j_timeout,\n                j.status as \"j_status: JobStatus\",\n                j.created_at as j_created_at,\n                j.started_at as j_started_at,\n                j.finished_at as j_finished_at,\n\n                s.id as \"s_id?\",\n                s.name as \"s_name?\",\n                s.ordering as \"s_ordering?\",\n                s.command as \"s_command?\",\n                s.created_at as \"s_created_at?\",\n                s.exit_code as \"s_exit_code?\",\n                s.started_at as \"s_started_at?\",\n                s.finished_at as \"s_finished_at?\"\n            FROM\n                pipeline p\n            INNER JOIN repo r ON r.id = p.repo_id\n            INNER JOIN team t ON t.id = r.team_id\n            INNER JOIN pipeline_job j ON j.pipeline_id = p.id\n            LEFT JOIN pipeline_job_step s ON s.job_id = j.id\n            WHERE\n                p.id = $1\n            ORDER BY j.id ASC, s.ordering ASC\n            ",
   "describe": {
     "columns": [
       {
@@ -197,7 +197,6 @@
     ],
     "parameters": {
       "Left": [
-        "Uuid",
         "Uuid"
       ]
     },
@@ -220,5 +219,5 @@
       true
     ]
   },
-  "hash": "18da08c52409902784372de4bab590cdfb15e4d1b59c6378ec44129a8a30ed30"
+  "hash": "dcc461a7997c1950945d61c154ae3d9ea582806b173f06f296141a38af8320db"
 }

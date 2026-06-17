@@ -67,13 +67,10 @@ impl PipelineApi {
                 pipeline p
             INNER JOIN repo r ON r.id = p.repo_id
             INNER JOIN team t ON t.id = r.team_id
-            INNER JOIN user_team ut ON t.id = ut.team_id
             LEFT JOIN "user" tu ON tu.id = p.triggered_by_user
             WHERE
-                ut.user_id = $1 AND
-                p.id = $2
+                p.id = $1
             "#,
-            user_id,
             pipeline_id
         )
         .fetch_optional(&mut *tx)
@@ -155,15 +152,12 @@ impl PipelineApi {
                 pipeline p
             INNER JOIN repo r ON r.id = p.repo_id
             INNER JOIN team t ON t.id = r.team_id
-            INNER JOIN user_team ut ON t.id = ut.team_id
             INNER JOIN pipeline_job j ON j.pipeline_id = p.id
             LEFT JOIN pipeline_job_step s ON s.job_id = j.id
             WHERE
-                ut.user_id = $1 AND
-                p.id = $2
+                p.id = $1
             ORDER BY j.id ASC, s.ordering ASC
             "#,
-            user_id,
             pipeline_id
         )
         .fetch_all(&mut *tx)

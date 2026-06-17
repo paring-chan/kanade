@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT\n                p.id as p_id,\n                p.serial as p_serial,\n                p.repo_id as p_repo_id,\n                p.title as p_title,\n                p.triggered_by as p_triggered_by,\n                p.event_type as \"event_type: EventType\",\n                p.event_payload as p_event_payload,\n                p.git_ref as p_git_ref,\n                p.git_commit_id as p_git_commit_id,\n                p.status as \"status: PipelineStatus\",\n                p.created_at as p_created_at,\n                p.updated_at as p_updated_at,\n\n                tu.id as tu_id,\n                tu.username as tu_username,\n                tu.nick as tu_nick,\n                tu.email as tu_email,\n                tu.avatar_url as tu_avatar_url,\n                tu.created_at as tu_created_at,\n                tu.updated_at as tu_updated_at\n            FROM\n                pipeline p\n            INNER JOIN repo r ON r.id = p.repo_id\n            INNER JOIN team t ON t.id = r.team_id\n            INNER JOIN user_team ut ON t.id = ut.team_id\n            LEFT JOIN \"user\" tu ON tu.id = p.triggered_by_user\n            WHERE\n                ut.user_id = $1 AND\n                p.id = $2\n            ",
+  "query": "\n            SELECT\n                p.id as p_id,\n                p.serial as p_serial,\n                p.repo_id as p_repo_id,\n                p.title as p_title,\n                p.triggered_by as p_triggered_by,\n                p.event_type as \"event_type: EventType\",\n                p.event_payload as p_event_payload,\n                p.git_ref as p_git_ref,\n                p.git_commit_id as p_git_commit_id,\n                p.status as \"status: PipelineStatus\",\n                p.created_at as p_created_at,\n                p.updated_at as p_updated_at,\n\n                tu.id as \"tu_id?\",\n                tu.username as \"tu_username?\",\n                tu.nick as \"tu_nick?\",\n                tu.email as \"tu_email?\",\n                tu.avatar_url as \"tu_avatar_url?\",\n                tu.created_at as \"tu_created_at?\",\n                tu.updated_at as \"tu_updated_at?\"\n            FROM\n                pipeline p\n            INNER JOIN repo r ON r.id = p.repo_id\n            INNER JOIN team t ON t.id = r.team_id\n            LEFT JOIN \"user\" tu ON tu.id = p.triggered_by_user\n            WHERE\n                p.id = $1\n            ",
   "describe": {
     "columns": [
       {
@@ -164,7 +164,7 @@
       },
       {
         "ordinal": 12,
-        "name": "tu_id",
+        "name": "tu_id?",
         "type_info": "Uuid",
         "origin": {
           "Table": {
@@ -175,7 +175,7 @@
       },
       {
         "ordinal": 13,
-        "name": "tu_username",
+        "name": "tu_username?",
         "type_info": "Text",
         "origin": {
           "Table": {
@@ -186,7 +186,7 @@
       },
       {
         "ordinal": 14,
-        "name": "tu_nick",
+        "name": "tu_nick?",
         "type_info": "Text",
         "origin": {
           "Table": {
@@ -197,7 +197,7 @@
       },
       {
         "ordinal": 15,
-        "name": "tu_email",
+        "name": "tu_email?",
         "type_info": "Text",
         "origin": {
           "Table": {
@@ -208,7 +208,7 @@
       },
       {
         "ordinal": 16,
-        "name": "tu_avatar_url",
+        "name": "tu_avatar_url?",
         "type_info": "Text",
         "origin": {
           "Table": {
@@ -219,7 +219,7 @@
       },
       {
         "ordinal": 17,
-        "name": "tu_created_at",
+        "name": "tu_created_at?",
         "type_info": "Timestamptz",
         "origin": {
           "Table": {
@@ -230,7 +230,7 @@
       },
       {
         "ordinal": 18,
-        "name": "tu_updated_at",
+        "name": "tu_updated_at?",
         "type_info": "Timestamptz",
         "origin": {
           "Table": {
@@ -242,7 +242,6 @@
     ],
     "parameters": {
       "Left": [
-        "Uuid",
         "Uuid"
       ]
     },
@@ -259,14 +258,14 @@
       false,
       false,
       false,
+      false,
+      false,
       true,
       true,
       true,
-      true,
-      true,
-      true,
-      true
+      false,
+      false
     ]
   },
-  "hash": "29dd6b498898de1b7a86a2fc2b208fe53ab9d794f6735d417efb45ccfcd6fa62"
+  "hash": "3a0f11e4640b6a7ce007aa5f214bede4c0bd6f91e4ecb58d9719bcfa2cda3c4d"
 }

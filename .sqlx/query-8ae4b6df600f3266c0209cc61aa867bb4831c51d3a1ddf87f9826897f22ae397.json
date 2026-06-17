@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n                SELECT\n                    s.id,\n                    s.name,\n                    s.ordering,\n                    s.command\n                FROM pipeline_job_step s\n                WHERE\n                    s.job_id = $1\n            ",
+  "query": "\n                SELECT\n                    s.id,\n                    s.name,\n                    s.ordering,\n                    s.command,\n                    s.env as \"env: sqlx::types::Json<HashMap<String, EnvDefinition>>\"\n                FROM pipeline_job_step s\n                WHERE\n                    s.job_id = $1\n            ",
   "describe": {
     "columns": [
       {
@@ -46,6 +46,17 @@
             "name": "command"
           }
         }
+      },
+      {
+        "ordinal": 4,
+        "name": "env: sqlx::types::Json<HashMap<String, EnvDefinition>>",
+        "type_info": "Jsonb",
+        "origin": {
+          "Table": {
+            "table": "pipeline_job_step",
+            "name": "env"
+          }
+        }
       }
     ],
     "parameters": {
@@ -57,8 +68,9 @@
       false,
       false,
       false,
+      false,
       false
     ]
   },
-  "hash": "a0ebc01f8c771634d6f65cae30ceca71bb8f42d249fc22dbebcb6f796f96ac94"
+  "hash": "8ae4b6df600f3266c0209cc61aa867bb4831c51d3a1ddf87f9826897f22ae397"
 }

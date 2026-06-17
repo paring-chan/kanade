@@ -205,13 +205,10 @@ impl RepoApi {
                 t.updated_at as t_updated_at
             FROM repo r
             INNER JOIN team t ON t.id = r.team_id
-            INNER JOIN user_team ut ON ut.team_id = t.id
             WHERE
-                ut.user_id = $1 AND
-                t.slug = $2 AND
-                r.slug = $3
+                t.slug = $1 AND
+                r.slug = $2
             "#,
-            user_id,
             team,
             repo
         )
@@ -277,12 +274,9 @@ impl RepoApi {
                 t.updated_at as t_updated_at
             FROM repo r
             INNER JOIN team t ON t.id = r.team_id
-            INNER JOIN user_team ut ON ut.team_id = t.id
             WHERE
-                ut.user_id = $1 AND
-                r.id = $2
+                r.id = $1
             "#,
-            user_id,
             repo_id
         )
         .fetch_optional(&mut *tx)
@@ -361,18 +355,15 @@ impl RepoApi {
                 tu.updated_at as "tu_updated_at?"
             FROM repo r
             INNER JOIN team t ON t.id = r.team_id
-            INNER JOIN user_team ut ON ut.team_id = t.id
             INNER JOIN pipeline p ON p.repo_id = r.id
             LEFT JOIN "user" tu ON p.triggered_by_user = tu.id
             WHERE
-                ut.user_id = $1 AND
-                t.slug = $2 AND
-                r.slug = $3 AND
-                ($4::uuid IS NULL OR p.id < $4)
+                t.slug = $1 AND
+                r.slug = $2 AND
+                ($3::uuid IS NULL OR p.id < $3)
             ORDER BY p.id DESC
             LIMIT 20
             "#,
-            user_id,
             team,
             repo,
             cursor
