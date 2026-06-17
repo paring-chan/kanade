@@ -6,17 +6,21 @@ import {
   useSuspenseQuery,
 } from "@tanstack/react-query";
 import { type } from "arktype";
-import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { button, combobox, dialog, formField, input } from "../components";
 import { teamListQueryOptions } from "../queries/team";
 
-import LucideX from "~icons/lucide/x";
-import LucideChevronDown from "~icons/lucide/chevron-down";
-import LucideCheck from "~icons/lucide/check";
+import LuX from "~icons/lucide/x";
+import LuChevronDown from "~icons/lucide/chevron-down";
+import LuCheck from "~icons/lucide/check";
+import LuEdit from "~icons/lucide/pencil";
+import LuTrash from "~icons/lucide/trash";
+
 import { useMemo } from "react";
 import { api } from "../utils/api";
 import { agentsQueryOptions } from "../queries/agent";
+
+import type { components } from "../utils/api/types";
 
 export const Component = () => {
   return (
@@ -37,10 +41,41 @@ export const AgentList = () => {
   const { data: agents } = useSuspenseQuery(agentsQueryOptions());
 
   return (
-    <div>
-      <pre>
-        <code>{JSON.stringify(agents, null, 2)}</code>
-      </pre>
+    <div className="mt-4">
+      {agents.map((x) => (
+        <AgentItem key={x.id} agent={x} />
+      ))}
+    </div>
+  );
+};
+
+const AgentItem = ({
+  agent,
+}: {
+  agent: components["schemas"]["AgentResponse"];
+}) => {
+  return (
+    <div className="border -mt-px border-gray-300 px-4 py-2 flex items-center gap-4">
+      <div className="truncate">{agent.name}</div>
+
+      <div className="grow" />
+      <div className="text-sm opacity-40">
+        {agent.status === "offline"
+          ? "오프라인"
+          : agent.status === "busy"
+            ? "작업 처리 중"
+            : agent.status === "idle"
+              ? "온라인"
+              : "알 수 없음"}
+      </div>
+      <div className="flex items-center gap-2">
+        <button className="opacity-40 hover:opacity-100 focus:opacity-100 pointer cursor-pointer transition-opacity">
+          <LuEdit className="size-4" />
+        </button>
+        <button className="opacity-40 hover:opacity-100 text-red-400 focus:opacity-100 pointer cursor-pointer transition-opacity">
+          <LuTrash className="size-4" />
+        </button>
+      </div>
     </div>
   );
 };
@@ -286,10 +321,10 @@ const ScopeSelector = ({
           className={combobox.input()}
         />
         <Combobox.Clear>
-          <LucideX />
+          <LuX />
         </Combobox.Clear>
         <Combobox.Trigger className={combobox.trigger()}>
-          <LucideChevronDown />
+          <LuChevronDown />
         </Combobox.Trigger>
       </Combobox.InputGroup>
 
@@ -307,7 +342,7 @@ const ScopeSelector = ({
                   className={combobox.item()}
                 >
                   <Combobox.ItemIndicator className={combobox.itemIndicator()}>
-                    <LucideCheck className="size-4" />
+                    <LuCheck className="size-4" />
                   </Combobox.ItemIndicator>
                   <div className={combobox.itemContent()}>
                     <div>{item.name}</div>
