@@ -40,7 +40,7 @@ impl JobStatusReport for HttpReporter {
 
     async fn step_started(
         &self,
-        job_id: Uuid,
+        _job_id: Uuid,
         step_id: Uuid,
         step_name: &str,
     ) -> Result<(), Self::Error> {
@@ -56,7 +56,7 @@ impl JobStatusReport for HttpReporter {
 
     async fn step_finished(
         &self,
-        job_id: Uuid,
+        _job_id: Uuid,
         step_id: Uuid,
         exit_code: i32,
     ) -> Result<(), Self::Error> {

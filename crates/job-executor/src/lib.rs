@@ -15,10 +15,10 @@ use bollard::{
 use chrono::Duration;
 use futures_util::StreamExt;
 use secrecy::{ExposeSecret, SecretString};
-use tempfile::{NamedTempFile, TempDir, tempfile};
+use tempfile::TempDir;
 use tokio::io::AsyncReadExt;
 use tokio::{
-    fs::{File, create_dir_all, read_dir},
+    fs::{File, create_dir_all},
     io::AsyncWriteExt,
 };
 use tracing::{debug, instrument};
