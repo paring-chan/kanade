@@ -8,7 +8,11 @@
   "tags": [
     {
       "name": "Agent",
-      "description": "Agent 전용 API"
+      "description": "에이전트 전용 API"
+    },
+    {
+      "name": "AgentManagement",
+      "description": "에이전트 관리 API"
     },
     {
       "name": "Forge",
@@ -152,6 +156,58 @@
             }
           }
         }
+      }
+    },
+    "/api/v1/agents": {
+      "post": {
+        "tags": [
+          "AgentManagement"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json; charset=utf-8": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentCreateResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
       }
     },
     "/api/v1/users/me": {
@@ -668,7 +724,12 @@
           "204": {
             "description": "현재 할당 가능한 작업이 없음"
           }
-        }
+        },
+        "security": [
+          {
+            "AgentTokenAuth": []
+          }
+        ]
       }
     },
     "/api/v1/agent/jobs/{id}/finish": {
@@ -781,6 +842,44 @@
   },
   "components": {
     "schemas": {
+      "AgentCreateRequest": {
+        "type": "object",
+        "title": "AgentCreateRequest",
+        "required": [
+          "name",
+          "teamId"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "teamId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "AgentCreateResponse": {
+        "type": "object",
+        "title": "AgentCreateResponse",
+        "required": [
+          "id",
+          "name",
+          "token"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "token": {
+            "type": "string"
+          }
+        }
+      },
       "AgentPipelineJobResponse": {
         "type": "object",
         "title": "AgentPipelineJobResponse",
@@ -1065,8 +1164,7 @@
         "title": "LogEntry",
         "required": [
           "stepId",
-          "content",
-          "kind"
+          "content"
         ],
         "properties": {
           "stepId": {
@@ -1075,18 +1173,8 @@
           },
           "content": {
             "type": "string"
-          },
-          "kind": {
-            "$ref": "#/components/schemas/LogKind"
           }
         }
-      },
-      "LogKind": {
-        "type": "string",
-        "enum": [
-          "stdout",
-          "stderr"
-        ]
       },
       "PipelineJobResponse": {
         "type": "object",
@@ -1529,6 +1617,11 @@
       }
     },
     "securitySchemes": {
+      "AgentTokenAuth": {
+        "type": "apiKey",
+        "name": "X-Agent-Token",
+        "in": "header"
+      },
       "ApiKeyAuth": {
         "type": "apiKey",
         "name": "Authorization",

@@ -120,6 +120,60 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/agents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["AgentCreateRequest"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["AgentCreateResponse"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": unknown;
+                    };
+                };
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/users/me": {
         parameters: {
             query?: never;
@@ -799,6 +853,19 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AgentCreateRequest */
+        AgentCreateRequest: {
+            name: string;
+            /** Format: uuid */
+            teamId: string;
+        };
+        /** AgentCreateResponse */
+        AgentCreateResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            token: string;
+        };
         /** AgentPipelineJobResponse */
         AgentPipelineJobResponse: {
             /**
@@ -911,10 +978,7 @@ export interface components {
             /** Format: uuid */
             stepId: string;
             content: string;
-            kind: components["schemas"]["LogKind"];
         };
-        /** @enum {string} */
-        LogKind: "stdout" | "stderr";
         /** PipelineJobResponse */
         PipelineJobResponse: {
             /** Format: uuid */

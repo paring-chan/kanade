@@ -6,6 +6,11 @@ pub trait DatabaseSecurityExt: Send + Sync {
         &self,
         user_id: Uuid,
     ) -> impl Future<Output = crate::Result<sqlx::Transaction<'_, Postgres>>> + Send;
+
+    fn begin_as_agent(
+        &self,
+        agent_id: Uuid,
+    ) -> impl Future<Output = crate::Result<sqlx::Transaction<'_, Postgres>>> + Send;
 }
 
 impl DatabaseSecurityExt for PgPool {
@@ -16,6 +21,22 @@ impl DatabaseSecurityExt for PgPool {
         sqlx::query(AssertSqlSafe(format!(
             r#"SET LOCAL app.auth_user_id ='{}'"#,
             user_id
+        )))
+        .execute(&mut *tx)
+        .await?;
+
+        Ok(tx)
+    }
+
+    async fn begin_as_agent(
+        &self,
+        agent_id: Uuid,
+    ) -> crate::Result<sqlx::Transaction<'_, Postgres>> {
+        let mut tx = self.begin().await?;
+
+        sqlx::query(AssertSqlSafe(format!(
+            r#"SET LOCAL app.auth_agent_id ='{}'"#,
+            agent_id
         )))
         .execute(&mut *tx)
         .await?;

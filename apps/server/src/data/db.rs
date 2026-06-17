@@ -80,3 +80,11 @@ pub enum RoleType {
     Manager,
     Admin,
 }
+
+#[derive(Debug, Type)]
+#[sqlx(type_name = "agent_status", rename_all = "snake_case")]
+pub enum AgentStatus {
+    Idle,
+    Busy,
+    Offline,
+}

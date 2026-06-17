@@ -13,9 +13,6 @@ export type JobStatusResponse = "waiting" | "pending" | "running" | "success" | 
 export type LogEntry = {
 	stepId: string,
 	content: string,
-	kind: LogKind,
 };
-
-export type LogKind = "stdout" | "stderr";
 
 export type PipelineStatusResponse = "queued" | "running" | "success" | "failed" | "cancelled";

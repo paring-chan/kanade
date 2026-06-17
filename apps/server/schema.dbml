@@ -242,7 +242,8 @@ Enum agent_status {
 Table agent {
   id uuid pk [not null]
   name text [not null]
-  status agent_status
+  status agent_status [not null]
+  is_global bool [not null, default: `false`]
   token_sha256 bytea [not null, unique]
 
   created_at timestamptz [not null, default: `now()`]

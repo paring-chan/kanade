@@ -1,8 +1,10 @@
 use std::{collections::HashMap, sync::Arc};
 
 use crate::EventMessage;
+use crate::api::security::AgentTokenAuth;
 use crate::crypto::CryptoEngine;
 use crate::data::db::{JobStatus, PipelineStatus};
+use crate::security::DatabaseSecurityExt;
 use crate::{api::ApiTags, realtime::Realtime};
 use api_types::{
     AgentPipelineJobResponse, AgentPipelineJobStepResponse, JobAcquireEndpointResponse,
@@ -26,8 +28,9 @@ impl AgentJobsApi {
         Data(db): Data<&PgPool>,
         Data(realtime): Data<&Arc<Realtime>>,
         Data(crypto): Data<&Arc<CryptoEngine>>,
+        AgentTokenAuth(agent_id): AgentTokenAuth,
     ) -> poem::Result<JobAcquireEndpointResponse> {
-        self._acquire(db, realtime, crypto)
+        self._acquire(db, realtime, crypto, agent_id)
             .await
             .map_err(Into::into)
     }
@@ -38,6 +41,7 @@ impl AgentJobsApi {
         db: &PgPool,
         realtime: &Realtime,
         crypto: &CryptoEngine,
+        agent_id: Uuid,
     ) -> crate::Result<JobAcquireEndpointResponse> {
         let mut tx = db.begin().await?;
 
@@ -92,10 +96,12 @@ impl AgentJobsApi {
             r#"
             UPDATE pipeline_job
             SET status = 'running'::job_status,
-                started_at = NOW()
+                started_at = NOW(),
+                agent_id = $2
             WHERE id = $1
             "#,
-            job.id
+            job.id,
+            agent_id
         )
         .execute(&mut *tx)
         .await?;

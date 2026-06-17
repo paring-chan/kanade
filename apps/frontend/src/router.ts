@@ -15,6 +15,8 @@ const routes = [
 					{ path: 'r/:team/:repo', lazy: () => import('./routes/repo-info') },
 
 					{ path: 'p/:pipeline', lazy: () => import('./routes/pipeline-view') },
+
+					{ path: 'agents', lazy: () => import('./routes/agent-list') },
 				],
 			},
 		],
