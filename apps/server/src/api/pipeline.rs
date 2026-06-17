@@ -13,6 +13,7 @@ use uuid::Uuid;
 use crate::{
     api::security::ApiKeyAuth,
     data::db::{EventType, JobStatus, PipelineStatus},
+    security::DatabaseSecurityExt,
 };
 
 pub struct PipelineApi;
@@ -37,6 +38,8 @@ impl PipelineApi {
         user_id: Uuid,
         pipeline_id: Uuid,
     ) -> crate::Result<GetPipelineResponse> {
+        let mut tx = db.begin_as(user_id).await?;
+
         let Some(row) = sqlx::query!(
             r#"
             SELECT
@@ -73,7 +76,7 @@ impl PipelineApi {
             user_id,
             pipeline_id
         )
-        .fetch_optional(db)
+        .fetch_optional(&mut *tx)
         .await?
         else {
             return Ok(GetPipelineResponse::NotFound(Json(ErrorResponse {
@@ -126,6 +129,8 @@ impl PipelineApi {
         user_id: Uuid,
         pipeline_id: Uuid,
     ) -> crate::Result<Vec<PipelineJobResponse>> {
+        let mut tx = db.begin_as(user_id).await?;
+
         let rows = sqlx::query!(
             r#"
             SELECT
@@ -161,7 +166,7 @@ impl PipelineApi {
             user_id,
             pipeline_id
         )
-        .fetch_all(db)
+        .fetch_all(&mut *tx)
         .await?;
 
         let depend_rows = sqlx::query!(
@@ -176,7 +181,7 @@ impl PipelineApi {
             "#,
             pipeline_id
         )
-        .fetch_all(db)
+        .fetch_all(&mut *tx)
         .await?;
 
         let depends = depend_rows.into_iter().chunk_by(|r| r.downstream_id);

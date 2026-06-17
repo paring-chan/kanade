@@ -13,6 +13,7 @@ use crate::{
     data::forges::{ForgeConfig, ForgejoForgeConfig},
     error::AppError,
     forges::forgejo::ForgejoApi,
+    security::DatabaseSecurityExt,
 };
 
 pub mod forgejo;
@@ -59,7 +60,7 @@ impl AllForges {
         user_id: Uuid,
         forge_id: Uuid,
     ) -> crate::Result<Option<ForgeAuthInfo>> {
-        let mut tx = self.db.begin().await?;
+        let mut tx = self.db.begin_as(user_id).await?;
 
         let uf = match sqlx::query!(
             r#"

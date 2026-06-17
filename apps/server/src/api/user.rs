@@ -1,4 +1,4 @@
-use crate::api::security::ApiKeyAuth;
+use crate::{api::security::ApiKeyAuth, security::DatabaseSecurityExt};
 
 use super::ApiTags;
 use api_types::{ForgeInfoResponse, UserEndpointResponse, UserForgeResponse, UserResponse};
@@ -54,6 +54,8 @@ impl UserApi {
         user_id: Uuid,
         db: &PgPool,
     ) -> crate::Result<Json<Vec<UserForgeResponse>>> {
+        let mut tx = db.begin_as(user_id).await?;
+
         let rows = sqlx::query!(
             r#"
             SELECT
@@ -71,7 +73,7 @@ impl UserApi {
             "#,
             user_id,
         )
-        .fetch_all(db)
+        .fetch_all(&mut *tx)
         .await?;
 
         Ok(Json(

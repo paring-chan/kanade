@@ -8,7 +8,7 @@ use poem_openapi::{OpenApi, param::Path, payload::Json};
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use crate::{api::security::ApiKeyAuth, data::db::RoleType};
+use crate::{api::security::ApiKeyAuth, data::db::RoleType, security::DatabaseSecurityExt};
 
 pub struct TeamApi;
 
@@ -28,6 +28,8 @@ impl TeamApi {
         user_id: Uuid,
         db: &PgPool,
     ) -> crate::Result<Json<Vec<TeamResponse>>> {
+        let mut tx = db.begin_as(user_id).await?;
+
         let teams = sqlx::query!(
             r#"
             SELECT t.* FROM user_team ut
@@ -37,7 +39,7 @@ impl TeamApi {
             "#,
             user_id
         )
-        .fetch_all(db)
+        .fetch_all(&mut *tx)
         .await?;
 
         Ok(Json(
@@ -72,6 +74,8 @@ impl TeamApi {
         team_slug: String,
         db: &PgPool,
     ) -> crate::Result<TeamFindOneResponse> {
+        let mut tx = db.begin_as(user_id).await?;
+
         let team = sqlx::query!(
             r#"
             SELECT t.* FROM user_team ut
@@ -82,7 +86,7 @@ impl TeamApi {
             user_id,
             team_slug,
         )
-        .fetch_optional(db)
+        .fetch_optional(&mut *tx)
         .await?;
 
         match team {
@@ -116,6 +120,8 @@ impl TeamApi {
         team_slug: String,
         db: &PgPool,
     ) -> crate::Result<Json<Vec<RepoResponse>>> {
+        let mut tx = db.begin_as(user_id).await?;
+
         let res = sqlx::query!(
             r#"
             SELECT
@@ -141,7 +147,7 @@ impl TeamApi {
             user_id,
             team_slug,
         )
-        .fetch_all(db)
+        .fetch_all(&mut *tx)
         .await?;
 
         Ok(Json(
@@ -193,7 +199,7 @@ impl TeamApi {
             }
         }
 
-        let mut tx = db.begin().await?;
+        let mut tx = db.begin_as(user_id).await?;
 
         let id = Uuid::new_v4();
 

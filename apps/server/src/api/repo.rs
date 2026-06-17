@@ -24,6 +24,7 @@ use crate::{
     data::db::{EventType, PipelineStatus},
     error::AppError,
     forges::AllForges,
+    security::DatabaseSecurityExt,
 };
 
 pub struct RepoApi;
@@ -72,6 +73,8 @@ impl RepoApi {
             .await?
             .ok_or(AppError::UpstreamRepoNotFound)?;
 
+        let mut tx = db.begin_as(user_id).await?;
+
         let exists = sqlx::query!(
             r#"
             SELECT
@@ -83,7 +86,7 @@ impl RepoApi {
             payload.forge_id,
             upstream_repo.id
         )
-        .fetch_one(db)
+        .fetch_one(&mut *tx)
         .await?;
 
         if exists.slug.unwrap_or_default() {
@@ -123,7 +126,7 @@ impl RepoApi {
 
         let encrypted_webhook_token = crypto.encrypt(&webhook_token)?;
         let encrypted_ssh_key = crypto.encrypt(&private_key_encoded)?;
-        let mut tx = db.begin().await?;
+        let mut tx = db.begin_as(user_id).await?;
 
         let res = sqlx::query!(
             r#"
@@ -183,6 +186,8 @@ impl RepoApi {
         team: &str,
         repo: &str,
     ) -> crate::Result<GetRepoResponse> {
+        let mut tx = db.begin_as(user_id).await?;
+
         let result = sqlx::query!(
             r#"
             SELECT
@@ -210,7 +215,7 @@ impl RepoApi {
             team,
             repo
         )
-        .fetch_optional(db)
+        .fetch_optional(&mut *tx)
         .await?;
 
         match result {
@@ -253,6 +258,8 @@ impl RepoApi {
         user_id: Uuid,
         repo_id: Uuid,
     ) -> crate::Result<GetRepoResponse> {
+        let mut tx = db.begin_as(user_id).await?;
+
         let result = sqlx::query!(
             r#"
             SELECT
@@ -278,7 +285,7 @@ impl RepoApi {
             user_id,
             repo_id
         )
-        .fetch_optional(db)
+        .fetch_optional(&mut *tx)
         .await?;
 
         match result {
@@ -327,6 +334,8 @@ impl RepoApi {
         repo: &str,
         cursor: Option<Uuid>,
     ) -> crate::Result<PipelineListResponse> {
+        let mut tx = db.begin_as(user_id).await?;
+
         let result = sqlx::query!(
             r#"
             SELECT
@@ -368,7 +377,7 @@ impl RepoApi {
             repo,
             cursor
         )
-        .fetch_all(db)
+        .fetch_all(&mut *tx)
         .await?;
 
         if result.is_empty() {

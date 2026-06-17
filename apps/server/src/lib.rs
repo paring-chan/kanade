@@ -26,6 +26,7 @@ mod error;
 mod forges;
 mod realtime;
 mod routes;
+mod security;
 mod util;
 
 use error::*;
