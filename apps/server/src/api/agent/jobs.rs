@@ -55,6 +55,13 @@ impl AgentJobsApi {
             INNER JOIN pipeline p ON p.id = j.pipeline_id
             INNER JOIN repo r ON r.id = p.repo_id
             WHERE j.status = 'pending'::job_status
+                AND NOT EXISTS (
+                    SELECT
+                    FROM pipeline_job_depend d
+                    INNER JOIN pipeline_job upstream ON upstream.id = d.upstream_id
+                    WHERE d.downstream_id = j.id
+                    AND upstream.status != 'success'::job_status
+                )
             ORDER BY j.created_at ASC
             LIMIT 1
             FOR UPDATE OF j SKIP LOCKED
