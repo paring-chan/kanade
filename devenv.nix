@@ -3,6 +3,7 @@
   languages.rust = {
     enable = true;
     channel = "nightly";
+    targets = [ "x86_64-unknown-linux-musl" ];
   };
 
   services.redis = {

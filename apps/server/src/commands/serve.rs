@@ -38,7 +38,13 @@ pub async fn run(config: Arc<AppConfig>) -> anyhow::Result<()> {
 
     Server::new(listener)
         .name("kanade-server")
-        .run(app)
+        .run_with_graceful_shutdown(
+            app,
+            async {
+                _ = tokio::signal::ctrl_c().await;
+            },
+            None,
+        )
         .await
         .context("failed to start server")?;
 
