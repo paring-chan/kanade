@@ -16,7 +16,7 @@ import LuCheck from "~icons/lucide/check";
 import LuEdit from "~icons/lucide/pencil";
 import LuTrash from "~icons/lucide/trash";
 
-import { useMemo } from "react";
+import { useMemo, type SubmitEvent } from "react";
 import { api } from "../utils/api";
 import { agentsQueryOptions } from "../queries/agent";
 
@@ -33,6 +33,7 @@ export const Component = () => {
 
         <AgentList />
       </div>
+      <DeleteAgentDialog />
     </div>
   );
 };
@@ -72,7 +73,12 @@ const AgentItem = ({
         <button className="opacity-40 hover:opacity-100 focus-visible:opacity-100 pointer cursor-pointer transition-opacity">
           <LuEdit className="size-4" />
         </button>
-        <button className="opacity-40 hover:opacity-100 text-red-400 focus-visible:opacity-100 pointer cursor-pointer transition-opacity">
+        <button
+          className="opacity-40 hover:opacity-100 text-red-400 focus-visible:opacity-100 pointer cursor-pointer transition-opacity"
+          onClick={() => {
+            deleteHandle.openWithPayload({ agent });
+          }}
+        >
           <LuTrash className="size-4" />
         </button>
       </div>
@@ -84,6 +90,69 @@ const createAgentSchema = type({
   name: "string > 0 & string <= 20",
   teamId: "string == 36",
 });
+
+const deleteHandle = AlertDialog.createHandle<{
+  agent: components["schemas"]["AgentResponse"];
+}>();
+
+const DeleteAgentDialog = () => {
+  const qc = useQueryClient();
+
+  const onSubmit = async (e: SubmitEvent<HTMLFormElement>) => {
+    try {
+      const value = new FormData(e.currentTarget);
+      const id = value.get("id") as string;
+      if (!id) throw new Error("id not defined");
+
+      await api.DELETE("/api/v1/agents/{agent_id}", {
+        params: { path: { agent_id: id } },
+      });
+
+      toast.success("에이전트가 삭제되었습니다");
+      qc.invalidateQueries(agentsQueryOptions());
+
+      deleteHandle.close();
+    } catch (e: any) {
+      if (e.message) toast.error(e.message);
+    }
+  };
+
+  return (
+    <AlertDialog.Root handle={deleteHandle}>
+      {({ payload }) => (
+        <AlertDialog.Portal>
+          <AlertDialog.Backdrop className={dialog.backdrop()} />
+          <AlertDialog.Popup
+            className={dialog.popup()}
+            render={
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  onSubmit(e);
+                }}
+              />
+            }
+          >
+            <input type="hidden" name="id" value={payload?.agent.id} />
+            <div className={dialog.titleArea()}>
+              <AlertDialog.Title className={dialog.title()}>
+                에이전트 삭제
+              </AlertDialog.Title>
+            </div>
+            <div className={dialog.actionsArea()}>
+              <Dialog.Close className={button({ style: "outlined" })}>
+                취소
+              </Dialog.Close>
+              <button className={button({ style: "error" })} type="submit">
+                삭제
+              </button>
+            </div>
+          </AlertDialog.Popup>
+        </AlertDialog.Portal>
+      )}
+    </AlertDialog.Root>
+  );
+};
 
 const CreateAgentDialog = () => {
   const qc = useQueryClient();
@@ -109,6 +178,7 @@ const CreateAgentDialog = () => {
           .then((x) => x.data!);
 
         createdHandle.openWithPayload({ name: res.name, token: res.token });
+        qc.invalidateQueries(agentsQueryOptions());
 
         dialogHandle.close();
       } catch (e: any) {

@@ -192,6 +192,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/agents/{agent_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    agent_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                203: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["DeleteAgentResponse"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/users/me": {
         parameters: {
             query?: never;
@@ -938,6 +982,10 @@ export interface components {
         };
         /** @enum {string} */
         AgentStatusResponse: "idle" | "busy" | "offline";
+        /** DeleteAgentResponse */
+        DeleteAgentResponse: {
+            message: string;
+        };
         /** @description 환경변수 정의 */
         EnvDefinitionResponse: components["schemas"]["EnvDefinitionResponse_StaticEnv"] | components["schemas"]["EnvDefinitionResponse_SecretEnv"];
         /** @description 환경변수 정의 */

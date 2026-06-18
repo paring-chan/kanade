@@ -9,6 +9,7 @@ Table user {
   nick text
   email text [unique]
   avatar_url text
+  is_admin bool [not null, default: `false`]
 
   created_at timestamptz [default: `now()`]
   updated_at timestamptz [default: `now()`]

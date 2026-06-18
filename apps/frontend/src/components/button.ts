@@ -5,6 +5,7 @@ export const button = tv({
 	variants: {
 		style: {
 			normal: 'bg-black text-white disabled:bg-black/10 disabled:text-gray-500',
+			error: 'bg-red-500 hover:bg-red-600 text-white disabled:bg-red/10 disabled:text-gray-500',
 			outlined: 'border border-black/40 hover:bg-black/10 active:bg-black/15',
 		},
 	},

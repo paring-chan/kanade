@@ -48,3 +48,16 @@ pub struct AgentResponse {
     pub updated_at: DateTime<Utc>,
     pub last_heartbeat_at: Option<DateTime<Utc>>,
 }
+
+#[derive(Debug, ApiResponse)]
+pub enum DeleteAgentEndpointResponse {
+    #[oai(status = 203)]
+    Ok(Json<DeleteAgentResponse>),
+    #[oai(status = 404)]
+    NotFound(Json<ErrorResponse>),
+}
+
+#[derive(Debug, Object)]
+pub struct DeleteAgentResponse {
+    pub message: String,
+}

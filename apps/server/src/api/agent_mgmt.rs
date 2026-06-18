@@ -1,8 +1,9 @@
 use api_types::{
     AgentCreateEndpointResponse, AgentCreateRequest, AgentCreateResponse, AgentResponse,
+    DeleteAgentEndpointResponse, DeleteAgentResponse, ErrorResponse,
 };
 use poem::web::Data;
-use poem_openapi::{OpenApi, payload::Json};
+use poem_openapi::{OpenApi, param::Path, payload::Json};
 use rand::{TryRng, rngs::SysRng};
 use sha2::{Digest, Sha256};
 use sqlx::PgPool;
@@ -119,6 +120,43 @@ impl AgentManagementApi {
             id: result.id,
             name: result.name,
             token,
+        })))
+    }
+
+    #[oai(path = "/:agent_id", method = "delete")]
+    async fn delete_agent(
+        &self,
+        Data(db): Data<&PgPool>,
+        Path(agent_id): Path<Uuid>,
+        ApiKeyAuth(user_id): ApiKeyAuth,
+    ) -> poem::Result<DeleteAgentEndpointResponse> {
+        self._delete_agent(db, agent_id, user_id)
+            .await
+            .map_err(Into::into)
+    }
+
+    async fn _delete_agent(
+        &self,
+        db: &PgPool,
+        agent_id: Uuid,
+        user_id: Uuid,
+    ) -> crate::Result<DeleteAgentEndpointResponse> {
+        let mut tx = db.begin_as(user_id).await?;
+
+        let res = sqlx::query!("DELETE FROM agent WHERE id = $1", agent_id)
+            .execute(&mut *tx)
+            .await?;
+
+        if res.rows_affected() == 0 {
+            return Ok(DeleteAgentEndpointResponse::NotFound(Json(ErrorResponse {
+                message: "agent not found".to_string(),
+            })));
+        }
+
+        tx.commit().await?;
+
+        Ok(DeleteAgentEndpointResponse::Ok(Json(DeleteAgentResponse {
+            message: "deleted".to_string(),
         })))
     }
 }

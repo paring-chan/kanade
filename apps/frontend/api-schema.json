@@ -235,6 +235,53 @@
         ]
       }
     },
+    "/api/v1/agents/{agent_id}": {
+      "delete": {
+        "tags": [
+          "AgentManagement"
+        ],
+        "parameters": [
+          {
+            "name": "agent_id",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "required": true,
+            "deprecated": false,
+            "explode": true
+          }
+        ],
+        "responses": {
+          "203": {
+            "description": "",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteAgentResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
     "/api/v1/users/me": {
       "get": {
         "tags": [
@@ -1018,6 +1065,18 @@
           "busy",
           "offline"
         ]
+      },
+      "DeleteAgentResponse": {
+        "type": "object",
+        "title": "DeleteAgentResponse",
+        "required": [
+          "message"
+        ],
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        }
       },
       "EnvDefinitionResponse": {
         "type": "object",
