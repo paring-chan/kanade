@@ -152,7 +152,15 @@ impl<R: adapter::JobStatusReport> JobExecutor<R> {
         debug!("container created: {container:?}");
 
         let result = self
-            .run_steps(job.id, &name, dir.path(), job.steps, reporter)
+            .run_steps(
+                job.id,
+                &name,
+                dir.path(),
+                job.steps,
+                job.ssh_key.expose_secret(),
+                job.secrets,
+                reporter,
+            )
             .await;
 
         self.docker
@@ -184,6 +192,8 @@ impl<R: adapter::JobStatusReport> JobExecutor<R> {
         container_name: &str,
         work_dir: &Path,
         mut steps: Vec<JobStep>,
+        ssh_key: &str,
+        secrets: HashMap<String, SecretString>,
         reporter: &R,
     ) -> Result<i32> {
         self.docker
@@ -201,6 +211,24 @@ impl<R: adapter::JobStatusReport> JobExecutor<R> {
 
         let cwd_path = work_dir.join("cwd");
 
+        let mask_log = |input: &str| -> String {
+            let mut result = if ssh_key.len() >= 6 {
+                input.replace(ssh_key, "***")
+            } else {
+                input.to_string()
+            };
+
+            for secret in secrets
+                .values()
+                .map(|x| x.expose_secret())
+                .filter(|x| x.len() >= 6)
+            {
+                result = result.replace(secret, "***");
+            }
+
+            result
+        };
+
         for step in steps {
             reporter
                 .step_started(job_id, step.id, &step.name)
@@ -217,6 +245,19 @@ impl<R: adapter::JobStatusReport> JobExecutor<R> {
                 Err(e) => return Err(Error::Io(e)),
             };
 
+            let env = step
+                .env
+                .iter()
+                .filter_map(|(k, v)| match v {
+                    EnvDefinitionResponse::Static(StaticEnv { value }) => {
+                        Some(format!("{k}={value}"))
+                    }
+                    EnvDefinitionResponse::Secret(SecretEnv { secret_key }) => secrets
+                        .get(secret_key)
+                        .map(|v| format!("{k}={}", v.expose_secret())),
+                })
+                .collect::<Vec<_>>();
+
             let exec = self
                 .docker
                 .create_exec(
@@ -226,6 +267,7 @@ impl<R: adapter::JobStatusReport> JobExecutor<R> {
                         cmd: Some(vec!["/bin/sh".to_string(), "-c".to_string(), step.command]),
                         attach_stderr: Some(true),
                         attach_stdout: Some(true),
+                        env: Some(env),
                         ..Default::default()
                     },
                 )
@@ -244,44 +286,27 @@ impl<R: adapter::JobStatusReport> JobExecutor<R> {
             };
 
             while let Some(output) = output.next().await.transpose()? {
-                match output {
-                    LogOutput::StdErr { message } => {
-                        reporter
-                            .step_log(
-                                job_id,
-                                step.id,
-                                LogLine::StdErr(
-                                    String::from_utf8_lossy(message.as_ref()).to_string(),
-                                ),
-                            )
-                            .await
-                            .map_err(|e| Error::Reporter(Box::new(e)))?;
-                    }
-                    LogOutput::StdOut { message } => {
-                        reporter
-                            .step_log(
-                                job_id,
-                                step.id,
-                                LogLine::StdOut(
-                                    String::from_utf8_lossy(message.as_ref()).to_string(),
-                                ),
-                            )
-                            .await
-                            .map_err(|e| Error::Reporter(Box::new(e)))?;
-                    }
-                    LogOutput::Console { message } => {
-                        reporter
-                            .step_log(
-                                job_id,
-                                step.id,
-                                LogLine::StdOut(
-                                    String::from_utf8_lossy(message.as_ref()).to_string(),
-                                ),
-                            )
-                            .await
-                            .map_err(|e| Error::Reporter(Box::new(e)))?;
-                    }
-                    _ => {}
+                let raw_message = match &output {
+                    LogOutput::StdErr { message } => Some((true, message)),
+                    LogOutput::StdOut { message } => Some((false, message)),
+                    LogOutput::Console { message } => Some((false, message)),
+                    _ => None,
+                };
+
+                if let Some((is_stderr, message_bytes)) = raw_message {
+                    let lossy_string = String::from_utf8_lossy(message_bytes.as_ref());
+                    let masked_string = mask_log(&lossy_string);
+
+                    let log_line = if is_stderr {
+                        LogLine::StdErr(masked_string)
+                    } else {
+                        LogLine::StdOut(masked_string)
+                    };
+
+                    reporter
+                        .step_log(job_id, step.id, log_line)
+                        .await
+                        .map_err(|e| Error::Reporter(Box::new(e)))?;
                 }
             }
 
