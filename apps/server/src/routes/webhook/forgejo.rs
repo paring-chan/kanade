@@ -19,9 +19,10 @@ use sqlx::{PgPool, types::Json};
 use uuid::Uuid;
 
 use crate::{
+    config::AppConfig,
     data::db::{EventType, JobStatus, PipelineStatus},
     error::AppError,
-    forges::AllForges,
+    forges::{AllForges, CommitStatus},
     security::DatabaseSecurityExt,
 };
 
@@ -77,6 +78,7 @@ async fn forgejo_webhook(
     crypto: Data<&Arc<crate::crypto::CryptoEngine>>,
     Query(query): Query<WebhookQueryParams>,
     Data(forges): Data<&Arc<AllForges>>,
+    Data(config): Data<&Arc<AppConfig>>,
 ) -> poem::Result<()> {
     if req.header(CONTENT_TYPE) != Some("application/json") {
         return Err(poem::Error::from_string(
@@ -169,21 +171,23 @@ async fn forgejo_webhook(
         }
     };
 
+    let event_str = match &event {
+        EventType::Push => "push",
+        EventType::Tag => "tag",
+        EventType::Release => "release",
+        EventType::PullRequest => "pull_request",
+        EventType::Cron => "cron",
+        EventType::Manual => "manual",
+    };
+
     let pipelines = tokio::task::spawn_blocking({
         let body = body.clone();
-        let event = match &event {
-            EventType::Push => "push",
-            EventType::Tag => "tag",
-            EventType::Release => "release",
-            EventType::PullRequest => "pull_request",
-            EventType::Cron => "cron",
-            EventType::Manual => "manual",
-        };
+
         move || {
             event_evaluator::evaluate(
                 &script,
                 EvalContext {
-                    event,
+                    event: event_str,
                     branch: body
                         .r#ref
                         .strip_prefix("refs/heads/")
@@ -220,30 +224,48 @@ async fn forgejo_webhook(
             poem::Error::from_string("internal error", StatusCode::INTERNAL_SERVER_ERROR)
         })?;
 
-    for pipeline in pipelines {
+    struct StatusUpdate {
+        context: String,
+        description: String,
+        url: String,
+    }
+
+    let mut targets = Vec::<StatusUpdate>::new();
+
+    for (i, pipeline) in pipelines.into_iter().enumerate() {
+        let status_context = format!("kanade/{event_str}/{}", i + 1);
+        targets.push(StatusUpdate {
+            context: status_context.clone(),
+            description: pipeline.name.clone(),
+            url: format!("{}/p/{}", config.server.public_url, pipeline.id),
+        });
+
         sqlx::query!(
             r#"
             INSERT INTO pipeline
                 (
-                    id, repo_id, title, triggered_by, triggered_by_user,
-                    event_type, event_payload, git_ref, git_commit_id, status,
+                    id, repo_id, title, short_title, triggered_by, triggered_by_user,
+                    event_type, event_payload, git_ref, git_commit_id,
+                    status, status_context,
                     serial
                 )
             VALUES
-                ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
+                ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12,
                     (SELECT COALESCE(MAX(serial), 0) + 1 FROM pipeline WHERE repo_id = $2)
                 )
             "#,
             pipeline.id,
             query.repo,
             format!("{} ({})", &body.head_commit.message, pipeline.name),
+            pipeline.name,
             body.sender.username,
             Option::<Uuid>::None as Option<Uuid>,
             event.clone() as EventType,
             Json(json!({})) as Json<serde_json::Value>,
             body.r#ref,
             body.after,
-            PipelineStatus::Queued as PipelineStatus
+            PipelineStatus::Queued as PipelineStatus,
+            status_context
         )
         .execute(&mut *tx)
         .await
@@ -330,6 +352,20 @@ async fn forgejo_webhook(
         error!("failed to commit transaction: {e}");
         poem::Error::from_string("internal error", StatusCode::INTERNAL_SERVER_ERROR)
     })?;
+
+    for status in targets {
+        forges
+            .set_commit_status(
+                &auth,
+                &upstream_repo,
+                &body.after,
+                &status.context,
+                &status.description,
+                &status.url,
+                CommitStatus::Pending,
+            )
+            .await?;
+    }
 
     Ok(())
 }

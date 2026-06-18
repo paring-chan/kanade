@@ -13,7 +13,7 @@ use crate::{
     config::AppConfig,
     data::forges::ForgejoForgeConfig,
     error::AppError,
-    forges::UpstreamRepositoryInfo,
+    forges::{CommitStatus, UpstreamRepositoryInfo},
     util::{HTTP, OAUTH2_REQWEST},
 };
 
@@ -81,6 +81,55 @@ impl ForgejoApi {
             })
             .collect())
     }
+
+    #[instrument(skip(self, config, access_token), err(Debug))]
+    pub async fn set_commit_status(
+        &self,
+        config: &ForgejoForgeConfig,
+        access_token: &SecretString,
+        repo: &UpstreamRepositoryInfo,
+        commit_sha: &str,
+        name: &str,
+        description: &str,
+        url: &str,
+        state: CommitStatus,
+    ) -> crate::Result<()> {
+        let res = HTTP
+            .post(format!(
+                "{}/api/v1/repos/{}/statuses/{}",
+                &config.url, &repo.full_name, commit_sha
+            ))
+            .header(
+                AUTHORIZATION,
+                format!("token {}", access_token.expose_secret()),
+            )
+            .json(&json!({
+                "context": name,
+                "description": description,
+                "state": match state {
+                    CommitStatus::Pending => "pending",
+                    CommitStatus::Success => "success",
+                    CommitStatus::Failure => "failure",
+                },
+                "target_url": url,
+            }))
+            .send()
+            .await?;
+
+        let status = res.status();
+
+        let text = res.text().await?;
+        debug!(status = ?status, "response: {text}");
+
+        if status != StatusCode::CREATED {
+            return Err(AppError::InternalError(anyhow::anyhow!(
+                "create webhook request failed with status {status}"
+            )));
+        }
+
+        Ok(())
+    }
+
     #[instrument(skip(self, config, access_token, public_key), err(Debug))]
     pub async fn add_ssh_key(
         &self,

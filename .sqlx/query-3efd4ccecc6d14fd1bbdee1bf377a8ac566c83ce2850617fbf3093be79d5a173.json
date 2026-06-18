@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            UPDATE pipeline_job j\n            SET status = $1,\n                finished_at = NOW()\n            WHERE id = $2 AND status = 'running'::job_status\n            RETURNING j.id, j.pipeline_id\n            ",
+  "query": "\n            UPDATE pipeline_job j\n            SET status = $1,\n                finished_at = NOW()\n            WHERE id = $2\n                AND status = 'running'::job_status\n                AND agent_id = $3\n            RETURNING j.id, j.pipeline_id\n            ",
   "describe": {
     "columns": [
       {
@@ -44,6 +44,7 @@
             }
           }
         },
+        "Uuid",
         "Uuid"
       ]
     },
@@ -52,5 +53,5 @@
       false
     ]
   },
-  "hash": "32c7d11c3585cf1873aa8d715e1cbd6b94ca627470ceb871b81b367332dc20ad"
+  "hash": "3efd4ccecc6d14fd1bbdee1bf377a8ac566c83ce2850617fbf3093be79d5a173"
 }

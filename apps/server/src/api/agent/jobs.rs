@@ -2,8 +2,10 @@ use std::{collections::HashMap, sync::Arc};
 
 use crate::EventMessage;
 use crate::api::security::AgentTokenAuth;
+use crate::config::AppConfig;
 use crate::crypto::CryptoEngine;
 use crate::data::db::{JobStatus, PipelineStatus};
+use crate::forges::{AllForges, CommitStatus};
 use crate::security::DatabaseSecurityExt;
 use crate::{api::ApiTags, realtime::Realtime};
 use api_types::{
@@ -200,20 +202,24 @@ impl AgentJobsApi {
         &self,
         Data(db): Data<&PgPool>,
         Data(realtime): Data<&Arc<Realtime>>,
+        Data(forges): Data<&Arc<AllForges>>,
+        Data(config): Data<&Arc<AppConfig>>,
         id: Path<Uuid>,
         status: Json<JobFinishRequest>,
         AgentTokenAuth(agent_id): AgentTokenAuth,
     ) -> poem::Result<JobFinishResponse> {
-        self._finish(db, realtime, id.0, status.0, agent_id)
+        self._finish(db, config, realtime, forges, id.0, status.0, agent_id)
             .await
             .map_err(Into::into)
     }
 
-    #[instrument(skip(self, realtime, db), err(Debug))]
+    #[instrument(skip(self, realtime, db, forges), err(Debug))]
     async fn _finish(
         &self,
         db: &PgPool,
+        config: &AppConfig,
         realtime: &Realtime,
+        forges: &AllForges,
         run_id: Uuid,
         request: JobFinishRequest,
         agent_id: Uuid,
@@ -300,11 +306,24 @@ impl AgentJobsApi {
                     SELECT 1 FROM pipeline_job
                     WHERE pipeline_id = $1 AND finished_at IS NULL
                 )
-            RETURNING id, status as "status: PipelineStatus"
+            RETURNING id, repo_id, status as "status: PipelineStatus", git_commit_id, status_context, short_title
             "#,
             result.pipeline_id
         )
         .fetch_optional(&mut *tx)
+        .await?;
+
+        let repo = sqlx::query!(
+            r#"
+            SELECT
+                forge_id, forge_repo_id, created_by
+            FROM repo r
+            INNER JOIN pipeline p ON p.repo_id = r.id
+            WHERE p.id = $1
+            "#,
+            result.pipeline_id
+        )
+        .fetch_one(&mut *tx)
         .await?;
 
         tx.commit().await?;
@@ -324,6 +343,32 @@ impl AgentJobsApi {
                     status: pipeline.status.into(),
                 })
                 .await?;
+
+            let forge_auth = forges
+                .get_forge_auth(repo.created_by, repo.forge_id)
+                .await?;
+            if let Some(auth) = forge_auth
+                && let Some(forge_repo) = forges.get_repo(&auth, &repo.forge_repo_id).await?
+            {
+                forges
+                    .set_commit_status(
+                        &auth,
+                        &forge_repo,
+                        &pipeline.git_commit_id,
+                        &pipeline.status_context,
+                        pipeline.short_title.as_deref().unwrap_or(""),
+                        &format!("{}/p/{}", config.server.public_url, pipeline.id),
+                        match pipeline.status {
+                            PipelineStatus::Success => CommitStatus::Success,
+                            PipelineStatus::Failed => CommitStatus::Failure,
+                            PipelineStatus::Cancelled => CommitStatus::Failure,
+                            _ => CommitStatus::Pending,
+                        },
+                    )
+                    .await?;
+            } else {
+                warn!("forge repo not found");
+            }
         }
 
         // TODO: publish step status update

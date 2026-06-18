@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT\n                j.id,\n                j.name,\n                j.timeout,\n                j.image,\n                j.pipeline_id,\n                j.env as \"env: sqlx::types::Json<HashMap<String, EnvDefinition>>\",\n                r.ssh_key\n            FROM pipeline_job j\n            INNER JOIN pipeline p ON p.id = j.pipeline_id\n            INNER JOIN repo r ON r.id = p.repo_id\n            WHERE j.status = 'pending'::job_status\n                AND NOT EXISTS (\n                    SELECT\n                    FROM pipeline_job_depend d\n                    INNER JOIN pipeline_job upstream ON upstream.id = d.upstream_id\n                    WHERE d.downstream_id = j.id\n                    AND upstream.status != 'success'::job_status\n                )\n            ORDER BY j.created_at ASC\n            LIMIT 1\n            FOR UPDATE OF j SKIP LOCKED\n            ",
+  "query": "\n            SELECT\n                j.id,\n                j.name,\n                j.timeout,\n                j.image,\n                j.pipeline_id,\n                j.env as \"env: sqlx::types::Json<HashMap<String, EnvDefinition>>\",\n                r.ssh_key\n            FROM pipeline_job j\n            INNER JOIN pipeline p ON p.id = j.pipeline_id\n            INNER JOIN repo r ON r.id = p.repo_id\n            INNER JOIN agent a ON a.id = $1\n            WHERE j.status = 'pending'::job_status\n                AND (\n                    a.is_global = true\n                    -- TODO: scope check\n                )\n                AND NOT EXISTS (\n                    SELECT\n                    FROM pipeline_job_depend d\n                    INNER JOIN pipeline_job upstream ON upstream.id = d.upstream_id\n                    WHERE d.downstream_id = j.id\n                    AND upstream.status != 'success'::job_status\n                )\n            ORDER BY j.created_at ASC\n            LIMIT 1\n            FOR UPDATE OF j SKIP LOCKED\n            ",
   "describe": {
     "columns": [
       {
@@ -82,7 +82,9 @@
       }
     ],
     "parameters": {
-      "Left": []
+      "Left": [
+        "Uuid"
+      ]
     },
     "nullable": [
       false,
@@ -94,5 +96,5 @@
       false
     ]
   },
-  "hash": "01f6a6dff7d1fb3c570ad1d73b1a46bb105cdbe579c98d5ffbaf9cb2d31f37b6"
+  "hash": "afeac12ccf4f75d8a28d7f08b6647c590332790094215c0fb8df13d14a551ad9"
 }

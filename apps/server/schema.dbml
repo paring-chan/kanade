@@ -155,6 +155,7 @@ Table pipeline {
   serial integer [not null]
   repo_id uuid [not null, ref: > repo.id]
   title text
+  short_title text
   triggered_by text [not null, note: '모든 git 유저가 계정을 가진게 아니기 때문에 디스플레이용 값을 저장함']
   triggered_by_user uuid [null, ref: > user.id]
 
@@ -163,6 +164,8 @@ Table pipeline {
 
   git_ref text
   git_commit_id text [not null]
+
+  status_context string [not null]
 
   status pipeline_status [not null, default: 'queued']
 

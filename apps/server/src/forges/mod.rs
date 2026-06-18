@@ -33,6 +33,13 @@ pub struct AllForges {
     pub forgejo: ForgejoApi,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum CommitStatus {
+    Pending,
+    Success,
+    Failure,
+}
+
 #[derive(Debug)]
 pub enum ForgeAuthInfo {
     Forgejo {
@@ -214,6 +221,38 @@ impl AllForges {
             } => {
                 self.forgejo
                     .setup_webhook(&config, &access_token, repo, secret, repo_id)
+                    .await
+            }
+        }
+    }
+
+    pub async fn set_commit_status(
+        &self,
+        auth: &ForgeAuthInfo,
+        repo: &UpstreamRepositoryInfo,
+        commit_sha: &str,
+        name: &str,
+        description: &str,
+        url: &str,
+        state: CommitStatus,
+    ) -> crate::Result<()> {
+        match auth {
+            ForgeAuthInfo::Forgejo {
+                config,
+                access_token,
+                ..
+            } => {
+                self.forgejo
+                    .set_commit_status(
+                        &config,
+                        &access_token,
+                        repo,
+                        commit_sha,
+                        name,
+                        description,
+                        url,
+                        state,
+                    )
                     .await
             }
         }

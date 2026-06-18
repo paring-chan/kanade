@@ -27,7 +27,7 @@ impl From<EventType> for EventTypeResponse {
     }
 }
 
-#[derive(Debug, Type)]
+#[derive(Debug, Type, Clone, Copy)]
 #[sqlx(type_name = "pipeline_status", rename_all = "snake_case")]
 pub enum PipelineStatus {
     Queued,

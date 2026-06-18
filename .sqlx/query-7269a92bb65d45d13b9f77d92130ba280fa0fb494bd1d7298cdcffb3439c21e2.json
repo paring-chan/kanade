@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE pipeline_job\n            SET status = 'running'::job_status,\n                started_at = NOW(),\n                agent_id = $2\n            WHERE id = $1\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "7269a92bb65d45d13b9f77d92130ba280fa0fb494bd1d7298cdcffb3439c21e2"
+}

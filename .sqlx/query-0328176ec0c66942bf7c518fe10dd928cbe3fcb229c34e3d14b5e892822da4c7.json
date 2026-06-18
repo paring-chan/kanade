@@ -79,6 +79,17 @@
             "name": "avatar_url"
           }
         }
+      },
+      {
+        "ordinal": 7,
+        "name": "is_admin",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "\"user\"",
+            "name": "is_admin"
+          }
+        }
       }
     ],
     "parameters": {
@@ -93,7 +104,8 @@
       true,
       false,
       false,
-      true
+      true,
+      false
     ]
   },
   "hash": "0328176ec0c66942bf7c518fe10dd928cbe3fcb229c34e3d14b5e892822da4c7"

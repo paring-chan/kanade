@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SET LOCAL app.bypass_rls = true",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "c89a2b6658df91984f317df5be62e0f01b9d5b1f54e7401074dbcbd96fb8ffaf"
+}
