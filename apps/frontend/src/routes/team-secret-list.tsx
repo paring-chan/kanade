@@ -1,94 +1,100 @@
-import { Button, Dialog, Field } from "@base-ui/react";
-import { button } from "../components/button";
-import { dialog } from "../components/dialog";
-import { type } from "arktype";
+import { useQueryClient, useSuspenseQueries } from "@tanstack/react-query";
+import {
+  teamBySlugQueryOptions,
+  teamSecretsQueryOptions,
+} from "../queries/team";
+import { useParams } from "react-router";
 import { useForm } from "@tanstack/react-form";
-import { formField, input } from "../components";
-import { api } from "../utils/api";
-import { generatePath, Link, useNavigate } from "react-router";
+import { type } from "arktype";
 import { toast } from "sonner";
-import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { teamListQueryOptions } from "../queries/team";
+import { Button, Dialog, Field } from "@base-ui/react";
+import { button, dialog, formField, input } from "../components";
+import { useMemo } from "react";
+import { api } from "../utils/api";
 import type { components } from "../utils/api/types";
 
-const createTeamSchema = type({
-  name: "string > 0 & string <= 20",
-  slug: "/^[a-zA-Z0-9-_]{1,20}$/",
-});
-
 export const Component = () => {
+  const params = useParams<"team">();
+  const [{ data: team }, { data: secrets }] = useSuspenseQueries({
+    queries: [
+      teamBySlugQueryOptions(params.team!),
+      teamSecretsQueryOptions(params.team!),
+    ],
+  });
+
   return (
     <div className="px-4">
       <div className="container mx-auto mt-12">
-        <div className="flex items-center">
-          <h1 className="text-3xl grow w-0">팀 목록</h1>
-          <CreateTeamDialog />
+        <div>팀</div>
+        <div className="flex items-end gap-2">
+          <h1 className="text-3xl font-bold">{team.name}</h1>
+          <span className="text-base opacity-60">{team.slug}</span>
         </div>
 
-        <TeamList />
+        <div className="flex items-center">
+          <h1 className="text-2xl font-medium grow w-0 mt-8">시크릿 목록</h1>
+          <CreateTeamSecretDialog team={team} />
+        </div>
+
+        <SecretList secrets={secrets} />
       </div>
     </div>
   );
 };
 
-const TeamList = () => {
-  const { data } = useSuspenseQuery(teamListQueryOptions());
-
-  return (
-    <div className="mt-8 grid md:grid-cols-2 lg:grid-cols-3">
-      {data.map((x) => (
-        <TeamItem team={x} key={x.id} />
-      ))}
-    </div>
-  );
+const SecretList = ({
+  secrets,
+}: {
+  secrets: components["schemas"]["SecretInfo"][];
+}) => {
+  return <pre>{JSON.stringify(secrets, null, 2)}</pre>;
 };
 
-const TeamItem = ({
+const createSecretSchema = type({
+  key: "string > 0 & string <= 36",
+  value: "string >= 6 & string <= 300",
+  scopes: "string > 1",
+});
+
+const CreateTeamSecretDialog = ({
   team,
 }: {
   team: components["schemas"]["TeamResponse"];
 }) => {
-  return (
-    <Link
-      to={generatePath("/t/:slug", { slug: team.slug })}
-      className="bg-pink-50 hover:bg-pink-100 transition-colors px-5 py-4 flex items-center gap-4 border border-black/10 -ml-px -mt-px"
-    >
-      <h3 className="text-lg">{team.name}</h3>
-      <div className="text-sm text-black/60">{team.slug}</div>
-    </Link>
-  );
-};
-
-const CreateTeamDialog = () => {
-  const navigate = useNavigate();
   const qc = useQueryClient();
+  const createDialog = useMemo(() => Dialog.createHandle(), []);
 
   const form = useForm({
-    defaultValues: { name: "", slug: "" } as type.infer<
-      typeof createTeamSchema
+    defaultValues: { key: "", value: "" } as type.infer<
+      typeof createSecretSchema
     >,
     onSubmit: async ({ value }) => {
       try {
-        const { data } = await api.POST("/api/v1/teams", {
-          body: { name: value.name, slug: value.slug },
+        await api.POST("/api/v1/teams/{team_slug}/secrets", {
+          params: { path: { team_slug: team.slug } },
+          body: {
+            key: value.key,
+            value: value.value,
+            // TODO
+            scopes: value.scopes.split(",").map((x) => x.trim()) as any,
+          },
         });
 
-        if (data) {
-          qc.invalidateQueries(teamListQueryOptions());
-          navigate(generatePath("/t/:slug", { slug: data!.slug }));
-        }
+        qc.invalidateQueries(teamSecretsQueryOptions(team.slug));
+        toast.success("created");
+        createDialog.close();
       } catch (e: any) {
         if (e.message) toast.error(e.message);
       }
     },
 
     validators: {
-      onChange: createTeamSchema,
+      onChange: createSecretSchema,
     },
   });
 
   return (
-    <Dialog.Root>
+    <Dialog.Root handle={createDialog}>
       <Dialog.Trigger className={button({ style: "outlined" })}>
         생성
       </Dialog.Trigger>
@@ -110,7 +116,7 @@ const CreateTeamDialog = () => {
           </div>
           <div className={dialog.content()}>
             <form.Field
-              name="name"
+              name="key"
               children={(field) => (
                 <Field.Root
                   className={formField.root()}
@@ -120,18 +126,18 @@ const CreateTeamDialog = () => {
                   touched={field.state.meta.isTouched}
                 >
                   <Field.Label className={formField.label()}>
-                    팀 이름
+                    시크릿 키
                   </Field.Label>
                   <Field.Control
                     className={input()}
                     value={field.state.value}
                     onValueChange={field.handleChange}
                     onBlur={field.handleBlur}
-                    placeholder="Example Team"
+                    placeholder="SOME_SECRET_KEY"
                   />
                   <div className={formField.helperArea()}>
                     <Field.Description className={formField.description()}>
-                      최대 20자
+                      최대 36자
                     </Field.Description>
                     <Field.Error
                       className={formField.error()}
@@ -144,7 +150,7 @@ const CreateTeamDialog = () => {
               )}
             />
             <form.Field
-              name="slug"
+              name="value"
               children={(field) => (
                 <Field.Root
                   className={formField.root()}
@@ -154,24 +160,58 @@ const CreateTeamDialog = () => {
                   touched={field.state.meta.isTouched}
                 >
                   <Field.Label className={formField.label()}>
-                    팀 슬러그
+                    시크릿 값
                   </Field.Label>
                   <Field.Control
                     className={input()}
                     value={field.state.value}
                     onValueChange={field.handleChange}
                     onBlur={field.handleBlur}
-                    placeholder="example-team"
+                    placeholder="mizuki-is-kawaii"
                   />
                   <div className={formField.helperArea()}>
                     <Field.Description className={formField.description()}>
-                      최대 20자, 알파벳, 숫자, -, _만 사용 가능
+                      최대 300자
                     </Field.Description>
                     <Field.Error
                       className={formField.error()}
                       match={!field.state.meta.isValid}
                     >
                       {field.state.meta.errors.join(",")}{" "}
+                    </Field.Error>
+                  </div>
+                </Field.Root>
+              )}
+            />
+            <form.Field
+              name="scopes"
+              children={(field) => (
+                <Field.Root
+                  className={formField.root()}
+                  name={field.name}
+                  invalid={!field.state.meta.isValid}
+                  dirty={field.state.meta.isDirty}
+                  touched={field.state.meta.isTouched}
+                >
+                  <Field.Label className={formField.label()}>
+                    적용 범위
+                  </Field.Label>
+                  <Field.Control
+                    className={input()}
+                    value={field.state.value}
+                    onValueChange={field.handleChange}
+                    onBlur={field.handleBlur}
+                    placeholder="push"
+                  />
+                  <div className={formField.helperArea()}>
+                    <Field.Description className={formField.description()}>
+                      , 구분, push tag release pull_request cron manual
+                    </Field.Description>
+                    <Field.Error
+                      className={formField.error()}
+                      match={!field.state.meta.isValid}
+                    >
+                      {field.state.meta.errors.join(",")}
                     </Field.Error>
                   </div>
                 </Field.Root>

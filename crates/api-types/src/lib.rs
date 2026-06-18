@@ -1,5 +1,8 @@
 use poem_openapi::Object;
 
+pub mod secret;
+pub use secret::*;
+
 mod agent_mtmt;
 pub use agent_mtmt::*;
 

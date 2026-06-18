@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT t.id\n            FROM team t\n            INNER JOIN user_team ut ON t.id = ut.team_id\n            WHERE ut.id = $1 AND ut.role IN ('manager', 'admin')\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "team",
+            "name": "id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "d24ce8ea0c6baee2e14a01bc8c6c7d1a9dd3158c4332689811bf192bbd136255"
+}

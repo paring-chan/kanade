@@ -176,7 +176,7 @@ export interface paths {
                         "application/json; charset=utf-8": unknown;
                     };
                 };
-                401: {
+                409: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -362,7 +362,7 @@ export interface paths {
                         "application/json; charset=utf-8": unknown;
                     };
                 };
-                401: {
+                409: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -450,6 +450,88 @@ export interface paths {
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/teams/{team_slug}/secrets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    team_slug: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["SecretInfo"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    team_slug: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["SecretCreateRequest"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": unknown;
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -571,7 +653,7 @@ export interface paths {
                         "application/json; charset=utf-8": unknown;
                     };
                 };
-                401: {
+                409: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -982,6 +1064,8 @@ export interface components {
         };
         /** @enum {string} */
         AgentStatusResponse: "idle" | "busy" | "offline";
+        /** @enum {string} */
+        ApiEventType: "push" | "tag" | "release" | "pull_request" | "cron" | "manual";
         /** DeleteAgentResponse */
         DeleteAgentResponse: {
             message: string;
@@ -1008,8 +1092,6 @@ export interface components {
         ErrorResponse: {
             message: string;
         };
-        /** @enum {string} */
-        EventTypeResponse: "push" | "tag" | "release" | "pullRequest" | "cron" | "manual";
         /** ForgeInfoResponse */
         ForgeInfoResponse: {
             /**
@@ -1113,7 +1195,7 @@ export interface components {
             title?: string;
             triggeredBy: string;
             triggeredByUser?: components["schemas"]["UserResponse"];
-            eventType: components["schemas"]["EventTypeResponse"];
+            eventType: components["schemas"]["ApiEventType"];
             eventPayload: unknown;
             gitRef?: string;
             gitCommitId: string;
@@ -1155,6 +1237,12 @@ export interface components {
             updated_at: string;
             team: components["schemas"]["TeamResponse"];
         };
+        /** SecretCreateRequest */
+        SecretCreateRequest: {
+            key: string;
+            value: string;
+            scopes: components["schemas"]["ApiEventType"][];
+        };
         /**
          * SecretEnv
          * @description 시크릿 환경변수
@@ -1162,6 +1250,16 @@ export interface components {
         SecretEnv: {
             /** @description 환경변수를 불러올 시크릿 키 */
             secret_key: string;
+        };
+        /** SecretInfo */
+        SecretInfo: {
+            /** Format: uuid */
+            id: string;
+            key: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
         };
         /**
          * StaticEnv

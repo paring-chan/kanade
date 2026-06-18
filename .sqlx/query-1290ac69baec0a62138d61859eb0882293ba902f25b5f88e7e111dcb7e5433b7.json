@@ -1,0 +1,38 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO team_secret\n                (id, team_id, secret_id, scopes)\n            VALUES\n                ($1, $2, $3, $4)\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        {
+          "Custom": {
+            "name": "event_type[]",
+            "kind": {
+              "Array": {
+                "Custom": {
+                  "name": "event_type",
+                  "kind": {
+                    "Enum": [
+                      "push",
+                      "tag",
+                      "release",
+                      "pull_request",
+                      "cron",
+                      "manual"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "1290ac69baec0a62138d61859eb0882293ba902f25b5f88e7e111dcb7e5433b7"
+}

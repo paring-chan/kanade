@@ -1,9 +1,7 @@
-use api_types::{
-    AgentStatusResponse, EventTypeResponse, JobStatusResponse, PipelineStatusResponse,
-};
+use api_types::{AgentStatusResponse, ApiEventType, JobStatusResponse, PipelineStatusResponse};
 use sqlx::prelude::Type;
 
-#[derive(Debug, Type, Clone)]
+#[derive(Debug, Type, Clone, PartialEq, Eq)]
 #[sqlx(type_name = "event_type", rename_all = "snake_case")]
 pub enum EventType {
     Push,
@@ -14,7 +12,7 @@ pub enum EventType {
     Manual,
 }
 
-impl From<EventType> for EventTypeResponse {
+impl From<EventType> for ApiEventType {
     fn from(value: EventType) -> Self {
         match value {
             EventType::Push => Self::Push,
@@ -23,6 +21,19 @@ impl From<EventType> for EventTypeResponse {
             EventType::PullRequest => Self::PullRequest,
             EventType::Cron => Self::Cron,
             EventType::Manual => Self::Manual,
+        }
+    }
+}
+
+impl From<ApiEventType> for EventType {
+    fn from(value: ApiEventType) -> Self {
+        match value {
+            ApiEventType::Push => Self::Push,
+            ApiEventType::Tag => Self::Tag,
+            ApiEventType::Release => Self::Release,
+            ApiEventType::PullRequest => Self::PullRequest,
+            ApiEventType::Cron => Self::Cron,
+            ApiEventType::Manual => Self::Manual,
         }
     }
 }

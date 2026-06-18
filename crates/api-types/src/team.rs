@@ -19,7 +19,7 @@ pub enum TeamCreateEndpointResponse {
     Ok(Json<TeamResponse>),
     #[oai(status = 400)]
     ValidationFailed(Json<serde_json::Value>),
-    #[oai(status = 401)]
+    #[oai(status = 409)]
     Conflict(Json<ErrorResponse>),
 }
 

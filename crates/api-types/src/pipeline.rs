@@ -7,8 +7,8 @@ use uuid::Uuid;
 use crate::{ErrorResponse, UserResponse};
 
 #[derive(Debug, Enum)]
-#[oai(rename_all = "camelCase")]
-pub enum EventTypeResponse {
+#[oai(rename_all = "snake_case")]
+pub enum ApiEventType {
     Push,
     Tag,
     Release,
@@ -37,7 +37,7 @@ pub struct PipelineResponse {
     pub title: Option<String>,
     pub triggered_by: String,
     pub triggered_by_user: Option<UserResponse>,
-    pub event_type: EventTypeResponse,
+    pub event_type: ApiEventType,
     pub event_payload: serde_json::Value,
     pub git_ref: Option<String>,
     pub git_commit_id: String,

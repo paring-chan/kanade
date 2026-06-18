@@ -217,7 +217,7 @@
               }
             }
           },
-          "401": {
+          "409": {
             "description": "",
             "content": {
               "application/json; charset=utf-8": {
@@ -394,7 +394,7 @@
               }
             }
           },
-          "401": {
+          "409": {
             "description": "",
             "content": {
               "application/json; charset=utf-8": {
@@ -478,6 +478,110 @@
                   "items": {
                     "$ref": "#/components/schemas/RepoResponse"
                   }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/teams/{team_slug}/secrets": {
+      "get": {
+        "tags": [
+          "Team"
+        ],
+        "parameters": [
+          {
+            "name": "team_slug",
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "required": true,
+            "deprecated": false,
+            "explode": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SecretInfo"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Team"
+        ],
+        "parameters": [
+          {
+            "name": "team_slug",
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "required": true,
+            "deprecated": false,
+            "explode": true
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json; charset=utf-8": {
+              "schema": {
+                "$ref": "#/components/schemas/SecretCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {}
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -598,7 +702,7 @@
               }
             }
           },
-          "401": {
+          "409": {
             "description": "",
             "content": {
               "application/json; charset=utf-8": {
@@ -840,7 +944,12 @@
           "404": {
             "description": "작업이 존재하지 않음\n\n존재하지 않거나 이미 완료되었거나 agent 자신이 소유하지 않는 경우"
           }
-        }
+        },
+        "security": [
+          {
+            "AgentTokenAuth": []
+          }
+        ]
       }
     },
     "/api/v1/agent/steps/{id}/started": {
@@ -869,7 +978,12 @@
           "404": {
             "description": "스텝이 존재하지않음\n\n1. 내 job의 스텝이 아님\n2. 진짜 존재하지 않음\n3. 이미 끝남"
           }
-        }
+        },
+        "security": [
+          {
+            "AgentTokenAuth": []
+          }
+        ]
       }
     },
     "/api/v1/agent/steps/{id}/finish": {
@@ -908,7 +1022,12 @@
           "404": {
             "description": "스텝이 존재하지않음\n\n1. 내 job의 스텝이 아님\n2. 진짜 존재하지 않음\n3. 이미 끝남"
           }
-        }
+        },
+        "security": [
+          {
+            "AgentTokenAuth": []
+          }
+        ]
       }
     }
   },
@@ -1066,6 +1185,17 @@
           "offline"
         ]
       },
+      "ApiEventType": {
+        "type": "string",
+        "enum": [
+          "push",
+          "tag",
+          "release",
+          "pull_request",
+          "cron",
+          "manual"
+        ]
+      },
       "DeleteAgentResponse": {
         "type": "object",
         "title": "DeleteAgentResponse",
@@ -1154,17 +1284,6 @@
             "type": "string"
           }
         }
-      },
-      "EventTypeResponse": {
-        "type": "string",
-        "enum": [
-          "push",
-          "tag",
-          "release",
-          "pullRequest",
-          "cron",
-          "manual"
-        ]
       },
       "ForgeInfoResponse": {
         "type": "object",
@@ -1465,7 +1584,7 @@
             "$ref": "#/components/schemas/UserResponse"
           },
           "eventType": {
-            "$ref": "#/components/schemas/EventTypeResponse"
+            "$ref": "#/components/schemas/ApiEventType"
           },
           "eventPayload": {},
           "gitRef": {
@@ -1587,6 +1706,29 @@
           }
         }
       },
+      "SecretCreateRequest": {
+        "type": "object",
+        "title": "SecretCreateRequest",
+        "required": [
+          "key",
+          "value",
+          "scopes"
+        ],
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApiEventType"
+            }
+          }
+        }
+      },
       "SecretEnv": {
         "type": "object",
         "title": "SecretEnv",
@@ -1598,6 +1740,33 @@
           "secret_key": {
             "type": "string",
             "description": "환경변수를 불러올 시크릿 키"
+          }
+        }
+      },
+      "SecretInfo": {
+        "type": "object",
+        "title": "SecretInfo",
+        "required": [
+          "id",
+          "key",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "key": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },

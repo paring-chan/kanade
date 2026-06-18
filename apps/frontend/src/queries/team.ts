@@ -28,3 +28,14 @@ export const teamReposQueryOptions = (teamSlug: string) =>
 				})
 				.then((x) => x.data!),
 	});
+
+export const teamSecretsQueryOptions = (teamSlug: string) =>
+	queryOptions({
+		queryKey: ['teams', 'by-slug', teamSlug, 'secrets'],
+		queryFn: () =>
+			api
+				.GET('/api/v1/teams/{team_slug}/secrets', {
+					params: { path: { team_slug: teamSlug } },
+				})
+				.then((x) => x.data!),
+	});

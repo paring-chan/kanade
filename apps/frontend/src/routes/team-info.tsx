@@ -9,6 +9,7 @@ import {
 import { useSuspenseQueries } from "@tanstack/react-query";
 import { teamBySlugQueryOptions, teamReposQueryOptions } from "../queries/team";
 import { queryClient } from "../utils/api";
+import { button } from "../components";
 
 export const loader = (async ({ params }) => {
   const team = await queryClient.ensureQueryData(
@@ -53,7 +54,15 @@ export const Component = () => {
 
         <div className="flex justify-between items-center mt-4">
           <h2 className="text-2xl font-medium">소속 프로젝트</h2>
-          <CreateProjectDialog defaultTeamId={team.id} />
+          <div className="flex gap-4">
+            <Link
+              to={generatePath("/t/:team/secrets", { team: team.slug })}
+              className={button({ style: "outlined" })}
+            >
+              시크릿 관리
+            </Link>
+            <CreateProjectDialog defaultTeamId={team.id} />
+          </div>
         </div>
 
         <div className="mt-4 grid lg:grid-cols-2">
