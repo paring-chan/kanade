@@ -87,7 +87,7 @@ impl<R: adapter::JobStatusReport> JobExecutor<R> {
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
-            tokio::fs::set_permissions(dir.path(), std::fs::Permissions::from_mode(0o700)).await?;
+            tokio::fs::set_permissions(dir.path(), std::fs::Permissions::from_mode(0o644)).await?;
             tokio::fs::set_permissions(&ssh_dir, std::fs::Permissions::from_mode(0o700)).await?;
         }
 
