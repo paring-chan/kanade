@@ -20,7 +20,7 @@ if ctx.event == "push" && ctx.branch == "main" {
         command: #"
         set -ex
 
-        cargo check --locked
+        mise x -- cargo check --locked
         "#
     });
 }
