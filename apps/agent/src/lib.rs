@@ -36,6 +36,10 @@ pub struct Args {
 
 #[tokio::main]
 pub async fn main() -> anyhow::Result<()> {
+    rustls::crypto::ring::default_provider()
+        .install_default()
+        .unwrap();
+
     let env_filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into());
     tracing_subscriber::registry()
         .with(fmt::layer())
