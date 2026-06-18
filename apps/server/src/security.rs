@@ -11,6 +11,10 @@ pub trait DatabaseSecurityExt: Send + Sync {
         &self,
         agent_id: Uuid,
     ) -> impl Future<Output = crate::Result<sqlx::Transaction<'_, Postgres>>> + Send;
+
+    fn begin_bypass(
+        &self,
+    ) -> impl Future<Output = crate::Result<sqlx::Transaction<'_, Postgres>>> + Send;
 }
 
 impl DatabaseSecurityExt for PgPool {
@@ -40,6 +44,16 @@ impl DatabaseSecurityExt for PgPool {
         )))
         .execute(&mut *tx)
         .await?;
+
+        Ok(tx)
+    }
+
+    async fn begin_bypass(&self) -> crate::Result<sqlx::Transaction<'_, Postgres>> {
+        let mut tx = self.begin().await?;
+
+        sqlx::query!("SET LOCAL app.bypass_rls = true")
+            .execute(&mut *tx)
+            .await?;
 
         Ok(tx)
     }

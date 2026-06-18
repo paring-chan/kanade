@@ -34,10 +34,6 @@ impl Realtime {
         let subscriber_client = client.clone_new();
         let log_client = client.clone_new();
 
-        client.init().await?;
-        subscriber_client.init().await?;
-        log_client.init().await?;
-
         client.on_error(|(error, server)| async move {
             error!(server = ?server, "valkey error: {error}");
             Ok(())
@@ -74,6 +70,10 @@ impl Realtime {
                 }
             }
         });
+
+        client.init().await?;
+        subscriber_client.init().await?;
+        log_client.init().await?;
 
         subscriber_client.subscribe("kanade:events").await?;
         log_client.subscribe("kanade:logs").await?;
@@ -133,9 +133,7 @@ impl Realtime {
                     };
                     debug!("realtime message: {message:?}");
 
-                    _ = sender.send(message).inspect_err(|e| {
-                        warn!("event send failed: {:?}", e);
-                    });
+                    _ = sender.send(message);
                 }
 
                 info!("realtime receiver stopped")

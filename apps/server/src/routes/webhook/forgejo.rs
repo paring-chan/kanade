@@ -22,6 +22,7 @@ use crate::{
     data::db::{EventType, JobStatus, PipelineStatus},
     error::AppError,
     forges::AllForges,
+    security::DatabaseSecurityExt,
 };
 
 pub fn routes() -> BoxEndpoint<'static> {
@@ -94,13 +95,21 @@ async fn forgejo_webhook(
     let body_str = body.into_string().await?;
     let body = serde_json::from_str::<WebhookMessage>(&body_str).map_err(BadRequest)?;
 
-    let repo_row = sqlx::query!(
-        r#"SELECT forge_id, forge_repo_id, created_by, forge_webhook_token FROM repo WHERE id = $1"#,
-        query.repo
-    )
-    .fetch_one(db)
-    .await
-    .map_err(|_| poem::Error::from_string("repository not found", StatusCode::NOT_FOUND))?;
+    debug!("repo id: {}", query.repo);
+
+    let repo_row = {
+        let mut tx = db.begin_bypass().await?;
+        sqlx::query!(
+                r#"SELECT forge_id, forge_repo_id, created_by, forge_webhook_token FROM repo WHERE id = $1"#,
+                query.repo
+            )
+            .fetch_one(&mut *tx)
+            .await
+            .map_err(|err| {
+                debug!("repo fetch failed: {err:?}");
+                poem::Error::from_string("repository not found", StatusCode::NOT_FOUND)
+            })?
+    };
 
     let webhook_token = crypto.decrypt(&repo_row.forge_webhook_token).map_err(|e| {
         error!("failed to decrypt webhook token: {e}");
@@ -198,7 +207,7 @@ async fn forgejo_webhook(
     .await
     .map_err(AppError::from)??;
 
-    let mut tx = db.begin().await.map_err(|e| {
+    let mut tx = db.begin_bypass().await.map_err(|e| {
         error!("failed to start tx: {e}");
         poem::Error::from_string("internal error", StatusCode::INTERNAL_SERVER_ERROR)
     })?;

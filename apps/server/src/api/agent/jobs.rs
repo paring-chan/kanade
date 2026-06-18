@@ -43,7 +43,8 @@ impl AgentJobsApi {
         crypto: &CryptoEngine,
         agent_id: Uuid,
     ) -> crate::Result<JobAcquireEndpointResponse> {
-        let mut tx = db.begin().await?;
+        // BYPASS: queue 소모를 위해 사용함
+        let mut tx = db.begin_bypass().await?;
 
         let row = sqlx::query!(
             r#"
@@ -58,7 +59,12 @@ impl AgentJobsApi {
             FROM pipeline_job j
             INNER JOIN pipeline p ON p.id = j.pipeline_id
             INNER JOIN repo r ON r.id = p.repo_id
+            INNER JOIN agent a ON a.id = $1
             WHERE j.status = 'pending'::job_status
+                AND (
+                    a.is_global = true
+                    -- TODO: scope check
+                )
                 AND NOT EXISTS (
                     SELECT
                     FROM pipeline_job_depend d
@@ -70,6 +76,7 @@ impl AgentJobsApi {
             LIMIT 1
             FOR UPDATE OF j SKIP LOCKED
             "#,
+            agent_id
         )
         .fetch_optional(&mut *tx)
         .await?;
@@ -195,8 +202,9 @@ impl AgentJobsApi {
         Data(realtime): Data<&Arc<Realtime>>,
         id: Path<Uuid>,
         status: Json<JobFinishRequest>,
+        AgentTokenAuth(agent_id): AgentTokenAuth,
     ) -> poem::Result<JobFinishResponse> {
-        self._finish(db, realtime, id.0, status.0)
+        self._finish(db, realtime, id.0, status.0, agent_id)
             .await
             .map_err(Into::into)
     }
@@ -208,8 +216,10 @@ impl AgentJobsApi {
         realtime: &Realtime,
         run_id: Uuid,
         request: JobFinishRequest,
+        agent_id: Uuid,
     ) -> crate::Result<JobFinishResponse> {
-        let mut tx = db.begin().await?;
+        // BYPASS: RLS에서 허용되지 않은 파이프라인 상태 변경 필요
+        let mut tx = db.begin_bypass().await?;
 
         let job_status = if request.success {
             JobStatus::Success
@@ -222,11 +232,14 @@ impl AgentJobsApi {
             UPDATE pipeline_job j
             SET status = $1,
                 finished_at = NOW()
-            WHERE id = $2 AND status = 'running'::job_status
+            WHERE id = $2
+                AND status = 'running'::job_status
+                AND agent_id = $3
             RETURNING j.id, j.pipeline_id
             "#,
             job_status as JobStatus,
-            run_id
+            run_id,
+            agent_id
         )
         .fetch_optional(&mut *tx)
         .await?;

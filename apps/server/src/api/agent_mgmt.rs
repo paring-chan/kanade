@@ -45,6 +45,8 @@ impl AgentManagementApi {
                 updated_at,
                 last_heartbeat_at
             FROM agent
+            WHERE
+                (is_session_admin() = true AND is_global = true)
             "#
         )
         .fetch_all(&mut *tx)

@@ -1,5 +1,7 @@
 use crate::api::ApiTags;
+use crate::api::security::AgentTokenAuth;
 use crate::data::db::JobStatus;
+use crate::security::DatabaseSecurityExt;
 use api_types::{StepFinishRequest, StepFinishResponse, StepStartedResponse};
 use poem::web::Data;
 use poem_openapi::OpenApi;
@@ -18,13 +20,19 @@ impl AgentJobStepsApi {
         &self,
         db: Data<&PgPool>,
         id: Path<Uuid>,
+        AgentTokenAuth(agent_id): AgentTokenAuth,
     ) -> poem::Result<StepStartedResponse> {
-        self._started(&db, id.0).await.map_err(Into::into)
+        self._started(&db, id.0, agent_id).await.map_err(Into::into)
     }
 
     #[instrument(skip(self, db), err(Debug))]
-    async fn _started(&self, db: &PgPool, step_id: Uuid) -> crate::Result<StepStartedResponse> {
-        let mut tx = db.begin().await?;
+    async fn _started(
+        &self,
+        db: &PgPool,
+        step_id: Uuid,
+        agent_id: Uuid,
+    ) -> crate::Result<StepStartedResponse> {
+        let mut tx = db.begin_as_agent(agent_id).await?;
 
         let result = sqlx::query!(
             r#"
@@ -54,8 +62,11 @@ impl AgentJobStepsApi {
         db: Data<&PgPool>,
         id: Path<Uuid>,
         request: Json<StepFinishRequest>,
+        AgentTokenAuth(agent_id): AgentTokenAuth,
     ) -> poem::Result<StepFinishResponse> {
-        self._finish(&db, id.0, request.0).await.map_err(Into::into)
+        self._finish(&db, id.0, request.0, agent_id)
+            .await
+            .map_err(Into::into)
     }
 
     #[instrument(skip(self, db), err(Debug))]
@@ -64,8 +75,9 @@ impl AgentJobStepsApi {
         db: &PgPool,
         step_run_id: Uuid,
         request: StepFinishRequest,
+        agent_id: Uuid,
     ) -> crate::Result<StepFinishResponse> {
-        let mut tx = db.begin().await?;
+        let mut tx = db.begin_as_agent(agent_id).await?;
 
         let target_status = if request.success {
             JobStatus::Success

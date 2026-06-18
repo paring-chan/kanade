@@ -20,6 +20,7 @@ use crate::{
     data::forges::ForgeConfig,
     error::AppError,
     routes::auth::jwt::LoginClaims,
+    security::DatabaseSecurityExt,
     util::{AUD_LOGIN, AUD_USER, HTTP, JWT_ISS, OAUTH2_REQWEST},
 };
 
@@ -176,7 +177,7 @@ async fn process_callback(
     let access_token = crypto_engine.encrypt(result.access_token.expose_secret())?;
     let refresh_token = crypto_engine.encrypt(result.refresh_token.expose_secret())?;
 
-    let mut tx = db.begin().await?;
+    let mut tx = db.begin_bypass().await?;
 
     let existing_user = sqlx::query!(
         r#"

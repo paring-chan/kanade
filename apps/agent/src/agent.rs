@@ -4,22 +4,35 @@ use api_types::JobAcquireResponse;
 use chrono::Duration;
 use job_executor::{Job, JobExecutor, JobStep};
 use reqwest::Client;
-use secrecy::SecretString;
+use reqwest::header::{HeaderMap, HeaderValue};
+use secrecy::{ExposeSecret, SecretString};
 use std::sync::Arc;
 use tokio::time::sleep;
 
 pub struct KanadeAgent {
     config: Arc<AgentConfig>,
     log_sender: Arc<LogSender>,
-    client: Client,
+    api_client: Client,
 }
 
 impl KanadeAgent {
     pub fn new(config: Arc<AgentConfig>, log_sender: Arc<LogSender>) -> Self {
         Self {
+            api_client: Client::builder()
+                .default_headers({
+                    let mut headers = HeaderMap::new();
+
+                    headers.insert(
+                        "x-agent-token",
+                        HeaderValue::from_str(config.token.expose_secret()).unwrap(),
+                    );
+
+                    headers
+                })
+                .build()
+                .unwrap(),
             config,
             log_sender,
-            client: Client::new(),
         }
     }
 
@@ -28,7 +41,7 @@ impl KanadeAgent {
         let uri = format!("{}/api/v1/agent/jobs/acquire", self.config.api_uri);
 
         loop {
-            match self.client.post(&uri).send().await {
+            match self.api_client.post(&uri).send().await {
                 Ok(response) => {
                     let status = response.status();
 
@@ -49,7 +62,7 @@ impl KanadeAgent {
                                     let executor = JobExecutor::new().unwrap();
                                     let reporter = HttpReporter::new(
                                         self.config.api_uri.clone(),
-                                        self.client.clone(),
+                                        self.api_client.clone(),
                                         self.log_sender.clone(),
                                     );
                                     let job_to_run = Job {
