@@ -1,7 +1,7 @@
 FROM debian:trixie-slim
 
 RUN apt-get update && \
-    apt-get install -y git extrepo && \
+    apt-get install -y git extrepo curl wget zip unzip tar zstd && \
     extrepo enable mise && \
     apt-get update && \
     apt-get install -y mise
