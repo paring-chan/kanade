@@ -12,7 +12,7 @@ if ctx.event == "push" && ctx.branch == "main" {
         echo $PWD > /workspace/cwd
 
         mise install
-        "
+        "#
     });
 
     cargo_check.step(#{
@@ -21,6 +21,6 @@ if ctx.event == "push" && ctx.branch == "main" {
         set -ex
 
         cargo check --locked
-        "
+        "#
     });
 }
