@@ -14,7 +14,8 @@ export class EventSocket {
 			this.ws.close();
 		}
 
-		const ws = new WebSocket('/_/ws/events');
+		const loc = window.location;
+		const ws = new WebSocket(`${loc.protocol.replace('http', 'ws')}//${loc.host}/_/ws/events`);
 		this.ws = ws;
 
 		ws.onopen = () => {

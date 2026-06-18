@@ -105,7 +105,10 @@ class LogStore {
       this.ws.close();
     }
 
-    const ws = new WebSocket(`/_/ws/logs/${this.job.id}`);
+    const loc = window.location;
+    const ws = new WebSocket(
+      `${loc.protocol.replace("http", "ws")}//${loc.host}/_/ws/logs/${this.job.id}`,
+    );
     this.ws = ws;
     this.shouldConnect = true;
 
