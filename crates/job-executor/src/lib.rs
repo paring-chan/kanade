@@ -84,18 +84,21 @@ impl<R: adapter::JobStatusReport> JobExecutor<R> {
         let ssh_dir = dir.path().join(".ssh");
         create_dir_all(&ssh_dir).await?;
 
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::PermissionsExt;
-            tokio::fs::set_permissions(dir.path(), std::fs::Permissions::from_mode(0o644)).await?;
-            tokio::fs::set_permissions(&ssh_dir, std::fs::Permissions::from_mode(0o600)).await?;
-        }
-
-        let mut key_file = tokio::fs::File::create(ssh_dir.join("id_ed25519")).await?;
+        let key_path = ssh_dir.join("id_ed25519");
+        let mut key_file = tokio::fs::File::create(&key_path).await?;
         key_file
             .write_all(job.ssh_key.expose_secret().as_bytes())
             .await?;
         key_file.flush().await?;
+
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            tokio::fs::set_permissions(dir.path(), std::fs::Permissions::from_mode(0o644)).await?;
+            tokio::fs::set_permissions(&ssh_dir, std::fs::Permissions::from_mode(0o700)).await?;
+            tokio::fs::set_permissions(&key_path, std::fs::Permissions::from_mode(0o600)).await?;
+        }
+
         drop(key_file);
 
         let mut env = job
