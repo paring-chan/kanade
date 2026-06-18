@@ -1,0 +1,52 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT\n                forge_id, forge_repo_id, created_by\n            FROM repo r\n            INNER JOIN pipeline p ON p.repo_id = r.id\n            WHERE p.id = $1\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "forge_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "repo",
+            "name": "forge_id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "forge_repo_id",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "repo",
+            "name": "forge_repo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "created_by",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "repo",
+            "name": "created_by"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "6e239c673ffcf5949d90ea455ff247ffd4feea998bc027f00efc2a7adc9e29de"
+}

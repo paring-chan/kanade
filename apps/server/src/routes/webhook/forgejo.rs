@@ -182,6 +182,7 @@ async fn forgejo_webhook(
 
     let pipelines = tokio::task::spawn_blocking({
         let body = body.clone();
+        let config = config.clone();
 
         move || {
             event_evaluator::evaluate(
@@ -195,7 +196,7 @@ async fn forgejo_webhook(
                     tag: body.r#ref.strip_prefix("refs/tags/").map(|x| x.to_string()),
                     r#ref: body.r#ref.clone(),
                     args: Default::default(),
-                    default_image: config.workflow.default_image,
+                    default_image: config.workflow.default_image.clone(),
                     default_shell: "/bin/sh".to_string(),
                     pipelines: Default::default(),
                 },

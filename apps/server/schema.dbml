@@ -75,8 +75,8 @@ Table user_team {
 
 Table secret {
   id uuid pk
-  key text
-  value bytea [note: 'AES-256-GCM으로 암호화']
+  key text [not null]
+  value bytea [not null, note: 'AES-256-GCM으로 암호화']
 
   created_at timestamptz [not null, default: `now()`]
   updated_at timestamptz [not null, default: `now()`]

@@ -88,6 +88,28 @@ impl AgentJobsApi {
             return Ok(JobAcquireEndpointResponse::NoContent);
         };
 
+        let secrets = sqlx::query!(
+            r#"
+            SELECT
+                s.key as "key!",
+                s.value as "value!"
+            FROM secret s
+            WHERE
+                EXISTS (
+                    SELECT FROM pipeline_job j
+                    INNER JOIN pipeline p ON j.pipeline_id = p.id
+                    INNER JOIN repo r ON p.repo_id = r.id
+                    INNER JOIN team t ON r.team_id = t.id
+                    LEFT OUTER JOIN repo_secret rs ON rs.repo_id = r.id
+                    LEFT OUTER JOIN team_secret ts ON ts.team_id = t.id
+                    WHERE j.id  = $1 AND (s.id = rs.secret_id OR s.id = ts.secret_id)
+                )
+            "#,
+            job.id
+        )
+        .fetch_all(&mut *tx)
+        .await?;
+
         let ssh_key = crypto.decrypt(&job.ssh_key)?;
 
         sqlx::query!(
@@ -170,7 +192,15 @@ impl AgentJobsApi {
             job: job_res,
             steps,
             env: job.env.0.into_iter().map(|(k, v)| (k, v.into())).collect(),
-            secrets: HashMap::default(),
+            secrets: secrets
+                .into_iter()
+                .filter_map(|x| {
+                    Some((
+                        x.key,
+                        crypto.decrypt(&x.value).ok()?.expose_secret().to_string(),
+                    ))
+                })
+                .collect(),
             ssh_key: ssh_key.expose_secret().to_string(),
         };
 

@@ -1,0 +1,113 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE pipeline\n            SET status = CASE\n                WHEN EXISTS(\n                    SELECT 1 FROM pipeline_job\n                    WHERE pipeline_id = $1 AND status IN ('failed'::job_status, 'cancelled'::job_status)\n                ) THEN 'failed'::pipeline_status\n                ELSE 'success'::pipeline_status\n                END,\n                finished_at = now()\n            WHERE\n                id = $1 AND status = 'running'::pipeline_status\n                AND NOT EXISTS (\n                    SELECT 1 FROM pipeline_job\n                    WHERE pipeline_id = $1 AND finished_at IS NULL\n                )\n            RETURNING id, repo_id, status as \"status: PipelineStatus\", git_commit_id, status_context, short_title, serial\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "pipeline",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "repo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "pipeline",
+            "name": "repo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "status: PipelineStatus",
+        "type_info": {
+          "Custom": {
+            "name": "pipeline_status",
+            "kind": {
+              "Enum": [
+                "queued",
+                "running",
+                "success",
+                "failed",
+                "cancelled"
+              ]
+            }
+          }
+        },
+        "origin": {
+          "Table": {
+            "table": "pipeline",
+            "name": "status"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "git_commit_id",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "pipeline",
+            "name": "git_commit_id"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "status_context",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "pipeline",
+            "name": "status_context"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "short_title",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "pipeline",
+            "name": "short_title"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "serial",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "pipeline",
+            "name": "serial"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "3b430237c8497ea29f12ca401c3ddc9ed6f38cc14cc7d56cf9e4037aa7e57439"
+}

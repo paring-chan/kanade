@@ -1,0 +1,66 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO pipeline\n                (\n                    id, repo_id, title, short_title, triggered_by, triggered_by_user,\n                    event_type, event_payload, git_ref, git_commit_id,\n                    status, status_context,\n                    serial\n                )\n            VALUES\n                ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12,\n                    (SELECT COALESCE(MAX(serial), 0) + 1 FROM pipeline WHERE repo_id = $2)\n                )\n            RETURNING serial\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "serial",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "pipeline",
+            "name": "serial"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Uuid",
+        {
+          "Custom": {
+            "name": "event_type",
+            "kind": {
+              "Enum": [
+                "push",
+                "tag",
+                "release",
+                "pull_request",
+                "cron",
+                "manual"
+              ]
+            }
+          }
+        },
+        "Jsonb",
+        "Text",
+        "Text",
+        {
+          "Custom": {
+            "name": "pipeline_status",
+            "kind": {
+              "Enum": [
+                "queued",
+                "running",
+                "success",
+                "failed",
+                "cancelled"
+              ]
+            }
+          }
+        },
+        "Text"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "f4bc1f08a3eede288a7e857aa56fa1fed93c216ed0963303340bfc350456f8bd"
+}
