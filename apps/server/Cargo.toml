@@ -43,5 +43,6 @@ futures-util.workspace = true
 specta.workspace = true
 specta-typescript.workspace = true
 specta-serde.workspace = true
+rustls.workspace = true
 
 event-evaluator.workspace = true

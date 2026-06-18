@@ -57,6 +57,7 @@ dependencies = [
  "futures-util",
  "job-executor",
  "reqwest 0.13.4",
+ "rustls",
  "secrecy",
  "serde",
  "serde_json",
@@ -3201,6 +3202,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ef86cd5876211988985292b91c96a8f2d298df24e75989a43a3c73f2d4d8168b"
 dependencies = [
  "aws-lc-rs",
+ "log",
  "once_cell",
  "ring",
  "rustls-pki-types",
@@ -3494,6 +3496,7 @@ dependencies = [
  "poem-openapi",
  "rand 0.10.1",
  "reqwest 0.13.4",
+ "rustls",
  "secrecy",
  "serde",
  "serde_json",
