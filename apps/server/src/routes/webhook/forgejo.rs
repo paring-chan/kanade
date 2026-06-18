@@ -195,7 +195,7 @@ async fn forgejo_webhook(
                     tag: body.r#ref.strip_prefix("refs/tags/").map(|x| x.to_string()),
                     r#ref: body.r#ref.clone(),
                     args: Default::default(),
-                    default_image: "oven/bun:latest".to_string(),
+                    default_image: config.workflow.default_image,
                     default_shell: "/bin/sh".to_string(),
                     pipelines: Default::default(),
                 },
@@ -234,13 +234,8 @@ async fn forgejo_webhook(
 
     for (i, pipeline) in pipelines.into_iter().enumerate() {
         let status_context = format!("kanade/{event_str}/{}", i + 1);
-        targets.push(StatusUpdate {
-            context: status_context.clone(),
-            description: pipeline.name.clone(),
-            url: format!("{}/p/{}", config.server.public_url, pipeline.id),
-        });
 
-        sqlx::query!(
+        let row = sqlx::query!(
             r#"
             INSERT INTO pipeline
                 (
@@ -253,6 +248,7 @@ async fn forgejo_webhook(
                 ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12,
                     (SELECT COALESCE(MAX(serial), 0) + 1 FROM pipeline WHERE repo_id = $2)
                 )
+            RETURNING serial
             "#,
             pipeline.id,
             query.repo,
@@ -267,12 +263,18 @@ async fn forgejo_webhook(
             PipelineStatus::Queued as PipelineStatus,
             status_context
         )
-        .execute(&mut *tx)
+        .fetch_one(&mut *tx)
         .await
         .map_err(|e| {
             error!("failed to insert pipeline: {e}");
             poem::Error::from_string("internal error", StatusCode::INTERNAL_SERVER_ERROR)
         })?;
+
+        targets.push(StatusUpdate {
+            context: status_context.clone(),
+            description: format!("#{} ({})", row.serial, pipeline.name),
+            url: format!("{}/p/{}", config.server.public_url, pipeline.id),
+        });
 
         for mut job in pipeline.jobs {
             job.env.insert(

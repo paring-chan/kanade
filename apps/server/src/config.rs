@@ -9,6 +9,21 @@ pub struct AppConfig {
     pub encryption_key: SecretString,
     pub jwt_secret: SecretString,
     pub valkey: ValkeyConfig,
+    #[serde(default)]
+    pub workflow: WorkflowConfig,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct WorkflowConfig {
+    pub default_image: String,
+}
+
+impl Default for WorkflowConfig {
+    fn default() -> Self {
+        Self {
+            default_image: "oci.pari.ng/kanade/build-env:0.1".to_string(),
+        }
+    }
 }
 
 #[derive(Debug, Deserialize)]

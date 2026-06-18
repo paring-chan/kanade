@@ -306,7 +306,7 @@ impl AgentJobsApi {
                     SELECT 1 FROM pipeline_job
                     WHERE pipeline_id = $1 AND finished_at IS NULL
                 )
-            RETURNING id, repo_id, status as "status: PipelineStatus", git_commit_id, status_context, short_title
+            RETURNING id, repo_id, status as "status: PipelineStatus", git_commit_id, status_context, short_title, serial
             "#,
             result.pipeline_id
         )
@@ -356,7 +356,11 @@ impl AgentJobsApi {
                         &forge_repo,
                         &pipeline.git_commit_id,
                         &pipeline.status_context,
-                        pipeline.short_title.as_deref().unwrap_or(""),
+                        &format!(
+                            "#{} ({})",
+                            pipeline.serial,
+                            pipeline.short_title.as_deref().unwrap_or("")
+                        ),
                         &format!("{}/p/{}", config.server.public_url, pipeline.id),
                         match pipeline.status {
                             PipelineStatus::Success => CommitStatus::Success,
