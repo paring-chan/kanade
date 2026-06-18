@@ -185,7 +185,7 @@ impl<R: adapter::JobStatusReport> JobExecutor<R> {
         }
     }
 
-    #[instrument(skip(self, job_id, steps, reporter))]
+    #[instrument(skip(self, job_id, steps, reporter, ssh_key, secrets))]
     async fn run_steps(
         &self,
         job_id: Uuid,

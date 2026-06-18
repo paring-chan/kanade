@@ -2,6 +2,7 @@ use crate::reporter::HttpReporter;
 use crate::{config::AgentConfig, ws::LogSender};
 use api_types::JobAcquireResponse;
 use chrono::Duration;
+use job_executor::adapter::JobStatusReport;
 use job_executor::{Job, JobExecutor, JobStep};
 use reqwest::Client;
 use reqwest::header::{HeaderMap, HeaderValue};
@@ -90,6 +91,7 @@ impl KanadeAgent {
                                     };
                                     if let Err(e) = executor.run(job_to_run, &reporter).await {
                                         tracing::error!("Failed to run job: {:?}", e);
+                                        _ = reporter.job_finished(job.id, false).await;
                                     }
                                 }
                                 Err(e) => {

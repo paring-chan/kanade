@@ -143,12 +143,12 @@ export const Component = () => {
             <button className="flex items-center cursor-pointer px-3 hover:bg-black/10 transition-colors border-b  border-black">
               로그
             </button>
-            <button className="flex items-center cursor-pointer px-3 hover:bg-black/10 transition-colors">
+            {/*<button className="flex items-center cursor-pointer px-3 hover:bg-black/10 transition-colors">
               아티팩트
             </button>
             <button className="flex items-center cursor-pointer px-3 hover:bg-black/10 transition-colors">
               상세정보
-            </button>
+            </button>*/}
             <div className="grow" />
             <button className="h-8 w-8 flex justify-center items-center cursor-pointer hover:bg-black/10 transition-colors">
               <LuX className="size-4" />
