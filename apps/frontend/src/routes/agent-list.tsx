@@ -69,10 +69,10 @@ const AgentItem = ({
               : "알 수 없음"}
       </div>
       <div className="flex items-center gap-2">
-        <button className="opacity-40 hover:opacity-100 focus:opacity-100 pointer cursor-pointer transition-opacity">
+        <button className="opacity-40 hover:opacity-100 focus-visible:opacity-100 pointer cursor-pointer transition-opacity">
           <LuEdit className="size-4" />
         </button>
-        <button className="opacity-40 hover:opacity-100 text-red-400 focus:opacity-100 pointer cursor-pointer transition-opacity">
+        <button className="opacity-40 hover:opacity-100 text-red-400 focus-visible:opacity-100 pointer cursor-pointer transition-opacity">
           <LuTrash className="size-4" />
         </button>
       </div>
