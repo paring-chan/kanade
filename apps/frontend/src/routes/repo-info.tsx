@@ -15,6 +15,8 @@ import LuLoaderCircle from "~icons/lucide/loader-circle";
 import LuHourglass from "~icons/lucide/hourglass";
 import LuX from "~icons/lucide/x";
 import LuRefreshCw from "~icons/lucide/refresh-cw";
+import LuBan from "~icons/lucide/ban";
+import LuCheck from "~icons/lucide/check";
 
 export const loader = (async ({ params }) => {
   const repo = await queryClient.ensureQueryData(
@@ -122,11 +124,26 @@ const PipelineItem = ({
 }) => {
   const pipelineLink = generatePath("/p/:id", { id: pipeline.id });
 
+  const icon = (() => {
+    switch (pipeline.status) {
+      case "cancelled":
+        return <LuBan className="size-4 text-gray-400" />;
+      case "queued":
+        return <LuHourglass className="size-4 text-yellow-400" />;
+      case "running":
+        return (
+          <LuLoaderCircle className="size-4 animate-spin text-yellow-400" />
+        );
+      case "failed":
+        return <LuX className="size-4 text-red-500" />;
+      case "success":
+        return <LuCheck className="size-4 text-green-500" />;
+    }
+  })();
+
   return (
     <div className="py-4 px-6 gap-4 flex items-center">
-      <div className="size-4">
-        <LuHourglass className="size-4 text-yellow-400" />
-      </div>
+      <div className="size-4">{icon}</div>
       <Link
         to={pipelineLink}
         className="font-mono font-bold hover:underline opacity-60"
