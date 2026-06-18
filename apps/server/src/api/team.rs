@@ -207,7 +207,8 @@ impl TeamApi {
             }
         }
 
-        let mut tx = db.begin_as(user_id).await?;
+        // BYPASS: required to insert a team
+        let mut tx = db.begin_bypass().await?;
 
         let id = Uuid::new_v4();
 
