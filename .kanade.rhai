@@ -31,7 +31,7 @@ if ctx.event == "push" && ctx.branch == "main" {
         set -ex
         git clone $CLONE_URL tree
         cd tree/apps/frontend
-        echo $PWD > /workspace/cwd/apps/frontend
+        echo $PWD > /workspace/cwd
 
         mise install
         "#
