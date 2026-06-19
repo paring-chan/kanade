@@ -1,292 +1,320 @@
-import { ScrollArea } from '@base-ui/react';
-import { Fragment, useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { cn } from 'tailwind-variants';
-import { useVirtualizer } from '@tanstack/react-virtual';
+import { ScrollArea } from "@base-ui/react";
+import {
+  Fragment,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
+import { cn } from "tailwind-variants";
+import { useVirtualizer } from "@tanstack/react-virtual";
 
-import LuChevronRight from '~icons/lucide/chevron-right';
-import type { LogEntry } from '../ws-types';
-import { useSuspenseQuery } from '@tanstack/react-query';
-import { pipelineJobsQueryOptions } from '../queries/pipeline';
-import type { components } from '../utils/api/types';
-import { api } from '../utils/api';
+import LuChevronRight from "~icons/lucide/chevron-right";
+import type { LogEntry } from "../ws-types";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { pipelineJobsQueryOptions } from "../queries/pipeline";
+import type { components } from "../utils/api/types";
+import { api } from "../utils/api";
 
 type Step = {
-	id: string;
-	name: string;
+  id: string;
+  name: string;
 };
 
 type StepInfo = {
-	step: Step;
-	size: number;
-	start: number;
+  step: Step;
+  size: number;
+  start: number;
 };
 
 type StoreMeta = {
-	steps: StepInfo[];
-	total: number;
+  steps: StepInfo[];
+  total: number;
 };
 
 type ElementInfo =
-	| {
-			type: 'header';
-			step: Step;
-	  }
-	| {
-			type: 'line';
-			index: number;
-			line: string;
-	  };
+  | {
+      type: "header";
+      step: Step;
+    }
+  | {
+      type: "line";
+      index: number;
+      line: string;
+    };
 
 class LogStore {
-	shouldConnect = false;
+  shouldConnect = false;
 
-	steps!: Step[];
-	currentMeta!: StoreMeta;
-	logs = new Map<string, string[]>();
-	callbacks = new Set<() => void>();
+  steps!: Step[];
+  currentMeta!: StoreMeta;
+  logs = new Map<string, string[]>();
+  callbacks = new Set<() => void>();
 
-	private ws?: WebSocket;
+  private ws?: WebSocket;
 
-	constructor(public job: components['schemas']['PipelineJobResponse']) {
-		this.setJob(job);
-	}
+  constructor(public job: components["schemas"]["PipelineJobResponse"]) {
+    this.setJob(job);
+  }
 
-	setJob(job: components['schemas']['PipelineJobResponse']) {
-		this.job = job;
-		this.logs.clear();
-		this.steps = job.steps.map((x) => ({ id: x.id, name: x.name }));
+  setJob(job: components["schemas"]["PipelineJobResponse"]) {
+    this.job = job;
+    this.logs.clear();
+    this.steps = job.steps.map((x) => ({ id: x.id, name: x.name }));
 
-		api
-			.GET('/api/v1/jobs/{job_id}/logs', {
-				params: { path: { job_id: job.id } },
-			})
-			.then((x) => {
-				if (job !== this.job) return;
-				const data = x.data!;
+    api
+      .GET("/api/v1/jobs/{job_id}/logs", {
+        params: { path: { job_id: job.id } },
+      })
+      .then((x) => {
+        if (job !== this.job) return;
+        const data = x.data!;
 
-				const logsMap = new Map<string, string[]>();
+        this.logs = new Map();
 
-				for (const log of data) {
-					let logs = logsMap.get(log.stepId);
-					if (!logs) {
-						logs = [];
-						logsMap.set(log.stepId, logs);
-					}
+        for (const log of data) {
+          this.append(log.stepId, log.content);
+        }
 
-					logs.push(log.content);
-				}
+        this.rebuildMeta();
+      });
 
-				this.logs = logsMap;
-				this.rebuildMeta();
-			});
+    this.rebuildMeta();
+  }
 
-		this.rebuildMeta();
-	}
+  append(stepId: string, message: string) {
+    let logs = this.logs.get(stepId);
+    if (!logs) {
+      logs = [];
+      this.logs.set(stepId, logs);
+    }
 
-	append(stepId: string, message: string) {
-		let logs = this.logs.get(stepId);
-		if (!logs) {
-			logs = [];
-			this.logs.set(stepId, logs);
-		}
+    const lines = message.split("\n");
 
-		logs.push(message);
-		this.rebuildMeta();
-	}
+    lines.forEach((line, i) => {
+      if (i > 0) logs.push(line);
+      else {
+        if (logs.length === 0) {
+          logs.push(message);
+          return;
+        }
+        logs[logs.length - 1] += line;
+      }
+    });
 
-	connect() {
-		if (this.ws) {
-			this.ws.close();
-		}
+    this.rebuildMeta();
+  }
 
-		const loc = window.location;
-		const ws = new WebSocket(`${loc.protocol.replace('http', 'ws')}//${loc.host}/_/ws/logs/${this.job.id}`);
-		this.ws = ws;
-		this.shouldConnect = true;
+  connect() {
+    if (this.ws) {
+      this.ws.close();
+    }
 
-		ws.onopen = () => {
-			console.log('ws connected');
-		};
+    const loc = window.location;
+    const ws = new WebSocket(
+      `${loc.protocol.replace("http", "ws")}//${loc.host}/_/ws/logs/${this.job.id}`,
+    );
+    this.ws = ws;
+    this.shouldConnect = true;
 
-		ws.onmessage = (ev) => {
-			try {
-				const data = JSON.parse(ev.data) as LogEntry;
-				const lines = data.content.split('\r\n').filter((x, i, arr) => x || i !== arr.length - 1);
-				for (const line of lines) {
-					this.append(data.stepId, line);
-				}
-			} catch (e) {
-				console.error('failed to parse message:', ev.data, e);
-			}
-		};
+    ws.onopen = () => {
+      console.log("ws connected");
+    };
 
-		ws.onclose = () => {
-			console.log('connection closed');
+    ws.onmessage = (ev) => {
+      try {
+        const data = JSON.parse(ev.data) as LogEntry;
 
-			if (!this.shouldConnect) return;
-			setTimeout(() => {
-				if (!this.shouldConnect) return;
-				console.log('reconnecting...');
-				this.connect();
-			}, 1000);
-		};
-	}
+        this.append(data.stepId, data.content);
+      } catch (e) {
+        console.error("failed to parse message:", ev.data, e);
+      }
+    };
 
-	disconnect() {
-		this.shouldConnect = false;
-		this.ws?.close();
-	}
+    ws.onclose = () => {
+      console.log("connection closed");
 
-	private notify() {
-		this.callbacks.forEach((x) => {
-			x();
-		});
-	}
+      if (!this.shouldConnect) return;
+      setTimeout(() => {
+        if (!this.shouldConnect) return;
+        console.log("reconnecting...");
+        this.connect();
+      }, 1000);
+    };
+  }
 
-	private rebuildMeta() {
-		const meta: StoreMeta = { total: 0, steps: [] };
-		for (const step of this.steps) {
-			const logCount = this.logs.get(step.id)?.length ?? 0;
+  disconnect() {
+    this.shouldConnect = false;
+    this.ws?.close();
+  }
 
-			const sizeVisible = 1 + logCount;
+  private notify() {
+    this.callbacks.forEach((x) => {
+      x();
+    });
+  }
 
-			meta.steps.push({
-				step,
-				size: sizeVisible,
-				start: meta.total,
-			});
-			meta.total += sizeVisible;
-		}
+  private rebuildMeta() {
+    const meta: StoreMeta = { total: 0, steps: [] };
+    for (const step of this.steps) {
+      const logCount = this.logs.get(step.id)?.length ?? 0;
 
-		this.currentMeta = meta;
+      const sizeVisible = 1 + logCount;
 
-		this.notify();
-	}
+      meta.steps.push({
+        step,
+        size: sizeVisible,
+        start: meta.total,
+      });
+      meta.total += sizeVisible;
+    }
 
-	currentStep(index: number) {
-		let result = this.currentMeta.steps[0];
-		for (let i = 1; i < this.currentMeta.steps.length; i++) {
-			const current = this.currentMeta.steps[i]!;
-			if (current.start <= index) result = current;
-			else break;
-		}
+    this.currentMeta = meta;
 
-		return result;
-	}
+    this.notify();
+  }
 
-	get(index: number): ElementInfo | null {
-		const meta = this.currentStep(index);
+  currentStep(index: number) {
+    let result = this.currentMeta.steps[0];
+    for (let i = 1; i < this.currentMeta.steps.length; i++) {
+      const current = this.currentMeta.steps[i]!;
+      if (current.start <= index) result = current;
+      else break;
+    }
 
-		if (!meta) return null;
+    return result;
+  }
 
-		if (meta.start === index) return { type: 'header', step: meta.step };
-		const logs = this.logs.get(meta.step.id)!;
+  get(index: number): ElementInfo | null {
+    const meta = this.currentStep(index);
 
-		const logIndex = index - meta.start - 1;
-		return { type: 'line', line: logs[logIndex]!, index: logIndex };
-	}
+    if (!meta) return null;
 
-	subscribe(callback: () => void): () => void {
-		this.callbacks.add(callback);
+    if (meta.start === index) return { type: "header", step: meta.step };
+    const logs = this.logs.get(meta.step.id)!;
 
-		return () => {
-			this.callbacks.delete(callback);
-		};
-	}
+    const logIndex = index - meta.start - 1;
+    return { type: "line", line: logs[logIndex]!, index: logIndex };
+  }
+
+  subscribe(callback: () => void): () => void {
+    this.callbacks.add(callback);
+
+    return () => {
+      this.callbacks.delete(callback);
+    };
+  }
 }
 
-export const LogView = ({ jobId, pipelineId }: { pipelineId: string; jobId: string }) => {
-	const { data: jobs } = useSuspenseQuery(pipelineJobsQueryOptions(pipelineId));
-	const job = jobs.find((x) => x.id === jobId);
-	if (!job) throw new Error('job not found');
+export const LogView = ({
+  jobId,
+  pipelineId,
+}: {
+  pipelineId: string;
+  jobId: string;
+}) => {
+  const { data: jobs } = useSuspenseQuery(pipelineJobsQueryOptions(pipelineId));
+  const job = jobs.find((x) => x.id === jobId);
+  if (!job) throw new Error("job not found");
 
-	const container = useRef<HTMLDivElement>(null);
+  const container = useRef<HTMLDivElement>(null);
 
-	const [store] = useState(() => new LogStore(job));
+  const [store] = useState(() => new LogStore(job));
 
-	useEffect(() => {
-		if (store.job.id !== job.id) {
-			store.setJob(job);
-		}
-	}, [job, store]);
+  useEffect(() => {
+    if (store.job.id !== job.id) {
+      store.setJob(job);
+    }
+  }, [job, store]);
 
-	useEffect(() => {
-		store.connect();
-		return () => {
-			store.disconnect();
-		};
-	}, [store]);
+  useEffect(() => {
+    store.connect();
+    return () => {
+      store.disconnect();
+    };
+  }, [store]);
 
-	const meta = useSyncExternalStore(
-		(cb) => store.subscribe(cb),
-		() => store.currentMeta,
-	);
+  const meta = useSyncExternalStore(
+    (cb) => store.subscribe(cb),
+    () => store.currentMeta,
+  );
 
-	const virtualizer = useVirtualizer({
-		count: meta.total,
-		getScrollElement: () => container.current,
-		estimateSize: () => 24,
-	});
+  const virtualizer = useVirtualizer({
+    count: meta.total,
+    getScrollElement: () => container.current,
+    estimateSize: () => 24,
+  });
 
-	const totalSize = virtualizer.getTotalSize();
+  const totalSize = virtualizer.getTotalSize();
 
-	useEffect(() => {
-		if (container.current) {
-			container.current.scrollTo({ top: totalSize, behavior: 'smooth' });
-		}
-	}, [totalSize]);
+  useEffect(() => {
+    if (container.current) {
+      container.current.scrollTo({ top: totalSize, behavior: "smooth" });
+    }
+  }, [totalSize]);
 
-	return (
-		<ScrollArea.Root className="flex flex-col size-full">
-			<ScrollArea.Viewport className="grow h-0 overflow-y-auto" ref={container}>
-				<ScrollArea.Content>
-					<div style={{ height: `${virtualizer.getTotalSize()}px` }} className="relative">
-						{virtualizer.getVirtualItems().map((row) => {
-							const item = store.get(row.index);
-							if (!item) return <Fragment key={row.key} />;
+  return (
+    <ScrollArea.Root className="flex flex-col size-full">
+      <ScrollArea.Viewport className="grow h-0 overflow-y-auto" ref={container}>
+        <ScrollArea.Content>
+          <div
+            style={{ height: `${virtualizer.getTotalSize()}px` }}
+            className="relative"
+          >
+            {virtualizer.getVirtualItems().map((row) => {
+              const item = store.get(row.index);
+              if (!item) return <Fragment key={row.key} />;
 
-							switch (item.type) {
-								case 'header':
-									return (
-										<button
-											key={row.key}
-											data-index={row.index}
-											ref={virtualizer.measureElement}
-											className="bg-pink-200 hover:bg-pink-300 cursor-pointer px-2 py-1 w-full text-left flex items-center gap-2 top-0 z-10 absolute"
-											style={{
-												transform: `translateY(${row.start}px)`,
-											}}
-										>
-											<div className="size-4">
-												<LuChevronRight className="size-4 rotate-90" />
-											</div>
-											<div className="text-sm">{item.step.name}</div>
-										</button>
-									);
-								case 'line':
-									return (
-										<div
-											key={row.key}
-											data-index={row.index}
-											ref={virtualizer.measureElement}
-											className="px-2 text-sm font-mono py-0.5 hover:bg-black/5 absolute w-full"
-											style={{
-												transform: `translateY(${row.start}px)`,
-											}}
-										>
-											{item.line}
-										</div>
-									);
-								default:
-									throw new Error('what');
-							}
-						})}
-					</div>
-				</ScrollArea.Content>
-			</ScrollArea.Viewport>
-			<ScrollArea.Scrollbar className={cn('flex w-2 z-30', 'opacity-0 transition-opacity data-hovering:opacity-100 bg-pink-300/30', 'data-scrolling:pointer-events-auto')}>
-				<ScrollArea.Thumb className="w-full bg-pink-300" />
-			</ScrollArea.Scrollbar>
-		</ScrollArea.Root>
-	);
+              switch (item.type) {
+                case "header":
+                  return (
+                    <button
+                      key={row.key}
+                      data-index={row.index}
+                      ref={virtualizer.measureElement}
+                      className="bg-pink-200 hover:bg-pink-300 cursor-pointer px-2 py-1 w-full text-left flex items-center gap-2 top-0 z-10 absolute"
+                      style={{
+                        transform: `translateY(${row.start}px)`,
+                      }}
+                    >
+                      <div className="size-4">
+                        <LuChevronRight className="size-4 rotate-90" />
+                      </div>
+                      <div className="text-sm">{item.step.name}</div>
+                    </button>
+                  );
+                case "line":
+                  return (
+                    <div
+                      key={row.key}
+                      data-index={row.index}
+                      className="flex gap-2 absolute px-2 text-sm font-mono py-0.5 hover:bg-black/5 w-full"
+                      style={{
+                        transform: `translateY(${row.start}px)`,
+                      }}
+                    >
+                      <div className="opacity-40">
+                        {(item.index + 1).toString().padStart(6, "0")}
+                      </div>
+                      <pre ref={virtualizer.measureElement}>{item.line}</pre>
+                    </div>
+                  );
+                default:
+                  throw new Error("what");
+              }
+            })}
+          </div>
+        </ScrollArea.Content>
+      </ScrollArea.Viewport>
+      <ScrollArea.Scrollbar
+        className={cn(
+          "flex w-2 z-30",
+          "opacity-0 transition-opacity data-hovering:opacity-100 bg-pink-300/30",
+          "data-scrolling:pointer-events-auto",
+        )}
+      >
+        <ScrollArea.Thumb className="w-full bg-pink-300" />
+      </ScrollArea.Scrollbar>
+    </ScrollArea.Root>
+  );
 };
