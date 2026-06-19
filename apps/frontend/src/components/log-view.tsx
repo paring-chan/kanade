@@ -279,6 +279,7 @@ export const LogView = ({
                     <div
                       key={row.key}
                       data-index={row.index}
+                      ref={virtualizer.measureElement}
                       className="flex gap-2 absolute px-2 text-sm font-mono py-0.5 hover:bg-black/5 w-full"
                       style={{
                         transform: `translateY(${row.start}px)`,
@@ -287,7 +288,7 @@ export const LogView = ({
                       <div className="opacity-40">
                         {(item.index + 1).toString().padStart(6, "0")}
                       </div>
-                      <pre ref={virtualizer.measureElement}>{item.line}</pre>
+                      <pre className="whitespace-pre-wrap">{item.line}</pre>
                     </div>
                   );
                 default:

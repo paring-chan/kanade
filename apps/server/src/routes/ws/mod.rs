@@ -7,7 +7,7 @@ use poem::{
     endpoint::BoxEndpoint,
     get, handler,
     web::{
-        Data, Path,
+        Data,
         websocket::{Message, WebSocket},
     },
 };
