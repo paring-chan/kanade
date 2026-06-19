@@ -282,10 +282,6 @@ async fn forgejo_webhook(
                 "CLONE_URL".to_string(),
                 EnvDefinition::Static(upstream_repo.ssh_url.clone()),
             );
-            job.env.insert(
-                "COLUMNS".to_string(),
-                EnvDefinition::Static("200".to_string()),
-            );
 
             sqlx::query!(
                 r#"

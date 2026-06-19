@@ -268,8 +268,8 @@ impl<R: adapter::JobStatusReport> JobExecutor<R> {
                     CreateExecOptions::<String> {
                         working_dir: Some(cwd),
                         cmd: Some(vec![
-                            "/bin/bash".to_string(),
-                            "-c".to_string(),
+                            "/bin/sh".to_string(),
+                            "-exc".to_string(),
                             step.command,
                         ]),
                         attach_stderr: Some(true),

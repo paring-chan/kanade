@@ -7,7 +7,6 @@ if ctx.event == "push" && ctx.branch == "main" {
     cargo_check.step(#{
         name: "Set up repository",
         command: #"
-        set -ex
         git clone $CLONE_URL tree
         cd tree
         echo $PWD > /workspace/cwd
@@ -18,7 +17,6 @@ if ctx.event == "push" && ctx.branch == "main" {
     cargo_check.step(#{
         name: "Check",
         command: #"
-        set -ex
 
         mise x -- cargo check --locked
         "#
@@ -28,7 +26,6 @@ if ctx.event == "push" && ctx.branch == "main" {
     frontend_check.step(#{
         name: "Set up repository",
         command: #"
-        set -ex
         git clone $CLONE_URL tree
         cd tree/apps/frontend
         echo $PWD > /workspace/cwd
