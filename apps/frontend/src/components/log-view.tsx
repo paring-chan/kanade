@@ -157,9 +157,14 @@ class LogStore {
   private rebuildMeta() {
     const meta: StoreMeta = { total: 0, steps: [] };
     for (const step of this.steps) {
+      const logs = this.logs.get(step.id);
       const logCount = this.logs.get(step.id)?.length ?? 0;
 
-      const sizeVisible = 1 + logCount;
+      let sizeVisible = 1 + logCount;
+
+      if (logs?.[logs.length - 1] === "") {
+        sizeVisible--;
+      }
 
       meta.steps.push({
         step,
