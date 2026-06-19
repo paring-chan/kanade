@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT s.id, s.key, s.created_at, s.updated_at\n            FROM team t\n            INNER JOIN team_secret ts ON ts.team_id = t.id\n            INNER JOIN secret s ON ts.secret_id = s.id\n            INNER JOIN user_team ut ON t.id = ut.team_id\n            WHERE t.slug = $1 AND ut.id = $2 AND ut.role IN ('manager', 'admin')\n            ",
+  "query": "\n            SELECT s.id, s.key, s.created_at, s.updated_at\n            FROM team t\n            INNER JOIN team_secret ts ON ts.team_id = t.id\n            INNER JOIN secret s ON ts.secret_id = s.id\n            INNER JOIN user_team ut ON t.id = ut.team_id\n            WHERE t.slug = $1 AND ut.user_id = $2\n            ",
   "describe": {
     "columns": [
       {
@@ -61,5 +61,5 @@
       false
     ]
   },
-  "hash": "98a373e81403b3f7d0ea341f7c9f4b5aba9a9ff89208a1c9ce62a88d94ede2d6"
+  "hash": "2867cece048e923620fd56cafb154e4f82872ba501b47f23bca83d0349881c49"
 }
