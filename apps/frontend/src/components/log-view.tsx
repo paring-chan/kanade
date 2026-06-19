@@ -51,7 +51,7 @@ class LogStore {
   logs = new Map<string, string[]>();
   callbacks = new Set<() => void>();
 
-  private ws?: WebSocket;
+  private sse?: EventSource;
 
   constructor(public job: components["schemas"]["PipelineJobResponse"]) {
     this.setJob(job);
@@ -106,22 +106,19 @@ class LogStore {
   }
 
   connect() {
-    if (this.ws) {
-      this.ws.close();
+    if (this.sse) {
+      this.sse.close();
     }
 
-    const loc = window.location;
-    const ws = new WebSocket(
-      `${loc.protocol.replace("http", "ws")}//${loc.host}/_/ws/logs/${this.job.id}`,
-    );
-    this.ws = ws;
+    const sse = new EventSource(`/_/sse/logs/${this.job.id}`);
+    this.sse = sse;
     this.shouldConnect = true;
 
-    ws.onopen = () => {
+    sse.onopen = () => {
       console.log("ws connected");
     };
 
-    ws.onmessage = (ev) => {
+    sse.onmessage = (ev) => {
       try {
         const data = JSON.parse(ev.data) as LogEntry;
 
@@ -130,22 +127,11 @@ class LogStore {
         console.error("failed to parse message:", ev.data, e);
       }
     };
-
-    ws.onclose = () => {
-      console.log("connection closed");
-
-      if (!this.shouldConnect) return;
-      setTimeout(() => {
-        if (!this.shouldConnect) return;
-        console.log("reconnecting...");
-        this.connect();
-      }, 1000);
-    };
   }
 
   disconnect() {
     this.shouldConnect = false;
-    this.ws?.close();
+    this.sse?.close();
   }
 
   private notify() {

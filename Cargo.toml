@@ -54,5 +54,6 @@ specta-typescript = "0.0.12"
 specta-serde = "0.0.12"
 tempfile = "3.27.0"
 tokio-tungstenite = { version = "0.29.0", features = ["rustls-tls-webpki-roots"] }
+async-stream = "0.3.6"
 
 event-evaluator = { path = "./crates/event-evaluator" }

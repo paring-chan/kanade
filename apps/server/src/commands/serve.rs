@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{sync::Arc, time::Duration};
 
 use anyhow::Context;
 use hex::FromHex;
@@ -43,7 +43,7 @@ pub async fn run(config: Arc<AppConfig>) -> anyhow::Result<()> {
             async {
                 _ = tokio::signal::ctrl_c().await;
             },
-            None,
+            Some(Duration::from_secs(5)),
         )
         .await
         .context("failed to start server")?;

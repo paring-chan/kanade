@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use api_types::AgentLogMessage;
-use futures_util::{SinkExt, StreamExt};
+use futures_util::StreamExt;
 use poem::{
     EndpointExt, IntoResponse, Route,
     endpoint::BoxEndpoint,
@@ -11,7 +11,6 @@ use poem::{
         websocket::{Message, WebSocket},
     },
 };
-use uuid::Uuid;
 
 use crate::realtime::{
     Realtime,
@@ -19,57 +18,7 @@ use crate::realtime::{
 };
 
 pub fn routes() -> BoxEndpoint<'static> {
-    Route::new()
-        .at("/events", get(events_ws))
-        .at("/agent", get(handle_agent))
-        .at("/logs/:job_id", get(log_ws))
-        .boxed()
-}
-
-#[handler]
-async fn log_ws(
-    ws: WebSocket,
-    Data(realtime): Data<&Arc<Realtime>>,
-    Path(job_id_param): Path<Uuid>,
-) -> impl IntoResponse {
-    let realtime = realtime.clone();
-
-    ws.on_upgrade(move |socket| async move {
-        let (mut sink, _) = socket.split();
-        let mut receiver = realtime.log_stream.subscribe();
-
-        while let Ok(msg) = receiver.recv().await {
-            match msg {
-                LogMessage { job_id, entry } => {
-                    if job_id != job_id_param {
-                        continue;
-                    }
-                    if let Ok(data) = serde_json::to_string(&entry)
-                        && let Err(_) = sink.send(Message::Text(data)).await
-                    {
-                        break;
-                    }
-                }
-            }
-        }
-    })
-}
-
-#[handler]
-async fn events_ws(ws: WebSocket, Data(realtime): Data<&Arc<Realtime>>) -> impl IntoResponse {
-    let realtime = realtime.clone();
-    ws.on_upgrade(move |socket| async move {
-        let (mut sink, _) = socket.split();
-        let mut receiver = realtime.event_stream.subscribe();
-
-        while let Ok(msg) = receiver.recv().await {
-            if let Ok(data) = serde_json::to_string(&msg)
-                && let Err(_) = sink.send(Message::Text(data)).await
-            {
-                break;
-            }
-        }
-    })
+    Route::new().at("/agent", get(handle_agent)).boxed()
 }
 
 #[handler]

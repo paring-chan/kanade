@@ -3,30 +3,24 @@ import type { EventMessage } from '../ws-types';
 import { queryClient } from './api';
 
 export class EventSocket {
-	private ws?: WebSocket;
+	// private sse?: EventSource;
 
 	constructor() {
 		this.connect();
 	}
 
 	connect() {
-		if (this.ws) {
-			this.ws.close();
-		}
+		const sse = new EventSource(`/_/sse/events`);
+		// this.sse = sse;
 
-		const loc = window.location;
-		const ws = new WebSocket(`${loc.protocol.replace('http', 'ws')}//${loc.host}/_/ws/events`);
-		this.ws = ws;
-
-		ws.onopen = () => {
+		sse.addEventListener('open', () => {
 			console.log('ws connected');
 			queryClient.invalidateQueries({ refetchType: 'active' });
-		};
+		});
 
-		ws.onmessage = (ev) => {
+		sse.addEventListener('message', (ev) => {
 			try {
 				const data = JSON.parse(ev.data) as EventMessage;
-				console.log(data);
 
 				switch (data.t) {
 					case 'updatePipelineStatus': {
@@ -61,22 +55,13 @@ export class EventSocket {
 					}
 
 					default:
-						console.warn('unknown data type:', data.t);
+						console.warn('unknown data type:', data);
 						return;
 				}
 			} catch (e) {
 				console.error('failed to parse message:', ev.data, e);
 			}
-		};
-
-		ws.onclose = () => {
-			console.log('connection closed');
-
-			setTimeout(() => {
-				console.log('reconnecting...');
-				this.connect();
-			}, 1000);
-		};
+		});
 	}
 }
 

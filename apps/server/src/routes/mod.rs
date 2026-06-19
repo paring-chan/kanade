@@ -9,6 +9,7 @@ use poem::{
 use poem_openapi::OpenApiService;
 
 mod auth;
+mod sse;
 mod webhook;
 mod ws;
 
@@ -28,7 +29,8 @@ pub fn routes() -> BoxEndpoint<'static> {
         .nest("/_/auth", auth::routes())
         .nest("/api", svc.scalar())
         .nest("/api/v1", svc)
-        .nest("/_/ws", ws::routes());
+        .nest("/_/ws", ws::routes())
+        .nest("/_/sse", sse::routes());
 
     if let Some(frontend_path) = FRONTEND_PATH {
         let mut index = String::new();
